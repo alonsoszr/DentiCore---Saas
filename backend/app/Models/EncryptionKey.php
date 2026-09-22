@@ -3,19 +3,20 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
-use Database\Factories\EncryptionKeyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Se crea únicamente vía TenantEncryption::generateKeyFor() al dar de alta una clínica
+ * (sin factory propia: tenant_id es UNIQUE y TenantFactory ya genera la clave).
+ */
 #[Fillable(['key_ciphertext', 'is_active'])]
 #[Hidden(['key_ciphertext'])]
 class EncryptionKey extends Model
 {
-    /** @use HasFactory<EncryptionKeyFactory> */
-    use BelongsToTenant, HasFactory;
+    use BelongsToTenant;
 
     /**
      * Espeja el default de columna (is_active default true) a nivel de PHP: ver nota

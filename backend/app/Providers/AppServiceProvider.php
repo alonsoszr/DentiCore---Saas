@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Encryption\TenantEncryption;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +12,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Las claves de clínica descifradas se cachean solo durante el request.
+        $this->app->scoped(TenantEncryption::class);
     }
 
     /**

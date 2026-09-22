@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreTenantRequest;
 use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
+use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -15,6 +16,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class TenantController extends Controller
 {
+    public function __construct(private TenantService $tenants) {}
+
     public function index(): AnonymousResourceCollection
     {
         return TenantResource::collection(Tenant::query()->latest()->get());
@@ -22,7 +25,7 @@ class TenantController extends Controller
 
     public function store(StoreTenantRequest $request): JsonResponse
     {
-        $tenant = Tenant::create($request->validated());
+        $tenant = $this->tenants->create($request->validated());
 
         return TenantResource::make($tenant)->response()->setStatusCode(201);
     }

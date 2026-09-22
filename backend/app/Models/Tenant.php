@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'slug', 'subscription_plan', 'status', 'settings'])]
 class Tenant extends Model
@@ -42,5 +43,21 @@ class Tenant extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * @return HasMany<Patient, $this>
+     */
+    public function patients(): HasMany
+    {
+        return $this->hasMany(Patient::class);
+    }
+
+    /**
+     * @return HasOne<EncryptionKey, $this>
+     */
+    public function encryptionKey(): HasOne
+    {
+        return $this->hasOne(EncryptionKey::class);
     }
 }

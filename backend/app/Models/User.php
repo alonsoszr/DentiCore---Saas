@@ -29,6 +29,14 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, HasUuid, Notifiable;
 
     /**
+     * Roles que pertenecen a una clínica (tenant_id NOT NULL). super_admin queda fuera:
+     * es el único rol de plataforma (technical_specs.md §3.3 y §4.1).
+     *
+     * @var list<string>
+     */
+    public const TENANT_ROLES = ['clinic_admin', 'dentist', 'receptionist', 'patient'];
+
+    /**
      * Espeja el default de columna (is_active default true) a nivel de PHP: ver nota
      * equivalente en Tenant::$attributes.
      *

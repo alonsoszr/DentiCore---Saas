@@ -18,6 +18,8 @@ class ResolveTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
+        app()->forgetInstance('currentTenant');
+
         $tenantId = $request->user()?->tenant_id;
 
         if ($tenantId) {

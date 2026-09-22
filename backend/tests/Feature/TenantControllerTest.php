@@ -28,6 +28,20 @@ class TenantControllerTest extends TestCase
         $this->assertDatabaseHas('tenants', ['slug' => 'clinica-sonrisa']);
     }
 
+    public function test_registering_tenant_generates_its_encryption_key(): void
+    {
+        $superAdmin = User::factory()->superAdmin()->create();
+
+        $this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/tenants', [
+            'name' => 'Clinica Sonrisa',
+            'slug' => 'clinica-sonrisa',
+            'subscription_plan' => 'pro',
+        ])->assertCreated();
+
+        $tenant = Tenant::query()->where('slug', 'clinica-sonrisa')->sole();
+        $this->assertDatabaseHas('encryption_keys', ['tenant_id' => $tenant->id, 'is_active' => true]);
+    }
+
     public function test_non_super_admin_cannot_register_tenant(): void
     {
         $tenant = Tenant::factory()->create();
