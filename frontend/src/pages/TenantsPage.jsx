@@ -8,12 +8,19 @@ import { PageHeader } from '../components/PageHeader'
 const PLAN_LABELS = { basic: 'Básico', pro: 'Pro', enterprise: 'Enterprise' }
 const STATUS_LABELS = { active: 'Activa', suspended: 'Suspendida', cancelled: 'Cancelada' }
 
-const EMPTY_FORM = { name: '', slug: '', subscription_plan: 'basic' }
+const EMPTY_FORM = {
+  name: '',
+  slug: '',
+  subscription_plan: 'basic',
+  admin_name: '',
+  admin_email: '',
+  admin_password: '',
+}
 
 function slugify(text) {
   return text
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
@@ -34,9 +41,9 @@ export function TenantsPage() {
 
   const createTenant = useMutation({
     mutationFn: async (payload) => (await apiClient.post('/tenants', payload)).data.data,
-    onSuccess: (tenant) => {
+    onSuccess: (tenant, payload) => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
-      setCreated(tenant)
+      setCreated({ ...tenant, adminEmail: payload.admin.email })
       setForm(EMPTY_FORM)
       setSlugEdited(false)
       setShowForm(false)
@@ -56,7 +63,12 @@ export function TenantsPage() {
   const handleSubmit = (event) => {
     event.preventDefault()
     setCreated(null)
-    createTenant.mutate(form)
+    createTenant.mutate({
+      name: form.name,
+      slug: form.slug,
+      subscription_plan: form.subscription_plan,
+      admin: { name: form.admin_name, email: form.admin_email, password: form.admin_password },
+    })
   }
 
   const errors = fieldErrors(createTenant.error)
@@ -74,7 +86,8 @@ export function TenantsPage() {
 
       {created && (
         <div className="alert alert-success">
-          Clínica «{created.name}» registrada. Su código de acceso es <strong>{created.slug}</strong>.
+          Clínica «{created.name}» registrada. Su administrador ya puede ingresar con el código{' '}
+          <strong>{created.slug}</strong> y el correo <strong>{created.adminEmail}</strong>.
         </div>
       )}
 
@@ -84,12 +97,13 @@ export function TenantsPage() {
           {generalError(createTenant.error) && (
             <div className="alert alert-error">{generalError(createTenant.error)}</div>
           )}
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-grid">
-              <Field label="Nombre" name="name" value={form.name} onChange={handleChange} error={errors.name} />
+              <Field label="Nombre" name="name" autoComplete="off" value={form.name} onChange={handleChange} error={errors.name} />
               <Field
                 label="Código de acceso"
                 name="slug"
+                autoComplete="off"
                 value={form.slug}
                 onChange={handleChange}
                 error={errors.slug}
@@ -110,6 +124,38 @@ export function TenantsPage() {
                 </select>
               </Field>
             </div>
+
+            <h3 className="form-section">Primer administrador de la clínica</h3>
+            <div className="form-grid">
+              <Field
+                label="Nombre"
+                name="admin_name"
+                autoComplete="off"
+                value={form.admin_name}
+                onChange={handleChange}
+                error={errors['admin.name']}
+              />
+              <Field
+                label="Correo electrónico"
+                name="admin_email"
+                autoComplete="off"
+                type="email"
+                value={form.admin_email}
+                onChange={handleChange}
+                error={errors['admin.email']}
+              />
+              <Field
+                label="Contraseña"
+                name="admin_password"
+                type="password"
+                value={form.admin_password}
+                onChange={handleChange}
+                error={errors['admin.password']}
+                autoComplete="new-password"
+                hint="Mínimo 8 caracteres. Compártela de forma segura con el administrador."
+              />
+            </div>
+
             <div className="form-actions">
               <button type="submit" className="btn" disabled={createTenant.isPending}>
                 {createTenant.isPending ? 'Guardando…' : 'Guardar'}

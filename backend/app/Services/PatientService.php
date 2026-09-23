@@ -46,6 +46,8 @@ class PatientService
             throw $this->duplicatedDocument();
         }
 
+        $attributes['medical_history'] = $this->normalizeMedicalHistory($attributes['medical_history'] ?? null);
+
         $patient = new Patient($attributes);
 
         if (! empty($attributes['user_uuid'])) {
@@ -91,6 +93,37 @@ class PatientService
         }
 
         return $user->id;
+    }
+
+    /**
+     * Guarda siempre las cuatro claves (listas sin elementos vacíos ni espacios sobrantes)
+     * o null si no se registró ningún antecedente.
+     *
+     * @param  array{alergias?: list<string>, enfermedades?: list<string>, medicamentos?: list<string>, observaciones?: string|null}|null  $history
+     * @return array{alergias: list<string>, enfermedades: list<string>, medicamentos: list<string>, observaciones: string|null}|null
+     */
+    private function normalizeMedicalHistory(?array $history): ?array
+    {
+        if ($history === null) {
+            return null;
+        }
+
+        $cleanList = fn (?array $items): array => array_values(array_filter(
+            array_map(fn (?string $item): string => trim((string) $item), $items ?? []),
+            fn (string $item): bool => $item !== '',
+        ));
+
+        $normalized = [
+            'alergias' => $cleanList($history['alergias'] ?? null),
+            'enfermedades' => $cleanList($history['enfermedades'] ?? null),
+            'medicamentos' => $cleanList($history['medicamentos'] ?? null),
+            'observaciones' => trim((string) ($history['observaciones'] ?? '')) ?: null,
+        ];
+
+        $isEmpty = $normalized['alergias'] === [] && $normalized['enfermedades'] === []
+            && $normalized['medicamentos'] === [] && $normalized['observaciones'] === null;
+
+        return $isEmpty ? null : $normalized;
     }
 
     private function duplicatedDocument(): ValidationException

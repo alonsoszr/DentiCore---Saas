@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { to: '/clinicas', label: 'Clínicas', roles: ['super_admin'] },
   { to: '/pacientes', label: 'Pacientes', roles: STAFF_ROLES },
   { to: '/usuarios', label: 'Usuarios', roles: ['clinic_admin'] },
-  { to: '/inicio', label: 'Inicio', roles: ['patient'] },
+  { to: '/inicio', label: 'Mi ficha', roles: ['patient'] },
 ]
 
 export function Layout() {

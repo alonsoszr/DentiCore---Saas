@@ -22,6 +22,7 @@ class UserService
     {
         return User::query()
             ->where('tenant_id', $tenant->id)
+            ->with('patient')
             ->orderBy('name')
             ->get();
     }

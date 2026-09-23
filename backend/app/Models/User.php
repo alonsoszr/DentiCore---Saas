@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasUuid;
+use App\Models\Scopes\TenantScope;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -63,5 +65,18 @@ class User extends Authenticatable
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * Ficha vinculada a una cuenta de portal (role='patient'). Sin Global Scope porque se
+     * resuelve también en el login, antes de que haya tenant activo. El filtro por
+     * user_id (UNIQUE) ya la limita a la ficha propia, y PatientService solo permite
+     * vincular cuentas de la misma clínica.
+     *
+     * @return HasOne<Patient, $this>
+     */
+    public function patient(): HasOne
+    {
+        return $this->hasOne(Patient::class)->withoutGlobalScope(TenantScope::class);
     }
 }

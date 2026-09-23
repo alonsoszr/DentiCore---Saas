@@ -170,4 +170,79 @@ class PatientControllerTest extends TestCase
                 ->assertJsonValidationErrors('user_uuid');
         }
     }
+
+    public function test_portal_account_receives_its_patient_uuid_on_login_and_me(): void
+    {
+        $tenant = Tenant::factory()->create(['slug' => 'clinica-sonrisa']);
+        $patientUser = User::factory()->for($tenant)->create(['role' => 'patient', 'email' => 'pablo@example.com']);
+        $record = Patient::factory()->for($tenant)->create();
+        $record->user_id = $patientUser->id;
+        $record->save();
+
+        $this->postJson('/api/v1/auth/login', [
+            'tenant_slug' => 'clinica-sonrisa',
+            'email' => 'pablo@example.com',
+            'password' => 'password',
+        ])->assertOk()->assertJsonPath('user.patient_uuid', $record->uuid);
+
+        $this->actingAs($patientUser, 'sanctum')
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.patient_uuid', $record->uuid);
+    }
+
+    public function test_unlinked_portal_account_gets_null_and_staff_gets_no_patient_uuid(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $unlinkedPatientUser = User::factory()->for($tenant)->create(['role' => 'patient']);
+        $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+
+        $this->actingAs($unlinkedPatientUser, 'sanctum')
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.patient_uuid', null);
+
+        $this->actingAs($dentist, 'sanctum')
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonMissingPath('data.patient_uuid');
+    }
+
+    public function test_medical_history_is_stored_with_fixed_structure(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+
+        $response = $this->actingAs($dentist, 'sanctum')->postJson('/api/v1/patients', $this->payload([
+            'medical_history' => ['alergias' => [' Penicilina ', ''], 'observaciones' => '  Hipertenso  '],
+        ]));
+
+        $response->assertCreated()->assertJsonPath('data.medical_history', [
+            'alergias' => ['Penicilina'],
+            'enfermedades' => [],
+            'medicamentos' => [],
+            'observaciones' => 'Hipertenso',
+        ]);
+    }
+
+    public function test_empty_medical_history_is_stored_as_null(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+
+        $this->actingAs($dentist, 'sanctum')->postJson('/api/v1/patients', $this->payload([
+            'medical_history' => ['alergias' => [], 'enfermedades' => [''], 'medicamentos' => [], 'observaciones' => ''],
+        ]))->assertCreated()->assertJsonPath('data.medical_history', null);
+    }
+
+    public function test_medical_history_rejects_keys_outside_the_structure(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+
+        $this->actingAs($dentist, 'sanctum')
+            ->postJson('/api/v1/patients', $this->payload(['medical_history' => ['cirugias' => ['Apendicectomía']]]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('medical_history');
+    }
 }

@@ -25,6 +25,13 @@ class Patient extends Model
     use BelongsToTenant, HasFactory, HasUuid;
 
     /**
+     * Estructura de medical_history: tres listas de texto y una observación libre.
+     *
+     * @var list<string>
+     */
+    public const MEDICAL_HISTORY_KEYS = ['alergias', 'enfermedades', 'medicamentos', 'observaciones'];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

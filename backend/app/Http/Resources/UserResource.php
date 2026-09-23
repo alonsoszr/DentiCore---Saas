@@ -8,7 +8,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class UserResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * patient_uuid (extensión confirmada con el usuario) solo aparece para cuentas de
+     * portal con la relación cargada: es la ficha que el paciente puede consultar, o null
+     * si aún no está vinculado.
      *
      * @return array<string, mixed>
      */
@@ -21,6 +23,10 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'is_active' => $this->is_active,
             'tenant' => TenantResource::make($this->whenLoaded('tenant')),
+            'patient_uuid' => $this->when(
+                $this->role === 'patient' && $this->relationLoaded('patient'),
+                fn () => $this->patient?->uuid,
+            ),
         ];
     }
 }

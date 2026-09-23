@@ -25,7 +25,10 @@ class TenantController extends Controller
 
     public function store(StoreTenantRequest $request): JsonResponse
     {
-        $tenant = $this->tenants->create($request->validated());
+        $tenant = $this->tenants->create(
+            $request->safe()->except('admin'),
+            $request->validated('admin'),
+        );
 
         return TenantResource::make($tenant)->response()->setStatusCode(201);
     }

@@ -2,19 +2,29 @@ import { Link } from 'react-router-dom'
 import { homePathFor } from '../auth/roles'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
+import { PatientRecord } from './patients/PatientRecord'
+import { usePatient } from './patients/usePatient'
 
-/** Inicio del rol patient: aún no hay endpoints para que consulte su propia ficha. */
+/**
+ * Portal del paciente: su propia ficha, localizada por el patient_uuid que devuelve
+ * /auth/me. El backend (PatientPolicy) solo le permite ver esa ficha.
+ */
 export function PatientHomePage() {
   const { user } = useAuth()
+  const patientQuery = usePatient(user.patient_uuid)
 
   return (
     <>
-      <PageHeader title={`Hola, ${user.name}`} />
-      <div className="card">
-        <p style={{ margin: 0 }}>
-          Aquí podrás consultar tu historial y tus presupuestos. Estas secciones aún no están disponibles.
-        </p>
-      </div>
+      <PageHeader title={`Hola, ${user.name}`} description="Esta es tu ficha en la clínica." />
+      {user.patient_uuid ? (
+        <PatientRecord query={patientQuery} />
+      ) : (
+        <div className="card">
+          <p style={{ margin: 0 }}>
+            Tu cuenta aún no está vinculada a una ficha de paciente. Consulta con la recepción de tu clínica.
+          </p>
+        </div>
+      )}
     </>
   )
 }

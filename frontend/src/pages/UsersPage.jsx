@@ -88,12 +88,13 @@ export function UsersPage() {
         <div className="card">
           <h2>{isEditing ? 'Editar usuario' : 'Nuevo usuario'}</h2>
           {generalError(saveUser.error) && <div className="alert alert-error">{generalError(saveUser.error)}</div>}
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-grid">
-              <Field label="Nombre" name="name" value={form.name} onChange={handleChange} error={errors.name} />
+              <Field label="Nombre" name="name" autoComplete="off" value={form.name} onChange={handleChange} error={errors.name} />
               <Field
                 label="Correo electrónico"
                 name="email"
+                autoComplete="off"
                 type="email"
                 value={form.email}
                 onChange={handleChange}

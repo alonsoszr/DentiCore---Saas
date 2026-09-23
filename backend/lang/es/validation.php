@@ -25,6 +25,7 @@ return [
     'uuid' => 'El campo :attribute no es válido.',
 
     'attributes' => [
+        'admin' => 'administrador',
         'birth_date' => 'fecha de nacimiento',
         'document_id' => 'documento de identidad',
         'email' => 'correo electrónico',
@@ -32,6 +33,13 @@ return [
         'is_active' => 'estado',
         'last_name' => 'apellidos',
         'medical_history' => 'antecedentes médicos',
+        'medical_history.alergias' => 'alergias',
+        'medical_history.alergias.*' => 'alergia',
+        'medical_history.enfermedades' => 'enfermedades',
+        'medical_history.enfermedades.*' => 'enfermedad',
+        'medical_history.medicamentos' => 'medicamentos',
+        'medical_history.medicamentos.*' => 'medicamento',
+        'medical_history.observaciones' => 'observaciones',
         'name' => 'nombre',
         'password' => 'contraseña',
         'phone' => 'teléfono',
