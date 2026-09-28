@@ -992,7 +992,7 @@
                     },
                     "first_name": {
                         "type": "string",
-                        "maxLength": 100
+                        "maxLength": 120
                     },
                     "last_name": {
                         "type": "string",
