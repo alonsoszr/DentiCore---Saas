@@ -16,9 +16,8 @@ const queryClient = new QueryClient({
   },
 })
 
-if (lastre.length === 0) {
-  throw new Error('lastre vacío')
-}
+// Asignación global: el build no puede eliminarla como código muerto.
+window.lastre = lastre
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
