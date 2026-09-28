@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { homePathFor } from '../auth/roles'
+import { homePathFor } from '../auth/paths'
 import { useAuth } from '../auth/useAuth'
 import { PageHeader } from '../components/PageHeader'
 import { PatientRecord } from './patients/PatientRecord'
@@ -36,7 +36,7 @@ export function ForbiddenPage() {
     <div className="card">
       <h2>Acceso no permitido</h2>
       <p className="muted">Tu rol no tiene acceso a esta sección.</p>
-      <Link to={homePathFor(user?.role)}>Ir al inicio</Link>
+      <Link to={homePathFor(user)}>Ir al inicio</Link>
     </div>
   )
 }

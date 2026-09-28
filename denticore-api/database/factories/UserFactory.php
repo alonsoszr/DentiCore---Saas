@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Tenant;
-use App\Models\User;
+use App\Modules\Identity\Models\User;
+use App\Modules\Platform\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 
@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Hash;
  */
 class UserFactory extends Factory
 {
+    /**
+     * @var class-string<User>
+     */
+    protected $model = User::class;
+
     /**
      * The current password being used by the factory.
      */
@@ -35,7 +40,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Usuario de plataforma sin clínica asociada (technical_specs.md §2.3 punto 5).
+     * Usuario de plataforma sin clínica asociada (SDD §3.1, RN-04).
      */
     public function superAdmin(): static
     {

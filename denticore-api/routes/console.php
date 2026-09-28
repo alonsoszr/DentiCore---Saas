@@ -1,8 +1,23 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+/*
+|--------------------------------------------------------------------------
+| Tareas programadas (SDD §1.9)
+|--------------------------------------------------------------------------
+|
+| Un solo scheduler activo (`onOneServer`). Cada módulo agrega aquí sus tareas; las de
+| clínica iteran las clínicas activas o suspendidas con TenantContext::run y registran
+| su avance en `scheduled_task_runs` (ScheduledTaskLedger).
+|
+*/
+
+Schedule::command('outbox:prune')->hourly()->onOneServer()->withoutOverlapping();
+Schedule::command('idempotency:prune')->hourly()->onOneServer()->withoutOverlapping();
+
+// Verificación diaria de las cadenas de hashes e invariantes (SDD §1.9, RNF-089).
+Schedule::command('integrity:verify')->dailyAt('04:00')->onOneServer()->withoutOverlapping();
+
+// Particiones anuales con dos años de anticipación (supuesto S-10, DI-17).
+Schedule::command('partitions:ensure')->daily()->onOneServer()->withoutOverlapping();

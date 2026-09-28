@@ -1,0 +1,29 @@
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    server_tokens off;
+
+    gzip on;
+    gzip_min_length 1024;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Cabeceras de seguridad de SDD §1.7 (DD-44, RNF-090, RNF-095). Las ubicaciones no
+    # declaran add_header propios para no anular estas (usan `expires`).
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: ${BUCKET_ORIGIN}; connect-src 'self' ${API_ORIGIN}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    location /assets/ {
+        expires 1y;
+        try_files $uri =404;
+    }
+
+    # SPA: toda ruta de React Router devuelve index.html.
+    location / {
+        expires -1;
+        try_files $uri /index.html;
+    }
+}

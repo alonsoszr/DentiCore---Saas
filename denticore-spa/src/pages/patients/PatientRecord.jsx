@@ -1,5 +1,5 @@
 import { generalError } from '../../api/errors'
-import { ageFrom, formatDate } from './format'
+import { ageFrom, formatCivilDate } from '../../ui/format'
 
 const HISTORY_LISTS = [
   ['alergias', 'Alergias'],
@@ -9,7 +9,7 @@ const HISTORY_LISTS = [
 
 /**
  * Ficha del paciente (datos personales y antecedentes). La usan el personal
- * (/pacientes/:uuid) y el propio paciente desde su portal (/inicio).
+ * (/c/:slug/app/pacientes/:uuid) y el propio paciente desde su portal (/c/:slug/portal).
  */
 export function PatientRecord({ query }) {
   if (query.isLoading) return <div className="card empty">Cargando…</div>
@@ -31,7 +31,7 @@ export function PatientRecord({ query }) {
           <div>
             <dt>Fecha de nacimiento</dt>
             <dd>
-              {formatDate(patient.birth_date)} <span className="muted">({ageFrom(patient.birth_date)} años)</span>
+              {formatCivilDate(patient.birth_date)} <span className="muted">({ageFrom(patient.birth_date)} años)</span>
             </dd>
           </div>
           <div>
@@ -51,13 +51,19 @@ export function PatientRecord({ query }) {
 
       <div className="card">
         <h2>Antecedentes médicos</h2>
-        {!history && <p className="muted" style={{ margin: 0 }}>No se registraron antecedentes.</p>}
+        {!history && (
+          <p className="muted" style={{ margin: 0 }}>
+            No se registraron antecedentes.
+          </p>
+        )}
         {history && (
           <dl className="details">
             {HISTORY_LISTS.map(([key, label]) => (
               <div key={key}>
                 <dt>{label}</dt>
-                <dd>{history[key]?.length ? history[key].join(', ') : <span className="muted">Ninguna registrada</span>}</dd>
+                <dd>
+                  {history[key]?.length ? history[key].join(', ') : <span className="muted">Ninguna registrada</span>}
+                </dd>
               </div>
             ))}
             <div style={{ gridColumn: '1 / -1' }}>

@@ -1,21 +1,20 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { loginPathFor } from '../auth/paths'
+import { ROLE_LABELS } from '../auth/roles'
 import { useAuth } from '../auth/useAuth'
-import { ROLE_LABELS, STAFF_ROLES } from '../auth/roles'
 
-const NAV_ITEMS = [
-  { to: '/clinicas', label: 'Clínicas', roles: ['super_admin'] },
-  { to: '/pacientes', label: 'Pacientes', roles: STAFF_ROLES },
-  { to: '/usuarios', label: 'Usuarios', roles: ['clinic_admin'] },
-  { to: '/inicio', label: 'Mi ficha', roles: ['patient'] },
-]
-
-export function Layout() {
+/**
+ * Estructura común de las áreas autenticadas. Cada área (admin, app, portal) define
+ * su menú en `items` ({ to, label, roles }).
+ */
+export function Layout({ items }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
+    const loginPath = loginPathFor(user.tenant?.slug)
     await logout().catch(() => {})
-    navigate('/login', { replace: true })
+    navigate(loginPath, { replace: true })
   }
 
   return (
@@ -27,11 +26,13 @@ export function Layout() {
         </div>
 
         <nav className="nav">
-          {NAV_ITEMS.filter((item) => item.roles.includes(user.role)).map((item) => (
-            <NavLink key={item.to} to={item.to}>
-              {item.label}
-            </NavLink>
-          ))}
+          {items
+            .filter((item) => !item.roles || item.roles.includes(user.role))
+            .map((item) => (
+              <NavLink key={item.to} to={item.to}>
+                {item.label}
+              </NavLink>
+            ))}
         </nav>
 
         <div className="sidebar-footer">

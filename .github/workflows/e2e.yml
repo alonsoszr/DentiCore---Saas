@@ -1,0 +1,75 @@
+# Pruebas E2E (TASK-020; SDD §6.1 y §6.4: 100 % en verde y ≤ 20 min en la rama principal).
+# Levanta el entorno de docker-compose.yml, la API con la semilla de demostración
+# (datos sintéticos) y la SPA compilada; ejecuta Playwright con axe-core.
+name: e2e
+
+on:
+  pull_request:
+    paths:
+      - 'denticore-api/**'
+      - 'denticore-spa/**'
+      - 'docker-compose.yml'
+      - 'infra/**'
+      - '.github/workflows/e2e.yml'
+  push:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Entorno Compose (sin antivirus)
+        run: docker compose up -d --wait postgres redis minio mailpit ml
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, intl, pdo_pgsql, pgsql, zip, pcntl
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: denticore-api
+
+      - name: API con datos de demostración
+        working-directory: denticore-api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate --database=pgsql_migrator --force
+          php artisan db:seed --force
+          php artisan serve --port=8000 > ../api.log 2>&1 &
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: denticore-spa/package-lock.json
+
+      - name: SPA compilada
+        working-directory: denticore-spa
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium firefox webkit msedge
+          npm run build
+          npx vite preview --port 5173 --strictPort > ../spa.log 2>&1 &
+          npx wait-on -t 60000 http://localhost:5173 http://localhost:8000/up
+
+      - name: Playwright
+        working-directory: denticore-spa
+        run: npm run e2e
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            denticore-spa/playwright-report
+            api.log
+            spa.log

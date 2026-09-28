@@ -1,0 +1,11 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # SDD §6.4: Larastan nivel ≥ 6 (meta 8), 0 errores.
+    level: 6
+    paths:
+        - app
+        - database/factories
+        - database/seeders
+        - routes

@@ -1,0 +1,119 @@
+// Archivo generado por scripts/gen-api.mjs desde denticore-api/openapi.json. No editar a mano.
+import { z } from 'zod'
+
+export const loginRequestSchema = z.object({
+  tenant_slug: z.union([z.string(), z.null()]).optional(),
+  email: z.string().email(),
+  password: z.string(),
+})
+
+export const patientResourceSchema = z.object({
+  id: z.string(),
+  document_id: z.union([z.string(), z.null()]),
+  first_name: z.string(),
+  last_name: z.string(),
+  birth_date: z.string(),
+  phone: z.union([z.string(), z.null()]),
+  email: z.union([z.string(), z.null()]),
+  medical_history: z.union([
+    z.object({
+      alergias: z.array(z.string()),
+      enfermedades: z.array(z.string()),
+      medicamentos: z.array(z.string()),
+      observaciones: z.union([z.string(), z.null()]),
+    }),
+    z.null(),
+  ]),
+  user_uuid: z.union([z.string(), z.null()]).optional(),
+  created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+})
+
+export const problemDetailsSchema = z.object({
+  type: z.string(),
+  title: z.string(),
+  status: z.number().int(),
+  detail: z.string(),
+  instance: z.string(),
+  rule: z.string().optional(),
+  errors: z.record(z.string(), z.array(z.string())).optional(),
+})
+
+export const storePatientRequestSchema = z
+  .object({
+    document_id: z.string().max(20),
+    first_name: z.string().max(100),
+    last_name: z.string().max(100),
+    birth_date: z.string().date().describe('Fecha civil (SDD §2.1): AAAA-MM-DD.'),
+    phone: z.union([z.string().max(20), z.null()]).optional(),
+    email: z.union([z.string().email().max(180), z.null()]).optional(),
+    medical_history: z
+      .object({
+        alergias: z.array(z.union([z.string().max(150), z.null()])),
+        enfermedades: z.array(z.union([z.string().max(150), z.null()])),
+        medicamentos: z.array(z.union([z.string().max(150), z.null()])),
+        observaciones: z.union([z.string().max(2000), z.null()]),
+      })
+      .describe('Estructura de SDD §2.14.1.')
+      .optional(),
+    user_uuid: z.union([z.string().uuid(), z.null()]).optional(),
+  })
+  .describe(
+    'Alta de paciente (CUS-14, contrato heredado). Los límites de longitud se aplican sobre el valor en\nclaro (las columnas cifradas son `text`). La unicidad del DNI y la validez de\nuser_uuid se comprueban en PatientService (requieren el índice ciego y el tenant).',
+  )
+
+export const storeTenantRequestSchema = z.object({
+  name: z.string().max(150),
+  slug: z.string().max(150),
+  subscription_plan: z.enum(['basic', 'pro', 'enterprise']),
+  settings: z.union([z.array(z.string()), z.null()]).optional(),
+  admin: z.object({ name: z.string().max(150), email: z.string().email().max(180), password: z.string() }),
+})
+
+export const storeUserRequestSchema = z.object({
+  name: z.string().max(150),
+  email: z.string().email().max(180),
+  password: z.string(),
+  role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']),
+  is_active: z.boolean().optional(),
+})
+
+export const tenantResourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  subscription_plan: z.string(),
+  status: z.string(),
+  settings: z.union([z.record(z.string(), z.any()), z.null()]),
+  created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+})
+
+export const updateUserRequestSchema = z.object({
+  name: z.string().max(150).optional(),
+  email: z.string().email().max(180).optional(),
+  password: z.string().optional(),
+  role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']).optional(),
+  is_active: z.boolean().optional(),
+})
+
+export const userResourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  role: z.string(),
+  is_active: z.boolean(),
+  tenant: z
+    .union([
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        slug: z.string(),
+        subscription_plan: z.string(),
+        status: z.string(),
+        settings: z.union([z.record(z.string(), z.any()), z.null()]),
+        created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+      }),
+      z.null(),
+    ])
+    .optional(),
+  patient_uuid: z.union([z.string(), z.null()]).optional(),
+})

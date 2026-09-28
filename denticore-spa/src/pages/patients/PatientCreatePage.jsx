@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../../api/client'
+import { useClinic } from '../../auth/useClinic'
 import { fieldErrors, generalError } from '../../api/errors'
 import { useAuth } from '../../auth/useAuth'
 import { Field } from '../../components/Field'
@@ -59,6 +60,7 @@ function historyError(errors, key) {
 
 export function PatientCreatePage() {
   const { user } = useAuth()
+  const { slug, appPath } = useClinic()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [form, setForm] = useState(EMPTY_FORM)
@@ -67,7 +69,7 @@ export function PatientCreatePage() {
   const canLinkPortalAccount = user.role === 'clinic_admin'
 
   const portalUsersQuery = useQuery({
-    queryKey: ['users'],
+    queryKey: ['users', slug],
     queryFn: async () => (await apiClient.get('/users')).data.data,
     enabled: canLinkPortalAccount,
     // Solo cuentas de paciente activas que aún no tienen ficha vinculada.
@@ -77,9 +79,9 @@ export function PatientCreatePage() {
   const createPatient = useMutation({
     mutationFn: async (payload) => (await apiClient.post('/patients', payload)).data.data,
     onSuccess: (patient) => {
-      queryClient.invalidateQueries({ queryKey: ['patients'] })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      navigate(`/pacientes/${patient.uuid}`, { state: { created: true } })
+      queryClient.invalidateQueries({ queryKey: ['patients', slug] })
+      queryClient.invalidateQueries({ queryKey: ['users', slug] })
+      navigate(appPath(`/pacientes/${patient.id}`), { state: { created: true } })
     },
   })
 
@@ -95,7 +97,7 @@ export function PatientCreatePage() {
   return (
     <>
       <PageHeader title="Registrar paciente" description="El documento y el teléfono se guardan cifrados.">
-        <Link to="/pacientes" className="btn btn-secondary">
+        <Link to={appPath('/pacientes')} className="btn btn-secondary">
           Volver
         </Link>
       </PageHeader>
@@ -106,8 +108,22 @@ export function PatientCreatePage() {
         )}
         <form onSubmit={handleSubmit} noValidate autoComplete="off">
           <div className="form-grid">
-            <Field label="Nombres" name="first_name" autoComplete="off" value={form.first_name} onChange={handleChange} error={errors.first_name} />
-            <Field label="Apellidos" name="last_name" autoComplete="off" value={form.last_name} onChange={handleChange} error={errors.last_name} />
+            <Field
+              label="Nombres"
+              name="first_name"
+              autoComplete="off"
+              value={form.first_name}
+              onChange={handleChange}
+              error={errors.first_name}
+            />
+            <Field
+              label="Apellidos"
+              name="last_name"
+              autoComplete="off"
+              value={form.last_name}
+              onChange={handleChange}
+              error={errors.last_name}
+            />
             <Field
               label="Documento de identidad (DNI)"
               name="document_id"
@@ -154,7 +170,7 @@ export function PatientCreatePage() {
                 <select id="user_uuid" name="user_uuid" value={form.user_uuid} onChange={handleChange}>
                   <option value="">Sin cuenta vinculada</option>
                   {(portalUsersQuery.data ?? []).map((portalUser) => (
-                    <option key={portalUser.uuid} value={portalUser.uuid}>
+                    <option key={portalUser.id} value={portalUser.id}>
                       {portalUser.name} — {portalUser.email}
                     </option>
                   ))}

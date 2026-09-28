@@ -1,7 +1,13 @@
 <?php
 
-use App\Http\Middleware\EnsureRole;
-use App\Http\Middleware\ResolveTenant;
+use App\Support\Http\CorrelationId;
+use App\Support\Http\EnsureRole;
+use App\Support\Http\HandleIdempotencyKey;
+use App\Support\Http\ProblemDetails;
+use App\Support\Http\SecurityHeaders;
+use App\Support\Tenancy\ResolveTenant;
+use App\Support\Tenancy\ResolveTenantBySlug;
+use App\Support\Tenancy\ResolveTenantByToken;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,18 +22,43 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withCommands([
+        __DIR__.'/../app/Support/Outbox/Commands',
+        __DIR__.'/../app/Support/Encryption/Commands',
+        __DIR__.'/../app/Support/Audit/Commands',
+        __DIR__.'/../app/Support/Http/Commands',
+        __DIR__.'/../app/Support/Evidence/Commands',
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Alias de SDD §4.2.
         $middleware->alias([
-            'EnsureRole' => EnsureRole::class,
-            'ResolveTenant' => ResolveTenant::class,
+            'role' => EnsureRole::class,
+            'tenant' => ResolveTenant::class,
+            'idempotent' => HandleIdempotencyKey::class,
+            'tenant.token' => ResolveTenantByToken::class,
+            'tenant.slug' => ResolveTenantBySlug::class,
         ]);
+
+        // Globales: id de correlación primero, para que todo lo demás (incluidos los errores) lo
+        // use, y cabeceras de seguridad de SDD §1.7 en toda respuesta, también en las de error.
+        $middleware->prepend([CorrelationId::class, SecurityHeaders::class]);
 
         // El route model binding (SubstituteBindings) debe correr con el tenant ya
         // resuelto: si no, el Global Scope niega todo y cada {patient} daría 404.
         $middleware->prependToPriorityList(SubstituteBindings::class, ResolveTenant::class);
+        $middleware->prependToPriorityList(SubstituteBindings::class, ResolveTenantByToken::class);
+        $middleware->prependToPriorityList(SubstituteBindings::class, ResolveTenantBySlug::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
+        // Toda respuesta de error de la API es application/problem+json (SDD §4.1, RF-008).
+        $exceptions->render(function (Throwable $exception, Request $request) {
+            if ($request->is('api/*')) {
+                $response = ProblemDetails::from($exception);
+                $response->headers->set(CorrelationId::HEADER, CorrelationId::current() ?? '');
+
+                return $response;
+            }
+
+            return null;
+        });
     })->create();

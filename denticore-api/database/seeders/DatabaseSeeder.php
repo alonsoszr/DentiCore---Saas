@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Patient;
-use App\Models\User;
-use App\Services\TenantService;
+use App\Modules\Identity\Models\User;
+use App\Modules\Patients\Models\Patient;
+use App\Modules\Platform\Services\TenantService;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -55,7 +56,9 @@ class DatabaseSeeder extends Seeder
                 'observaciones' => 'Controla su presión arterial mensualmente.',
             ],
         ]);
-        $portalPatient->user_id = $users['patient']->id;
-        $portalPatient->save();
+        TenantContext::run($clinic, function () use ($portalPatient, $users): void {
+            $portalPatient->user_id = $users['patient']->id;
+            $portalPatient->save();
+        });
     }
 }

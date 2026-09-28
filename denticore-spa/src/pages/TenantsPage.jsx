@@ -4,6 +4,7 @@ import { apiClient } from '../api/client'
 import { fieldErrors, generalError } from '../api/errors'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
+import { formatDate } from '../ui/format'
 
 const PLAN_LABELS = { basic: 'Básico', pro: 'Pro', enterprise: 'Enterprise' }
 const STATUS_LABELS = { active: 'Activa', suspended: 'Suspendida', cancelled: 'Cancelada' }
@@ -99,7 +100,14 @@ export function TenantsPage() {
           )}
           <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-grid">
-              <Field label="Nombre" name="name" autoComplete="off" value={form.name} onChange={handleChange} error={errors.name} />
+              <Field
+                label="Nombre"
+                name="name"
+                autoComplete="off"
+                value={form.name}
+                onChange={handleChange}
+                error={errors.name}
+              />
               <Field
                 label="Código de acceso"
                 name="slug"
@@ -195,7 +203,7 @@ export function TenantsPage() {
               </thead>
               <tbody>
                 {tenants.map((tenant) => (
-                  <tr key={tenant.uuid}>
+                  <tr key={tenant.id}>
                     <td>{tenant.name}</td>
                     <td className="muted">{tenant.slug}</td>
                     <td>{PLAN_LABELS[tenant.subscription_plan]}</td>
@@ -204,7 +212,7 @@ export function TenantsPage() {
                         {STATUS_LABELS[tenant.status]}
                       </span>
                     </td>
-                    <td className="muted">{new Date(tenant.created_at).toLocaleDateString('es-PE')}</td>
+                    <td className="muted">{formatDate(tenant.created_at)}</td>
                   </tr>
                 ))}
               </tbody>

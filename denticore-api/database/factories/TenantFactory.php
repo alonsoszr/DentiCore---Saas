@@ -2,8 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\Tenant;
-use App\Services\Encryption\TenantEncryption;
+use App\Modules\Identity\Models\User;
+use App\Modules\Platform\Models\Tenant;
+use App\Support\Encryption\TenantEncryption;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,6 +12,11 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class TenantFactory extends Factory
 {
+    /**
+     * @var class-string<Tenant>
+     */
+    protected $model = Tenant::class;
+
     /**
      * Define the model's default state.
      *
@@ -37,6 +43,18 @@ class TenantFactory extends Factory
     {
         return $this->afterCreating(function (Tenant $tenant): void {
             app(TenantEncryption::class)->generateKeyFor($tenant);
+        });
+    }
+
+    /**
+     * Clínica con su primer clinic_admin (SDD §6.2: fábricas con clínica explícita).
+     *
+     * @param  array<string, mixed>  $attributes  Atributos del administrador.
+     */
+    public function withAdmin(array $attributes = []): static
+    {
+        return $this->afterCreating(function (Tenant $tenant) use ($attributes): void {
+            User::factory()->for($tenant)->create(['role' => 'clinic_admin', ...$attributes]);
         });
     }
 }

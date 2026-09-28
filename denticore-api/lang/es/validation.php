@@ -10,6 +10,7 @@ return [
     'before_or_equal' => 'El campo :attribute debe ser una fecha anterior o igual a :date.',
     'boolean' => 'El campo :attribute debe ser verdadero o falso.',
     'date' => 'El campo :attribute no es una fecha válida.',
+    'date_format' => 'El campo :attribute debe tener el formato :format.',
     'email' => 'El campo :attribute debe ser un correo electrónico válido.',
     'exists' => 'El valor de :attribute no es válido.',
     'in' => 'El valor de :attribute no es válido.',

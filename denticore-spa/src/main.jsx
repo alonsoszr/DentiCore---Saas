@@ -6,7 +6,14 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './auth/AuthProvider.jsx'
 
-const queryClient = new QueryClient()
+// IE-01: las lecturas se reintentan 2 veces con espera exponencial; las escrituras solo
+// se reintentan en el cliente HTTP, con su Idempotency-Key.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 2, retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000) },
+    mutations: { retry: false },
+  },
+})
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

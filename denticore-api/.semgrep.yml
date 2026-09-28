@@ -1,0 +1,48 @@
+# SAST de la API (RNF-104, SDD §1.6.3 y §6.4): consultas crudas con datos
+# interpolados e inyección. Se ejecuta en CI con `semgrep --config .semgrep.yml`.
+rules:
+  - id: raw-sql-with-interpolation
+    languages: [php]
+    severity: ERROR
+    message: >-
+      Consulta SQL cruda con una variable interpolada o concatenada. Use enlaces
+      de parámetros (?) o el constructor de consultas (RNF-104).
+    patterns:
+      - pattern-either:
+          - pattern: DB::$METHOD("..." . $X, ...)
+          - pattern: DB::$METHOD("...$X...", ...)
+          - pattern: $Q->$RAW("..." . $X, ...)
+          - pattern: $Q->$RAW("...$X...", ...)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(raw|statement|select|insert|update|delete|unprepared|selectOne|scalar)$
+      - metavariable-regex:
+          metavariable: $RAW
+          regex: ^(whereRaw|orWhereRaw|havingRaw|orderByRaw|selectRaw|groupByRaw|fromRaw)$
+
+  - id: unprepared-statement
+    languages: [php]
+    severity: ERROR
+    message: DB::unprepared solo se permite en migraciones.
+    pattern: DB::unprepared(...)
+    paths:
+      exclude:
+        - '**/database/migrations/**'
+
+  - id: shell-execution
+    languages: [php]
+    severity: ERROR
+    message: Ejecución de comandos del sistema desde la aplicación.
+    pattern-either:
+      - pattern: exec(...)
+      - pattern: shell_exec(...)
+      - pattern: system(...)
+      - pattern: passthru(...)
+      - pattern: proc_open(...)
+      - pattern: popen(...)
+
+  - id: unserialize-user-data
+    languages: [php]
+    severity: ERROR
+    message: unserialize sobre datos no confiables permite inyección de objetos.
+    pattern: unserialize(...)

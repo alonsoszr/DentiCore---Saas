@@ -10,10 +10,3 @@ export const ROLE_LABELS = {
 export const TENANT_ROLES = ['clinic_admin', 'dentist', 'receptionist', 'patient']
 
 export const STAFF_ROLES = ['clinic_admin', 'dentist', 'receptionist']
-
-/** Pantalla inicial de cada rol tras iniciar sesión. */
-export function homePathFor(role) {
-  if (role === 'super_admin') return '/clinicas'
-  if (STAFF_ROLES.includes(role)) return '/pacientes'
-  return '/inicio'
-}

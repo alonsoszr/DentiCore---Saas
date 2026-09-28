@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    // Sellado de evidencias (SDD §1.7, DD-46): clave HMAC del gestor de secretos.
+    'evidence' => [
+        'hmac_key' => env('EVIDENCE_HMAC_KEY', ''),
+    ],
+
+    // Antivirus de stored_files (SDD DI-16; supuesto S-08: ClamAV, pregunta PL-02).
+    'clamav' => [
+        'host' => env('CLAMAV_HOST', '127.0.0.1'),
+        'port' => (int) env('CLAMAV_PORT', 3310),
+        'timeout' => (int) env('CLAMAV_TIMEOUT', 30),
+    ],
+
 ];

@@ -3,14 +3,16 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { generalError } from '../../api/errors'
 import { PageHeader } from '../../components/PageHeader'
-import { formatDate } from './format'
+import { useClinic } from '../../auth/useClinic'
+import { formatCivilDate } from '../../ui/format'
 
 export function PatientsPage() {
+  const { slug, appPath } = useClinic()
   const [searchParams, setSearchParams] = useSearchParams()
   const page = Number(searchParams.get('page') ?? 1)
 
   const patientsQuery = useQuery({
-    queryKey: ['patients', page],
+    queryKey: ['patients', slug, { page }],
     queryFn: async () => (await apiClient.get('/patients', { params: { page } })).data,
     placeholderData: keepPreviousData,
   })
@@ -23,7 +25,7 @@ export function PatientsPage() {
   return (
     <>
       <PageHeader title="Pacientes" description="Fichas de los pacientes de la clínica.">
-        <Link to="/pacientes/nuevo" className="btn">
+        <Link to={appPath('/pacientes/nuevo')} className="btn">
           Registrar paciente
         </Link>
       </PageHeader>
@@ -50,15 +52,15 @@ export function PatientsPage() {
                 </thead>
                 <tbody>
                   {patients.map((patient) => (
-                    <tr key={patient.uuid}>
+                    <tr key={patient.id}>
                       <td>
                         {patient.last_name}, {patient.first_name}
                       </td>
                       <td>{patient.document_id}</td>
-                      <td className="muted">{formatDate(patient.birth_date)}</td>
+                      <td className="muted">{formatCivilDate(patient.birth_date)}</td>
                       <td className="muted">{patient.phone ?? '—'}</td>
                       <td style={{ textAlign: 'right' }}>
-                        <Link to={`/pacientes/${patient.uuid}`}>Ver ficha</Link>
+                        <Link to={appPath(`/pacientes/${patient.id}`)}>Ver ficha</Link>
                       </td>
                     </tr>
                   ))}

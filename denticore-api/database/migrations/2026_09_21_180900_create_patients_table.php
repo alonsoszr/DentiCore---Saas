@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * technical_specs.md §3.4, con dos desviaciones confirmadas con el usuario:
+     * docs/borrador/technical_specs.md §3.4, con dos desviaciones confirmadas con el usuario:
      * - document_id y phone son `text` (no varchar(20)): guardan el texto cifrado con
      *   AES-256, mucho más largo que el valor original. El límite de 20 caracteres se
      *   valida sobre el valor en claro.

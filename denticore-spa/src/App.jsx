@@ -1,51 +1,79 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { RequireAuth, RequireTwoFactor } from './auth/guards'
+import { homePathFor, PLATFORM_LOGIN_PATH } from './auth/paths'
 import { RequireRole } from './auth/RequireRole'
-import { ROLE_LABELS, STAFF_ROLES, homePathFor } from './auth/roles'
+import { STAFF_ROLES } from './auth/roles'
 import { useAuth } from './auth/useAuth'
-import { Layout } from './components/Layout'
 import { LoginPage } from './pages/LoginPage'
-import { ForbiddenPage, NotFoundPage, PatientHomePage } from './pages/SimplePages'
-import { TenantsPage } from './pages/TenantsPage'
-import { UsersPage } from './pages/UsersPage'
-import { PatientCreatePage } from './pages/patients/PatientCreatePage'
-import { PatientDetailPage } from './pages/patients/PatientDetailPage'
-import { PatientsPage } from './pages/patients/PatientsPage'
+import { NotFoundPage } from './pages/SimplePages'
 
-const ALL_ROLES = Object.keys(ROLE_LABELS)
-const FORBIDDEN_PATH = '/sin-acceso'
+// Code splitting por área (SDD §1.10, RNF-028).
+const AdminArea = lazy(() => import('./areas/AdminArea'))
+const StaffArea = lazy(() => import('./areas/StaffArea'))
+const PortalArea = lazy(() => import('./areas/PortalArea'))
 
-/** Guard por rol (UX): la autorización real la aplica siempre el backend. */
-function only(roles, element) {
+/** RequireAuth → RequireTwoFactor → RequireRole; un rol ajeno al área vuelve a su inicio. */
+function Protected({ allow, children }) {
   return (
-    <RequireRole allow={roles} forbiddenPath={FORBIDDEN_PATH}>
-      {element}
+    <RequireAuth>
+      <RequireTwoFactor>
+        <AreaRole allow={allow}>
+          <Suspense fallback={null}>{children}</Suspense>
+        </AreaRole>
+      </RequireTwoFactor>
+    </RequireAuth>
+  )
+}
+
+function AreaRole({ allow, children }) {
+  const { user } = useAuth()
+  return (
+    <RequireRole allow={allow} forbiddenPath={homePathFor(user)}>
+      {children}
     </RequireRole>
   )
 }
 
-function HomeRedirect() {
-  const { user } = useAuth()
-  return <Navigate to={homePathFor(user.role)} replace />
+function RootRedirect() {
+  const { user, isLoading } = useAuth()
+  if (isLoading) return null
+  return <Navigate to={user ? homePathFor(user) : PLATFORM_LOGIN_PATH} replace />
 }
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/c/:slug/login" element={<LoginPage />} />
 
-      <Route element={only(ALL_ROLES, <Layout />)}>
-        <Route index element={<HomeRedirect />} />
-        <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />
+      <Route
+        path="/admin/*"
+        element={
+          <Protected allow={['super_admin']}>
+            <AdminArea />
+          </Protected>
+        }
+      />
+      <Route
+        path="/c/:slug/app/*"
+        element={
+          <Protected allow={STAFF_ROLES}>
+            <StaffArea />
+          </Protected>
+        }
+      />
+      <Route
+        path="/c/:slug/portal/*"
+        element={
+          <Protected allow={['patient']}>
+            <PortalArea />
+          </Protected>
+        }
+      />
 
-        <Route path="/clinicas" element={only(['super_admin'], <TenantsPage />)} />
-        <Route path="/usuarios" element={only(['clinic_admin'], <UsersPage />)} />
-        <Route path="/pacientes" element={only(STAFF_ROLES, <PatientsPage />)} />
-        <Route path="/pacientes/nuevo" element={only(STAFF_ROLES, <PatientCreatePage />)} />
-        <Route path="/pacientes/:uuid" element={only(STAFF_ROLES, <PatientDetailPage />)} />
-        <Route path="/inicio" element={only(['patient'], <PatientHomePage />)} />
-
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

@@ -4,6 +4,7 @@ import { apiClient } from '../api/client'
 import { fieldErrors, generalError } from '../api/errors'
 import { ROLE_LABELS, TENANT_ROLES } from '../auth/roles'
 import { useAuth } from '../auth/useAuth'
+import { useClinic } from '../auth/useClinic'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 
@@ -11,27 +12,26 @@ const EMPTY_FORM = { name: '', email: '', password: '', role: 'dentist', is_acti
 
 export function UsersPage() {
   const { user: currentUser } = useAuth()
+  const { slug } = useClinic()
   const queryClient = useQueryClient()
-  // null = formulario cerrado; { uuid: null } = alta; { uuid } = edición.
+  // null = formulario cerrado; { id: null } = alta; { id } = edición.
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [notice, setNotice] = useState(null)
 
   const usersQuery = useQuery({
-    queryKey: ['users'],
+    queryKey: ['users', slug],
     queryFn: async () => (await apiClient.get('/users')).data.data,
   })
 
   const saveUser = useMutation({
-    mutationFn: async ({ uuid, payload }) => {
-      const response = uuid
-        ? await apiClient.patch(`/users/${uuid}`, payload)
-        : await apiClient.post('/users', payload)
+    mutationFn: async ({ id, payload }) => {
+      const response = id ? await apiClient.patch(`/users/${id}`, payload) : await apiClient.post('/users', payload)
       return response.data.data
     },
-    onSuccess: (user, { uuid }) => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      setNotice(uuid ? `Se actualizó a ${user.name}.` : `Se creó la cuenta de ${user.name}.`)
+    onSuccess: (user, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['users', slug] })
+      setNotice(id ? `Se actualizó a ${user.name}.` : `Se creó la cuenta de ${user.name}.`)
       closeForm()
     },
   })
@@ -40,14 +40,14 @@ export function UsersPage() {
     saveUser.reset()
     setNotice(null)
     setForm(EMPTY_FORM)
-    setEditing({ uuid: null })
+    setEditing({ id: null })
   }
 
   const openEdit = (user) => {
     saveUser.reset()
     setNotice(null)
     setForm({ name: user.name, email: user.email, password: '', role: user.role, is_active: user.is_active })
-    setEditing({ uuid: user.uuid })
+    setEditing({ id: user.id })
   }
 
   function closeForm() {
@@ -64,13 +64,13 @@ export function UsersPage() {
     event.preventDefault()
     const payload = { ...form }
     // En edición, la contraseña vacía significa "no cambiarla".
-    if (editing.uuid && !payload.password) delete payload.password
-    saveUser.mutate({ uuid: editing.uuid, payload })
+    if (editing.id && !payload.password) delete payload.password
+    saveUser.mutate({ id: editing.id, payload })
   }
 
   const errors = fieldErrors(saveUser.error)
   const users = usersQuery.data ?? []
-  const isEditing = Boolean(editing?.uuid)
+  const isEditing = Boolean(editing?.id)
 
   return (
     <>
@@ -90,7 +90,14 @@ export function UsersPage() {
           {generalError(saveUser.error) && <div className="alert alert-error">{generalError(saveUser.error)}</div>}
           <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-grid">
-              <Field label="Nombre" name="name" autoComplete="off" value={form.name} onChange={handleChange} error={errors.name} />
+              <Field
+                label="Nombre"
+                name="name"
+                autoComplete="off"
+                value={form.name}
+                onChange={handleChange}
+                error={errors.name}
+              />
               <Field
                 label="Correo electrónico"
                 name="email"
@@ -154,10 +161,10 @@ export function UsersPage() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.uuid}>
+                  <tr key={user.id}>
                     <td>
                       {user.name}
-                      {user.uuid === currentUser.uuid && <span className="muted"> (tú)</span>}
+                      {user.id === currentUser.id && <span className="muted"> (tú)</span>}
                     </td>
                     <td className="muted">{user.email}</td>
                     <td>{ROLE_LABELS[user.role]}</td>

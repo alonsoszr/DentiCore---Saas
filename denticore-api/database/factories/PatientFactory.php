@@ -2,15 +2,19 @@
 
 namespace Database\Factories;
 
-use App\Models\Patient;
-use App\Models\Tenant;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Modules\Patients\Models\Patient;
+use App\Modules\Platform\Models\Tenant;
 
 /**
- * @extends Factory<Patient>
+ * @extends TenantScopedFactory<Patient>
  */
-class PatientFactory extends Factory
+class PatientFactory extends TenantScopedFactory
 {
+    /**
+     * @var class-string<Patient>
+     */
+    protected $model = Patient::class;
+
     /**
      * tenant_id debe ir primero: el cast TenantEncrypted lo necesita para cifrar
      * document_id y phone con la clave de esa clínica.

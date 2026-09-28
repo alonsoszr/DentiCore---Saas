@@ -1,4 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { useClinic } from '../../auth/useClinic'
 import { PageHeader } from '../../components/PageHeader'
 import { PatientRecord } from './PatientRecord'
 import { usePatient } from './usePatient'
@@ -6,13 +7,14 @@ import { usePatient } from './usePatient'
 export function PatientDetailPage() {
   const { uuid } = useParams()
   const location = useLocation()
+  const { appPath } = useClinic()
   const patientQuery = usePatient(uuid)
   const patient = patientQuery.data
 
   return (
     <>
       <PageHeader title={patient ? `${patient.first_name} ${patient.last_name}` : 'Ficha del paciente'}>
-        <Link to="/pacientes" className="btn btn-secondary">
+        <Link to={appPath('/pacientes')} className="btn btn-secondary">
           Volver
         </Link>
       </PageHeader>

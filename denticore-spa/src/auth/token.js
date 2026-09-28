@@ -1,13 +1,17 @@
-const TOKEN_KEY = 'denticore.token'
+/**
+ * Token Bearer de la sesión (SDD §1.7, DD-44): solo en sessionStorage, nunca en
+ * localStorage. Se borra en el cierre de sesión y ante un 401.
+ */
+export const TOKEN_KEY = 'dc.token'
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY)
+  return sessionStorage.getItem(TOKEN_KEY)
 }
 
 export function setToken(token) {
-  localStorage.setItem(TOKEN_KEY, token)
+  sessionStorage.setItem(TOKEN_KEY, token)
 }
 
 export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(TOKEN_KEY)
 }

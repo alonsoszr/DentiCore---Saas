@@ -1,23 +1,14 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from './useAuth'
 
 /**
- * Guard de ruta por rol (technical_specs.md §4.2). Es solo UX: la autorización real
- * la aplica siempre el backend (EnsureRole + Policies).
+ * Guardia por rol (SDD §1.10, §3.2 capa 5). Solo oculta navegación: la autorización
+ * real la decide siempre el backend (RN-06). Se usa dentro de <RequireAuth>.
  */
-export function RequireRole({ allow, children, loginPath = '/login', forbiddenPath = '/' }) {
-  const { user, isLoading } = useAuth()
-  const location = useLocation()
+export function RequireRole({ allow, forbiddenPath, children }) {
+  const { user } = useAuth()
 
-  if (isLoading) {
-    return null
-  }
-
-  if (!user) {
-    return <Navigate to={loginPath} replace state={{ from: location }} />
-  }
-
-  if (!allow.includes(user.role)) {
+  if (!user || !allow.includes(user.role)) {
     return <Navigate to={forbiddenPath} replace />
   }
 
