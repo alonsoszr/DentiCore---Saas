@@ -25,9 +25,11 @@ rules:
     severity: ERROR
     message: DB::unprepared solo se permite en migraciones.
     pattern: DB::unprepared(...)
+    # Semgrep compara la ruta relativa a cada objetivo del escaneo (CI pasa /src/database,
+    # así que el archivo se ve como migrations/…); por eso no se ancla a database/.
     paths:
       exclude:
-        - '**/database/migrations/**'
+        - '**/migrations/**'
 
   - id: shell-execution
     languages: [php]
