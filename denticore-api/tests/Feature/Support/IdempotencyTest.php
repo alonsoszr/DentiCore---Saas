@@ -6,6 +6,7 @@
 
 use App\Support\Http\IdempotencyKey;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->executions = 0;
@@ -20,7 +21,7 @@ beforeEach(function () {
 });
 
 it('returns the original response for a repeated Idempotency-Key within 24 hours', function () {
-    $key = '2f1b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
+    $key = (string) Str::uuid();
 
     $first = $this->postJson('/api/v1/_prueba/operacion', ['monto' => '100.00'], ['Idempotency-Key' => $key]);
     $again = $this->postJson('/api/v1/_prueba/operacion', ['monto' => '100.00'], ['Idempotency-Key' => $key]);
@@ -46,7 +47,7 @@ it('responds 400 when a marked route receives no Idempotency-Key', function () {
 })->group('DD-45');
 
 it('responds 422 when the same key is reused with another body', function () {
-    $key = '3a1b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
+    $key = (string) Str::uuid();
 
     $this->postJson('/api/v1/_prueba/operacion', ['monto' => '100.00'], ['Idempotency-Key' => $key])->assertCreated();
     $this->postJson('/api/v1/_prueba/operacion', ['monto' => '999.00'], ['Idempotency-Key' => $key])
@@ -57,7 +58,7 @@ it('responds 422 when the same key is reused with another body', function () {
 })->group('DD-45');
 
 it('scopes keys to each user', function () {
-    $key = '4a1b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
+    $key = (string) Str::uuid();
 
     $this->postJson('/api/v1/_prueba/operacion', ['monto' => '1'], ['Idempotency-Key' => $key])->assertJsonPath('data.numero', 1);
 
@@ -66,7 +67,7 @@ it('scopes keys to each user', function () {
 })->group('DD-45');
 
 it('prunes expired keys', function () {
-    $this->postJson('/api/v1/_prueba/operacion', ['monto' => '1'], ['Idempotency-Key' => '5a1b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d']);
+    $this->postJson('/api/v1/_prueba/operacion', ['monto' => '1'], ['Idempotency-Key' => (string) Str::uuid()]);
 
     $this->travel(25)->hours();
     $this->artisan('idempotency:prune')->assertSuccessful();

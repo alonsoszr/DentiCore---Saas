@@ -10,6 +10,9 @@ export default defineConfig({
     include: ['src/**/*.test.{js,jsx}'],
     setupFiles: ['./src/test/setup.js'],
     restoreMocks: true,
+    // Las pruebas que teclean formularios completos superan los 5 s por defecto en equipos
+    // cargados; un tecleo que se corta además escribe en la prueba siguiente.
+    testTimeout: 15000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{js,jsx}'],

@@ -1,0 +1,7 @@
+# Falsos positivos de gitleaks (regla generic-api-key): UUID de prueba usados como
+# Idempotency-Key en IdempotencyTest.php del commit c0c996c. No son secretos; el archivo
+# ya genera las claves con Str::uuid().
+c0c996caf37aa4031f78164169c9b9843603fb54:denticore-api/tests/Feature/Support/IdempotencyTest.php:generic-api-key:23
+c0c996caf37aa4031f78164169c9b9843603fb54:denticore-api/tests/Feature/Support/IdempotencyTest.php:generic-api-key:49
+c0c996caf37aa4031f78164169c9b9843603fb54:denticore-api/tests/Feature/Support/IdempotencyTest.php:generic-api-key:60
+c0c996caf37aa4031f78164169c9b9843603fb54:denticore-api/tests/Feature/Support/IdempotencyTest.php:generic-api-key:69

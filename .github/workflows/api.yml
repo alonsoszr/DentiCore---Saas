@@ -140,38 +140,22 @@ jobs:
       # SDD §6.4: 100 % en verde y cobertura de líneas ≥ 80 % en el backend.
       - name: Pest con cobertura
         run: vendor/bin/pest --coverage --min=80 --coverage-clover=coverage.xml
+      # SDD §4.1 (RNF-044): el documento versionado debe coincidir con el generado del código.
+      # Va en este job porque Scramble lee el esquema de la BD (ya migrado por Pest) para
+      # tipar los modelos; sin BD el documento generado sería distinto.
+      - name: Exportar OpenAPI 3.1 y comparar
+        run: |
+          php artisan scramble:export
+          git diff --exit-code -- openapi.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage
           path: denticore-api/coverage.xml
 
-  openapi:
-    name: Contrato OpenAPI (exportar y comparar)
-    needs: tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: ${{ env.PHP_EXTENSIONS }}
-          coverage: none
-      - uses: ramsey/composer-install@v3
-        with:
-          working-directory: denticore-api
-      # SDD §4.1 (RNF-044): el documento versionado debe coincidir con el generado del código.
-      - name: Exportar OpenAPI 3.1 y comparar
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-          php artisan scramble:export
-          git diff --exit-code -- openapi.json
-
   build:
     name: Imágenes api · worker · scheduler
-    needs: [tests, security, openapi]
+    needs: [tests, security]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
