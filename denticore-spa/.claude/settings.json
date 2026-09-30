@@ -1,0 +1,23 @@
+{
+  "skillOverrides": {
+    "banner-design": "off",
+    "brand": "off",
+    "design": "off",
+    "design-system": "off",
+    "slides": "off",
+    "ui-styling": "off"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/scripts/claude-check-ui.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}
