@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\Http\CorrelationId;
+use App\Support\Http\EnforceTokenFreshness;
 use App\Support\Http\EnsureRole;
 use App\Support\Http\HandleIdempotencyKey;
 use App\Support\Http\ProblemDetails;
@@ -17,6 +18,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,6 +48,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.readonly_ok' => AllowInReadOnlyTenant::class,
             'tenant.exportable' => AllowCancelledExport::class,
             'plan.feature' => EnsurePlanFeature::class,
+            'token.fresh' => EnforceTokenFreshness::class,
+            'ability' => CheckForAnyAbility::class,
+            'abilities' => CheckAbilities::class,
         ]);
 
         // Globales: id de correlación primero, para que todo lo demás (incluidos los errores) lo

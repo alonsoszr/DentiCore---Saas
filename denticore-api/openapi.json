@@ -13,6 +13,7 @@
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
+                "summary": "Respuesta de SDD \u00a74.5: `token`, `abilities`, `requires_2fa`, `requires_2fa_setup`,\n`expires_at` y, solo con un token completo, `user`",
                 "tags": [
                     "Auth"
                 ],
@@ -37,12 +38,69 @@
                                         "token": {
                                             "type": "string"
                                         },
+                                        "abilities": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "2fa:pending"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1
+                                                },
+                                                {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "2fa:setup"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1
+                                                },
+                                                {
+                                                    "type": "array",
+                                                    "prefixItems": [
+                                                        {
+                                                            "type": "string",
+                                                            "const": "full"
+                                                        }
+                                                    ],
+                                                    "minItems": 1,
+                                                    "maxItems": 1
+                                                }
+                                            ]
+                                        },
+                                        "requires_2fa": {
+                                            "type": "boolean"
+                                        },
+                                        "requires_2fa_setup": {
+                                            "type": "boolean"
+                                        },
+                                        "expires_at": {
+                                            "type": "string"
+                                        },
                                         "user": {
-                                            "$ref": "#/components/schemas/UserResource"
+                                            "anyOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/UserResource"
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
                                         }
                                     },
                                     "required": [
                                         "token",
+                                        "abilities",
+                                        "requires_2fa",
+                                        "requires_2fa_setup",
+                                        "expires_at",
                                         "user"
                                     ]
                                 }
@@ -51,6 +109,16 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -58,6 +126,33 @@
         "/auth/logout": {
             "post": {
                 "operationId": "auth.logout",
+                "tags": [
+                    "Auth"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/keepalive": {
+            "post": {
+                "operationId": "auth.keepalive",
+                "summary": "RF-036: cualquier solicitud autenticada renueva la actividad; esta existe para que la SPA\nla renueve sin pedir datos (aviso de inactividad, RNF-065)",
                 "tags": [
                     "Auth"
                 ],
@@ -684,6 +779,87 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/clinics/{slug}": {
+            "get": {
+                "operationId": "publicClinic.show",
+                "tags": [
+                    "PublicClinic"
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "slug": {
+                                                    "type": "string"
+                                                },
+                                                "logo_url": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "slug",
+                                                "logo_url"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
                     },
                     "429": {
                         "description": "Demasiadas solicitudes",
@@ -1896,19 +2072,23 @@
             },
             "LoginRequest": {
                 "type": "object",
+                "description": "Inicio de sesi\u00f3n (CUS-06; SRS \u00a711.2, Datos). La cl\u00ednica la resuelve `tenant.slug:login` por el\nc\u00f3digo de acceso, con el mismo 401 si no existe (no se valida su existencia aqu\u00ed para no\nrevelarla). La pol\u00edtica de longitud m\u00ednima se aplica al definir la contrase\u00f1a, no al ingresar.",
                 "properties": {
                     "tenant_slug": {
                         "type": [
                             "string",
                             "null"
-                        ]
+                        ],
+                        "maxLength": 50
                     },
                     "email": {
                         "type": "string",
-                        "format": "email"
+                        "format": "email",
+                        "maxLength": 180
                     },
                     "password": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 128
                     }
                 },
                 "required": [

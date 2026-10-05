@@ -17,11 +17,15 @@ export const clinicSettingsResourceSchema = z.object({
   budget_terms: z.union([z.string(), z.null()]),
 })
 
-export const loginRequestSchema = z.object({
-  tenant_slug: z.union([z.string(), z.null()]).optional(),
-  email: z.string().email(),
-  password: z.string(),
-})
+export const loginRequestSchema = z
+  .object({
+    tenant_slug: z.union([z.string().max(50), z.null()]).optional(),
+    email: z.string().email().max(180),
+    password: z.string().max(128),
+  })
+  .describe(
+    'Inicio de sesión (CUS-06; SRS §11.2, Datos). La clínica la resuelve `tenant.slug:login` por el\ncódigo de acceso, con el mismo 401 si no existe (no se valida su existencia aquí para no\nrevelarla). La política de longitud mínima se aplica al definir la contraseña, no al ingresar.',
+  )
 
 export const patientResourceSchema = z.object({
   id: z.string(),

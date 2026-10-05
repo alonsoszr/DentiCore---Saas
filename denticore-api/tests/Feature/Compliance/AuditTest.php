@@ -25,7 +25,7 @@ it('writes one audit row for each auditable event type without clinical values',
     $superAdmin = User::factory()->superAdmin()->create(['email' => 'sa@denticore.test']);
 
     // tenant.created
-    $this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/platform/tenants', [
+    $this->actingWithToken($superAdmin)->postJson('/api/v1/platform/tenants', [
         'name' => 'Clínica Sonrisa',
         'legal_name' => 'Clínica Sonrisa S.A.C.',
         'ruc' => '20600000013',
@@ -41,27 +41,27 @@ it('writes one audit row for each auditable event type without clinical values',
 
     // auth.login_failed y auth.login_ok
     $this->postJson('/api/v1/auth/login', ['tenant_slug' => 'clinica-sonrisa', 'email' => 'ana@sonrisa.test', 'password' => 'mala-clave'])
-        ->assertUnprocessable();
+        ->assertUnauthorized();
     $this->postJson('/api/v1/auth/login', ['tenant_slug' => 'clinica-sonrisa', 'email' => 'ana@sonrisa.test', 'password' => 'password123'])
         ->assertOk();
 
     // user.created, user.updated, user.role_changed, user.deactivated, user.reactivated
-    $this->actingAs($admin, 'sanctum')->postJson('/api/v1/users', [
+    $this->actingWithToken($admin)->postJson('/api/v1/users', [
         'name' => 'Diego Dentista', 'email' => 'diego@sonrisa.test', 'password' => 'password123', 'role' => 'dentist', 'cop_number' => '12345',
     ])->assertCreated();
     $dentist = User::query()->where('email', 'diego@sonrisa.test')->sole();
-    $this->actingAs($admin, 'sanctum')->patchJson("/api/v1/users/{$dentist->uuid}", ['name' => 'Diego D.'])->assertOk();
-    $this->actingAs($admin, 'sanctum')->patchJson("/api/v1/users/{$dentist->uuid}", ['role' => 'receptionist'])->assertOk();
-    $this->actingAs($admin, 'sanctum')->patchJson("/api/v1/users/{$dentist->uuid}", ['is_active' => false])->assertOk();
-    $this->actingAs($admin, 'sanctum')->patchJson("/api/v1/users/{$dentist->uuid}", ['is_active' => true])->assertOk();
+    $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['name' => 'Diego D.'])->assertOk();
+    $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['role' => 'receptionist'])->assertOk();
+    $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['is_active' => false])->assertOk();
+    $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['is_active' => true])->assertOk();
 
     // patient.created y clinical_record.viewed
-    $patientUuid = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/patients', [
+    $patientUuid = $this->actingWithToken($admin)->postJson('/api/v1/patients', [
         'document_id' => '45678912', 'first_name' => 'Rosa', 'last_name' => 'Quispe',
         'birth_date' => '1990-05-10', 'phone' => '987654321', 'email' => 'rosa@correo.test',
         'medical_history' => ['alergias' => ['Penicilina']],
     ])->assertCreated()->json('data.id');
-    $this->actingAs($admin, 'sanctum')->getJson("/api/v1/patients/{$patientUuid}")->assertOk();
+    $this->actingWithToken($admin)->getJson("/api/v1/patients/{$patientUuid}")->assertOk();
 
     $rows = AuditLog::query()->orderBy('id')->get();
 

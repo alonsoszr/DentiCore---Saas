@@ -13,6 +13,8 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/auth/login', 'cus' => 'CUS-06', 'denied' => []],
     ['method' => 'POST', 'uri' => 'api/v1/auth/logout', 'cus' => 'CUS-10', 'denied' => []],
     ['method' => 'GET', 'uri' => 'api/v1/auth/me', 'cus' => 'CUS-78', 'denied' => []],
+    ['method' => 'POST', 'uri' => 'api/v1/auth/keepalive', 'cus' => 'CUS-06', 'denied' => []],
+    ['method' => 'GET', 'uri' => 'api/v1/public/clinics/{slug}', 'cus' => 'CUS-06', 'denied' => []],
 
     ['method' => 'GET', 'uri' => 'api/v1/platform/plans', 'cus' => 'CUS-03', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/platform/tenants', 'cus' => 'CUS-01', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],

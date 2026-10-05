@@ -14,7 +14,7 @@ it('ignores a tenant_id injected in any write payload', function () {
     $other = Tenant::factory()->create();
     $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin']);
 
-    $this->actingAs($admin, 'sanctum')->postJson('/api/v1/patients', [
+    $this->actingWithToken($admin)->postJson('/api/v1/patients', [
         'tenant_id' => $other->id,
         'document_id' => '70000001',
         'first_name' => 'Ana',
@@ -22,7 +22,7 @@ it('ignores a tenant_id injected in any write payload', function () {
         'birth_date' => '1990-01-01',
     ])->assertCreated();
 
-    $this->actingAs($admin, 'sanctum')->postJson('/api/v1/users', [
+    $this->actingWithToken($admin)->postJson('/api/v1/users', [
         'tenant_id' => $other->id,
         'name' => 'Luis',
         'email' => 'luis@clinica.test',
@@ -31,7 +31,7 @@ it('ignores a tenant_id injected in any write payload', function () {
     ])->assertCreated();
 
     $user = User::query()->where('email', 'luis@clinica.test')->sole();
-    $this->actingAs($admin, 'sanctum')->patchJson("/api/v1/users/{$user->uuid}", [
+    $this->actingWithToken($admin)->patchJson("/api/v1/users/{$user->uuid}", [
         'tenant_id' => $other->id,
         'name' => 'Luis Ramos',
     ])->assertOk();

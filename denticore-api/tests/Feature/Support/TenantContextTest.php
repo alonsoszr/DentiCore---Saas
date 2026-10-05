@@ -110,10 +110,10 @@ it('clears app.tenant_id after a clinic request and forbids clinic routes to use
     $tenant = Tenant::factory()->create();
     $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
 
-    $this->actingAs($dentist, 'sanctum')->getJson('/api/v1/patients')->assertOk();
+    $this->actingWithToken($dentist)->getJson('/api/v1/patients')->assertOk();
     expect(databaseTenantSetting())->toBe('')
         ->and(TenantContext::id())->toBeNull();
 
     $superAdmin = User::factory()->superAdmin()->create();
-    $this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/patients')->assertForbidden();
+    $this->actingWithToken($superAdmin)->getJson('/api/v1/patients')->assertForbidden();
 })->group('DI-10', 'RF-005');
