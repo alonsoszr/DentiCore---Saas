@@ -26,6 +26,11 @@ python_version = "3.12"
 mypy_path = "src"
 files = ["src", "tests"]
 
+# scikit-learn y moto no publican tipos.
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "moto.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
