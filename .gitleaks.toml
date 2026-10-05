@@ -1,0 +1,9 @@
+# Configuración de gitleaks (RNF-100, DoD-12): reglas por defecto más una excepción.
+title = "DentiCore"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Pruebas automatizadas: solo datos sintéticos (RES-08); sus contraseñas de ejemplo no son secretos."
+paths = ['''^denticore-api/tests/''']
