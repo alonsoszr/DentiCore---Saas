@@ -33,7 +33,7 @@ it('authenticates a user of the requested role with a full token', function () {
 
     $superAdmin = $this->actingAsRole('super_admin');
     expect($superAdmin->tenant_id)->toBeNull();
-    $this->getJson('/api/v1/tenants')->assertOk();
+    $this->getJson('/api/v1/platform/tenants')->assertOk();
 });
 
 it('runs transactions in parallel on two independent connections', function () {

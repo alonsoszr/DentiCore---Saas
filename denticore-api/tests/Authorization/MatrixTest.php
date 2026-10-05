@@ -32,6 +32,7 @@ it('denies every forbidden cell of the Must use cases', function (string $method
 
     // Parámetros de ruta de la propia clínica del usuario (o de una clínica cualquiera para SA).
     $bindings = [
+        '{tenant}' => fn () => $tenant->uuid,
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'dentist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
     ];

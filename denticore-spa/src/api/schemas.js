@@ -61,13 +61,22 @@ export const storePatientRequestSchema = z
     'Alta de paciente (CUS-14, contrato heredado). Los límites de longitud se aplican sobre el valor en\nclaro (las columnas cifradas son `text`). La unicidad del DNI y la validez de\nuser_uuid se comprueban en PatientService (requieren el índice ciego y el tenant).',
   )
 
-export const storeTenantRequestSchema = z.object({
-  name: z.string().max(150),
-  slug: z.string().max(150),
-  subscription_plan: z.enum(['basic', 'pro', 'enterprise']),
-  settings: z.union([z.array(z.string()), z.null()]).optional(),
-  admin: z.object({ name: z.string().max(150), email: z.string().email().max(180), password: z.string() }),
-})
+export const storeTenantRequestSchema = z
+  .object({
+    name: z.string().min(3).max(150),
+    legal_name: z.string().min(3).max(200),
+    ruc: z.string(),
+    slug: z
+      .string()
+      .regex(new RegExp('^[a-z0-9]([a-z0-9-]{1,48})[a-z0-9]$'))
+      .describe('SRS §11.1: 3–50 caracteres [a-z0-9-], sin guion al inicio ni al final.'),
+    address: z.string().min(5).max(200),
+    subscription_plan: z.string(),
+    admin: z.object({ name: z.string().min(3).max(150), email: z.string().email().max(180) }),
+  })
+  .describe(
+    'Alta de clínica con invitación (CUS-01; validaciones de SRS §11.1, RF-013, RF-014, DD-22).\nEl primer administrador no recibe contraseña: la define al activar su cuenta.',
+  )
 
 export const storeUserRequestSchema = z.object({
   name: z.string().max(150),
@@ -84,15 +93,54 @@ export const storeUserRequestSchema = z.object({
     .optional(),
 })
 
+export const subscriptionPlanResourceSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  max_dentists: z.union([z.number().int(), z.null()]),
+  includes_ai: z.boolean(),
+  includes_risk: z.boolean(),
+  includes_analytics: z.boolean(),
+})
+
 export const tenantResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
+  legal_name: z.union([z.string(), z.null()]),
+  ruc: z.union([z.string(), z.null()]),
   slug: z.string(),
-  subscription_plan: z.string(),
+  address: z.union([z.string(), z.null()]),
+  phone: z.union([z.string(), z.null()]),
+  contact_email: z.union([z.string(), z.null()]),
+  plan: z
+    .object({
+      id: z.string(),
+      code: z.string(),
+      name: z.string(),
+      max_dentists: z.union([z.number().int(), z.null()]),
+      includes_ai: z.boolean(),
+      includes_risk: z.boolean(),
+      includes_analytics: z.boolean(),
+    })
+    .optional(),
   status: z.string(),
-  settings: z.union([z.record(z.string(), z.any()), z.null()]),
+  status_reason: z.union([z.string(), z.null()]),
+  timezone: z.string(),
+  active_dentists: z.union([z.number().int(), z.null()]).optional(),
+  admin: z.object({ id: z.string(), name: z.string(), email: z.string(), status: z.string() }).optional(),
   created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
 })
+
+export const updateTenantRequestSchema = z
+  .object({
+    name: z.string().min(3).max(150).optional(),
+    legal_name: z.string().min(3).max(200).optional(),
+    ruc: z.string().optional(),
+    address: z.string().min(5).max(200).optional(),
+  })
+  .describe(
+    'Edición de los datos de una clínica (CUS-01; RF-013, RF-014). El código de acceso no se\nacepta: es inmutable (DD-29) y el plan se cambia con PUT …/plan (CUS-03).',
+  )
 
 export const updateUserRequestSchema = z.object({
   name: z.string().max(150).optional(),
@@ -121,10 +169,28 @@ export const userResourceSchema = z.object({
       z.object({
         id: z.string(),
         name: z.string(),
+        legal_name: z.union([z.string(), z.null()]),
+        ruc: z.union([z.string(), z.null()]),
         slug: z.string(),
-        subscription_plan: z.string(),
+        address: z.union([z.string(), z.null()]),
+        phone: z.union([z.string(), z.null()]),
+        contact_email: z.union([z.string(), z.null()]),
+        plan: z
+          .object({
+            id: z.string(),
+            code: z.string(),
+            name: z.string(),
+            max_dentists: z.union([z.number().int(), z.null()]),
+            includes_ai: z.boolean(),
+            includes_risk: z.boolean(),
+            includes_analytics: z.boolean(),
+          })
+          .optional(),
         status: z.string(),
-        settings: z.union([z.record(z.string(), z.any()), z.null()]),
+        status_reason: z.union([z.string(), z.null()]),
+        timezone: z.string(),
+        active_dentists: z.union([z.number().int(), z.null()]).optional(),
+        admin: z.object({ id: z.string(), name: z.string(), email: z.string(), status: z.string() }).optional(),
         created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
       }),
       z.null(),
