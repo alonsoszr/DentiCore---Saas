@@ -113,6 +113,14 @@ services:
     build: ./denticore-ml
     environment:
       ML_SERVICE_KEY: ${ML_SERVICE_KEY:-ml_local_key}
+      # Artefactos del modelo en el bucket bajo models/<version>/ (DI-18).
+      ML_S3_BUCKET: ${MINIO_BUCKET:-denticore}
+      ML_S3_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-denticore}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-denticore_local}
+    depends_on:
+      minio:
+        condition: service_healthy
     ports:
       - '${FORWARD_ML_PORT:-8001}:8000'
     healthcheck:

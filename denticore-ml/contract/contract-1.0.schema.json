@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Contrato del motor ML de DentiCore",
+  "version": "1.0",
+  "request": {
+    "$defs": {
+      "Features": {
+        "additionalProperties": false,
+        "description": "Las 12 variables, todas presentes; `cpod`, `ceod` y `family_structure` admiten `null`.",
+        "properties": {
+          "age_years": {
+            "maximum": 120,
+            "minimum": 0,
+            "title": "Age Years",
+            "type": "integer"
+          },
+          "cpod": {
+            "anyOf": [
+              {
+                "maximum": 32,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpod"
+          },
+          "ceod": {
+            "anyOf": [
+              {
+                "maximum": 20,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceod"
+          },
+          "plaque_index_pct": {
+            "maximum": 100,
+            "minimum": 0,
+            "multipleOf": 0.1,
+            "title": "Plaque Index Pct",
+            "type": "number"
+          },
+          "active_lesions": {
+            "maximum": 32,
+            "minimum": 0,
+            "title": "Active Lesions",
+            "type": "integer"
+          },
+          "sugar_between_meals": {
+            "enum": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4+"
+            ],
+            "title": "Sugar Between Meals",
+            "type": "string"
+          },
+          "fluoride_toothpaste": {
+            "title": "Fluoride Toothpaste",
+            "type": "boolean"
+          },
+          "brushing_per_day": {
+            "enum": [
+              "0",
+              "1",
+              "2",
+              "3+"
+            ],
+            "title": "Brushing Per Day",
+            "type": "string"
+          },
+          "dental_visits_per_year": {
+            "enum": [
+              "<1",
+              "1",
+              "2+"
+            ],
+            "title": "Dental Visits Per Year",
+            "type": "string"
+          },
+          "education_level": {
+            "enum": [
+              "sin_estudios",
+              "primaria",
+              "secundaria",
+              "tecnica",
+              "universitaria"
+            ],
+            "title": "Education Level",
+            "type": "string"
+          },
+          "employment_status": {
+            "enum": [
+              "formal",
+              "informal",
+              "desempleado",
+              "otra"
+            ],
+            "title": "Employment Status",
+            "type": "string"
+          },
+          "family_structure": {
+            "anyOf": [
+              {
+                "enum": [
+                  "biparental",
+                  "monoparental",
+                  "extendida",
+                  "otra"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Family Structure"
+          }
+        },
+        "required": [
+          "age_years",
+          "cpod",
+          "ceod",
+          "plaque_index_pct",
+          "active_lesions",
+          "sugar_between_meals",
+          "fluoride_toothpaste",
+          "brushing_per_day",
+          "dental_visits_per_year",
+          "education_level",
+          "employment_status",
+          "family_structure"
+        ],
+        "title": "Features",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "contract_version": {
+        "maxLength": 10,
+        "title": "Contract Version",
+        "type": "string"
+      },
+      "request_ref": {
+        "format": "uuid",
+        "title": "Request Ref",
+        "type": "string"
+      },
+      "model_version": {
+        "maxLength": 30,
+        "minLength": 1,
+        "title": "Model Version",
+        "type": "string"
+      },
+      "age_group": {
+        "enum": [
+          "menor",
+          "adulto"
+        ],
+        "title": "Age Group",
+        "type": "string"
+      },
+      "features": {
+        "$ref": "#/$defs/Features"
+      }
+    },
+    "required": [
+      "contract_version",
+      "request_ref",
+      "model_version",
+      "age_group",
+      "features"
+    ],
+    "title": "PredictRequest",
+    "type": "object"
+  },
+  "response": {
+    "$defs": {
+      "Explanation": {
+        "properties": {
+          "global": {
+            "items": {
+              "$ref": "#/$defs/GlobalContribution"
+            },
+            "title": "Global",
+            "type": "array"
+          },
+          "individual": {
+            "items": {
+              "$ref": "#/$defs/IndividualContribution"
+            },
+            "title": "Individual",
+            "type": "array"
+          }
+        },
+        "required": [
+          "global",
+          "individual"
+        ],
+        "title": "Explanation",
+        "type": "object"
+      },
+      "GlobalContribution": {
+        "properties": {
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "mean_abs_shap": {
+            "title": "Mean Abs Shap",
+            "type": "number"
+          }
+        },
+        "required": [
+          "feature",
+          "mean_abs_shap"
+        ],
+        "title": "GlobalContribution",
+        "type": "object"
+      },
+      "IndividualContribution": {
+        "properties": {
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "shap": {
+            "title": "Shap",
+            "type": "number"
+          }
+        },
+        "required": [
+          "feature",
+          "value",
+          "shap"
+        ],
+        "title": "IndividualContribution",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "contract_version": {
+        "title": "Contract Version",
+        "type": "string"
+      },
+      "request_ref": {
+        "format": "uuid",
+        "title": "Request Ref",
+        "type": "string"
+      },
+      "model_version": {
+        "title": "Model Version",
+        "type": "string"
+      },
+      "probability": {
+        "maximum": 1,
+        "minimum": 0,
+        "title": "Probability",
+        "type": "number"
+      },
+      "confidence": {
+        "maximum": 1,
+        "minimum": 0,
+        "title": "Confidence",
+        "type": "number"
+      },
+      "base_value": {
+        "title": "Base Value",
+        "type": "number"
+      },
+      "explanation": {
+        "$ref": "#/$defs/Explanation"
+      }
+    },
+    "required": [
+      "contract_version",
+      "request_ref",
+      "model_version",
+      "probability",
+      "confidence",
+      "base_value",
+      "explanation"
+    ],
+    "title": "PredictResponse",
+    "type": "object"
+  }
+}
