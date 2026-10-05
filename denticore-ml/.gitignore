@@ -9,3 +9,5 @@ htmlcov/
 # Artefactos locales del modelo: la fuente es el bucket (models/<version>/, DI-18).
 /models/
 /build/
+# La raíz ignora toda carpeta docs/; la ficha del conjunto se versiona con el código (TASK-075).
+!docs/
