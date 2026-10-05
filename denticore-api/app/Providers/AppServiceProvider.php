@@ -56,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
 
         // throttle:login: 5 intentos por minuto por IP (SDD §4.2; RF-035). throttle:public: 60 por
         // minuto por IP en las rutas públicas (grupo PUB).
-        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by('login:'.$request->ip()));
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(config('auth.login_attempts_per_minute'))->by('login:'.$request->ip()));
         RateLimiter::for('public', fn (Request $request) => Limit::perMinute(60)->by('public:'.$request->ip()));
 
         // Inactividad (SDD §1.7; RF-036): se evalúa antes de que Sanctum actualice last_used_at;

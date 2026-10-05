@@ -20,6 +20,10 @@ return [
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
+    // throttle:login (SDD §4.2; RF-035): intentos de inicio de sesión por minuto e IP. Solo el
+    // entorno de las pruebas E2E lo eleva, porque todas sus sesiones salen de la misma IP.
+    'login_attempts_per_minute' => (int) env('LOGIN_ATTEMPTS_PER_MINUTE', 5),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards
