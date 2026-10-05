@@ -112,6 +112,9 @@
   --color-ai-origin: #6d28d9;
   --color-ai-origin-container: #f5f3ff;
 
+  /* Texto de ejemplo de los campos (DESIGN.md › Input fields: "#64748B placeholder") */
+  --color-placeholder: #64748b;
+
   /* ---------- Tipografía ---------- */
 
   --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -413,8 +416,9 @@
   }
 
   .btn:disabled {
-    opacity: 0.6;
-    cursor: default;
+    background: var(--color-on-surface-variant);
+    border-color: var(--color-on-surface-variant);
+    cursor: not-allowed;
   }
 
   .btn-secondary,
@@ -434,6 +438,12 @@
 
   .btn-secondary:active {
     background: var(--color-surface-container-high);
+  }
+
+  .btn-secondary:disabled {
+    background: var(--color-surface-container-lowest);
+    border-color: var(--color-outline);
+    opacity: 0.6;
   }
 
   .btn-link {
@@ -487,12 +497,93 @@
     border-color: var(--color-focus-ring);
   }
 
+  .field ::placeholder {
+    color: var(--color-placeholder);
+    opacity: 1;
+  }
+
+  .field input[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+
+  .field input:disabled,
+  .field select:disabled,
+  .field textarea:disabled {
+    background: var(--color-surface-container-low);
+    border-color: var(--color-outline-variant);
+    color: var(--color-on-surface-variant);
+    cursor: not-allowed;
+  }
+
+  /* Controles de 48px en autenticación y portal (DESIGN.md › Density). */
+  .field-lg input,
+  .field-lg select {
+    @apply text-body-lg;
+    min-height: 48px;
+    padding-inline: 14px;
+  }
+
+  .field-control {
+    position: relative;
+    display: flex;
+  }
+
+  .field-control input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-control.has-adornment input {
+    padding-right: 44px;
+  }
+
+  .field-adornment {
+    position: absolute;
+    inset-block: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    padding-inline: 12px;
+    color: var(--color-outline);
+    pointer-events: none;
+  }
+
+  .field-toggle {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    min-width: 44px;
+    margin-inline: -12px;
+    border: 0;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: none;
+    color: var(--color-on-surface-variant);
+    cursor: pointer;
+  }
+
+  .field-toggle:hover {
+    color: var(--color-on-surface);
+  }
+
+  .field-toggle:disabled {
+    cursor: not-allowed;
+  }
+
   .field .hint {
     color: var(--color-on-surface-variant);
   }
 
   .field .error {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
     color: var(--color-error);
+  }
+
+  .field .error svg {
+    margin-top: 2px;
   }
 
   .checkbox {
@@ -594,50 +685,5 @@
 
   .details dd {
     margin: 4px 0 0;
-  }
-
-  /* ---------- Login (autenticación: body-lg y controles de 48px) ---------- */
-
-  .login-page {
-    @apply text-body-lg;
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 16px;
-  }
-
-  .login-card {
-    width: 100%;
-    max-width: 420px;
-    padding: 1.5rem;
-  }
-
-  .login-card .brand {
-    @apply text-headline-md;
-    padding: 0;
-    margin-bottom: 4px;
-  }
-
-  .login-card form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-top: 24px;
-  }
-
-  .login-card .btn,
-  .login-card .field input,
-  .login-card .field select {
-    min-height: 48px;
-  }
-
-  .login-card .field input,
-  .login-card .field select {
-    @apply text-body-lg;
-  }
-
-  .login-card .clinic-code-form {
-    padding-top: 16px;
-    border-top: 1px solid var(--color-outline-variant);
   }
 }

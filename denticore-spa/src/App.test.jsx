@@ -69,7 +69,8 @@ describe('App', () => {
     renderApp('/c/clinica-demo/app/pacientes')
 
     expect(await screen.findByRole('button', { name: 'Ingresar' })).toBeInTheDocument()
-    expect(screen.getByText('clinica-demo')).toBeInTheDocument()
+    // El código de la clínica aparece en el encabezado y en el panel de marca (ficha auth-login).
+    expect(screen.getAllByText('clinica-demo').length).toBeGreaterThan(0)
     expect(getToken()).toBeNull()
   })
 
@@ -85,7 +86,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Clínicas' }, { timeout: 5000 })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
 
-    expect(await screen.findByText('Acceso de administración de la plataforma.')).toBeInTheDocument()
+    expect(await screen.findByText('DentiCore · Administración de la plataforma')).toBeInTheDocument()
     expect(getToken()).toBeNull()
   })
 
