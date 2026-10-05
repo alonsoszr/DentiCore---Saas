@@ -128,6 +128,20 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->getJson('/api/v1/patients/'.fake()->uuid()), 'GET', '/patients/{patient}');
     $check($this->actingWithToken($portal)->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
 
+    // Representantes legales
+    $representatives = "/api/v1/patients/{$patient->uuid}/representatives";
+    $created = $this->actingWithToken($admin)->postJson($representatives, [
+        'document_type' => 'dni', 'document_number' => '41234567', 'first_name' => 'Rosa', 'last_name' => 'Mamani',
+        'relationship' => 'madre', 'phone' => '912345678', 'email' => 'rosa@correo.test', 'valid_from' => '2026-10-05',
+    ]);
+    $check($created, 'POST', '/patients/{patient}/representatives');
+    $check($this->actingWithToken($admin)->postJson($representatives, []), 'POST', '/patients/{patient}/representatives');
+    $check($this->actingWithToken($admin)->getJson($representatives), 'GET', '/patients/{patient}/representatives');
+    $representativeId = $created->json('data.id');
+    $check($this->actingWithToken($admin)->postJson("{$representatives}/{$representativeId}/end", ['reason' => 'x']), 'POST', '/patients/{patient}/representatives/{representative}/end');
+    $check($this->actingWithToken($admin)->postJson("{$representatives}/{$representativeId}/end", ['reason' => 'revocada']), 'POST', '/patients/{patient}/representatives/{representative}/end');
+    $check($this->actingWithToken($admin)->postJson("{$representatives}/{$representativeId}/end", ['reason' => 'revocada']), 'POST', '/patients/{patient}/representatives/{representative}/end');
+
     // Parámetros de la clínica
     Storage::fake('s3');
     $check($this->actingWithToken($admin)->getJson('/api/v1/clinic/settings'), 'GET', '/clinic/settings');

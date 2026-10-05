@@ -11,6 +11,7 @@ use App\Support\Encryption\TenantEncrypted;
 use App\Support\Encryption\TenantEncryption;
 use App\Support\Tenancy\BelongsToTenant;
 use App\Support\Tenancy\TenantContext;
+use App\Support\Time\ClinicClock;
 use Database\Factories\PatientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -115,6 +117,24 @@ class Patient extends Model
             $patient->clinical_record_number = $record;
             $patient->clinical_record_hash = $encryption->blindIndex($tenantId, $record);
         });
+    }
+
+    /**
+     * @return HasMany<LegalRepresentative, $this>
+     */
+    public function representatives(): HasMany
+    {
+        return $this->hasMany(LegalRepresentative::class);
+    }
+
+    /**
+     * RN-12: menor de 18 años a la fecha indicada (por defecto, hoy en la zona de la clínica).
+     */
+    public function isMinorOn(?string $date = null): bool
+    {
+        $on = $date ?? ClinicClock::for($this->tenant)->now()->toDateString();
+
+        return $this->birth_date->copy()->addYears(18)->toDateString() > $on;
     }
 
     public function auditPatientUuid(): ?string
