@@ -122,6 +122,194 @@
                 }
             }
         },
+        "/clinic/settings": {
+            "get": {
+                "operationId": "clinicSettings.show",
+                "tags": [
+                    "ClinicSettings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ClinicSettingsResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ClinicSettingsResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "clinicSettings.update",
+                "tags": [
+                    "ClinicSettings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateClinicSettingsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ClinicSettingsResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ClinicSettingsResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clinic/logo": {
+            "post": {
+                "operationId": "clinicSettings.uploadLogo",
+                "summary": "RF-024: PNG o JPG de hasta 1 MB",
+                "tags": [
+                    "ClinicSettings"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "logo": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 1024 kilobytes."
+                                    }
+                                },
+                                "required": [
+                                    "logo"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ClinicSettingsResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ClinicSettingsResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/files/{tenant}/{file}": {
             "get": {
                 "operationId": "files.download",
@@ -1612,6 +1800,100 @@
     },
     "components": {
         "schemas": {
+            "ClinicSettingsResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "contact_email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "logo": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "status",
+                            "url"
+                        ]
+                    },
+                    "prices_include_igv": {
+                        "type": "boolean"
+                    },
+                    "discount_cap_pct": {
+                        "type": "string"
+                    },
+                    "budget_validity_days": {
+                        "type": "integer"
+                    },
+                    "portal_cancel_hours": {
+                        "type": "integer"
+                    },
+                    "self_booking_enabled": {
+                        "type": "boolean"
+                    },
+                    "ai_enabled": {
+                        "type": "boolean"
+                    },
+                    "budget_terms": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "address",
+                    "phone",
+                    "contact_email",
+                    "logo",
+                    "prices_include_igv",
+                    "discount_cap_pct",
+                    "budget_validity_days",
+                    "portal_cancel_hours",
+                    "self_booking_enabled",
+                    "ai_enabled",
+                    "budget_terms"
+                ],
+                "title": "ClinicSettingsResource"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -2127,6 +2409,72 @@
                     "created_at"
                 ],
                 "title": "TenantResource"
+            },
+            "UpdateClinicSettingsRequest": {
+                "type": "object",
+                "description": "Par\u00e1metros de la cl\u00ednica (CUS-04): los l\u00edmites son los CHECK de `clinic_settings` (SDD \u00a72.3;\nRN-31, RN-35, RN-49) y de RF-024. `ai_enabled` (RF-027) se acepta desde MS-12 y\n`complaints_book_url` (RNF-164) desde MS-13.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 150
+                    },
+                    "address": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 200
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "contact_email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "email",
+                        "maxLength": 180
+                    },
+                    "prices_include_igv": {
+                        "type": "boolean"
+                    },
+                    "discount_cap_pct": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "budget_validity_days": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 180
+                    },
+                    "portal_cancel_hours": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 72
+                    },
+                    "self_booking_enabled": {
+                        "type": "boolean"
+                    },
+                    "budget_terms": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    },
+                    "ai_enabled": {
+                        "type": "string"
+                    },
+                    "complaints_book_url": {
+                        "type": "string"
+                    }
+                },
+                "title": "UpdateClinicSettingsRequest"
             },
             "UpdateTenantRequest": {
                 "type": "object",

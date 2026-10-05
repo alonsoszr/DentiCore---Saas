@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Platform\Http\Controllers\ClinicSettingsController;
 use App\Modules\Platform\Http\Controllers\SubscriptionPlanController;
 use App\Modules\Platform\Http\Controllers\TenantController;
 use App\Modules\Platform\Http\Controllers\TenantPlanController;
@@ -28,3 +29,14 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:super_admin'])->prefix(
     Route::post('/tenants/{tenant}/reactivate', [TenantStatusController::class, 'reactivate']);
     Route::put('/tenants/{tenant}/plan', [TenantPlanController::class, 'update']);
 });
+
+/*
+| Parámetros de la clínica (CUS-04), grupo STAFF: solo clinic_admin.
+*/
+Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:clinic_admin'])
+    ->prefix('clinic')
+    ->group(function () {
+        Route::get('/settings', [ClinicSettingsController::class, 'show']);
+        Route::patch('/settings', [ClinicSettingsController::class, 'update']);
+        Route::post('/logo', [ClinicSettingsController::class, 'uploadLogo']);
+    });

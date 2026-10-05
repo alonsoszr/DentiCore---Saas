@@ -10,6 +10,7 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -88,8 +89,15 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/patients/'.fake()->uuid()), 'GET', '/patients/{patient}');
     $check($this->actingAs($portal, 'sanctum')->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
 
-    // Archivos (URL firmada)
+    // Parámetros de la clínica
     Storage::fake('s3');
+    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/clinic/settings'), 'GET', '/clinic/settings');
+    $check($this->actingAs($admin, 'sanctum')->patchJson('/api/v1/clinic/settings', ['budget_validity_days' => 45]), 'PATCH', '/clinic/settings');
+    $check($this->actingAs($admin, 'sanctum')->patchJson('/api/v1/clinic/settings', ['budget_validity_days' => 0]), 'PATCH', '/clinic/settings');
+    $check($this->actingAs($admin, 'sanctum')->post('/api/v1/clinic/logo', ['logo' => UploadedFile::fake()->image('logo.png')], ['Accept' => 'application/json']), 'POST', '/clinic/logo');
+    $check($this->actingAs($admin, 'sanctum')->postJson('/api/v1/clinic/logo', []), 'POST', '/clinic/logo');
+
+    // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');
 

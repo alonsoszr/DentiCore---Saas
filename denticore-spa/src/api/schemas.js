@@ -1,6 +1,22 @@
 // Archivo generado por scripts/gen-api.mjs desde denticore-api/openapi.json. No editar a mano.
 import { z } from 'zod'
 
+export const clinicSettingsResourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  address: z.union([z.string(), z.null()]),
+  phone: z.union([z.string(), z.null()]),
+  contact_email: z.union([z.string(), z.null()]),
+  logo: z.union([z.object({ id: z.string(), status: z.string(), url: z.union([z.string(), z.null()]) }), z.null()]),
+  prices_include_igv: z.boolean(),
+  discount_cap_pct: z.string(),
+  budget_validity_days: z.number().int(),
+  portal_cancel_hours: z.number().int(),
+  self_booking_enabled: z.boolean(),
+  ai_enabled: z.boolean(),
+  budget_terms: z.union([z.string(), z.null()]),
+})
+
 export const loginRequestSchema = z.object({
   tenant_slug: z.union([z.string(), z.null()]).optional(),
   email: z.string().email(),
@@ -130,6 +146,25 @@ export const tenantResourceSchema = z.object({
   admin: z.object({ id: z.string(), name: z.string(), email: z.string(), status: z.string() }).optional(),
   created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
 })
+
+export const updateClinicSettingsRequestSchema = z
+  .object({
+    name: z.string().min(3).max(150).optional(),
+    address: z.string().min(5).max(200).optional(),
+    phone: z.union([z.string().max(20), z.null()]).optional(),
+    contact_email: z.union([z.string().email().max(180), z.null()]).optional(),
+    prices_include_igv: z.boolean().optional(),
+    discount_cap_pct: z.number().gte(0).lte(100).optional(),
+    budget_validity_days: z.number().int().gte(1).lte(180).optional(),
+    portal_cancel_hours: z.number().int().gte(0).lte(72).optional(),
+    self_booking_enabled: z.boolean().optional(),
+    budget_terms: z.union([z.string().max(2000), z.null()]).optional(),
+    ai_enabled: z.string().optional(),
+    complaints_book_url: z.string().optional(),
+  })
+  .describe(
+    'Parámetros de la clínica (CUS-04): los límites son los CHECK de `clinic_settings` (SDD §2.3;\nRN-31, RN-35, RN-49) y de RF-024. `ai_enabled` (RF-027) se acepta desde MS-12 y\n`complaints_book_url` (RNF-164) desde MS-13.',
+  )
 
 export const updateTenantRequestSchema = z
   .object({
