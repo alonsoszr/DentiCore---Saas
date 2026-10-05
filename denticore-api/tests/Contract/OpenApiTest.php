@@ -172,6 +172,12 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->getJson('/api/v1/consents/'.$granted->json('data.id').'/certificate'), 'GET', '/consents/{consent}/certificate');
     $check($this->actingWithToken($admin)->getJson('/api/v1/consents/'.fake()->uuid().'/certificate'), 'GET', '/consents/{consent}/certificate');
 
+    // Antecedentes médicos
+    $history = ['alergias' => ['Penicilina'], 'enfermedades' => [], 'medicamentos' => [], 'observaciones' => null];
+    $check($this->actingWithToken($admin)->putJson("/api/v1/patients/{$adult->uuid}/medical-history", $history), 'PUT', '/patients/{patient}/medical-history');
+    $check($this->actingWithToken($admin)->putJson("/api/v1/patients/{$adult->uuid}/medical-history", ['alergias' => 'x']), 'PUT', '/patients/{patient}/medical-history');
+    $check($this->actingWithToken($admin)->putJson("/api/v1/patients/{$unrepresentedMinor->uuid}/medical-history", $history), 'PUT', '/patients/{patient}/medical-history');
+
     // Parámetros de la clínica
     Storage::fake('s3');
     $check($this->actingWithToken($admin)->getJson('/api/v1/clinic/settings'), 'GET', '/clinic/settings');

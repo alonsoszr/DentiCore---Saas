@@ -1389,6 +1389,143 @@
                 }
             }
         },
+        "/patients/{patient}/medical-history": {
+            "put": {
+                "operationId": "medicalHistory.update",
+                "summary": "Reemplaza los antecedentes: exactamente `alergias`, `enfermedades`, `medicamentos` y\n`observaciones`; listas de hasta 30 elementos de hasta 150 caracteres",
+                "tags": [
+                    "MedicalHistory"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "alergias": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 150
+                                        },
+                                        "maxItems": 30
+                                    },
+                                    "enfermedades": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 150
+                                        },
+                                        "maxItems": 30
+                                    },
+                                    "medicamentos": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 150
+                                        },
+                                        "maxItems": 30
+                                    },
+                                    "observaciones": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 2000
+                                    }
+                                },
+                                "required": [
+                                    "alergias",
+                                    "enfermedades",
+                                    "medicamentos",
+                                    "observaciones"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`PatientResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PatientResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "user_uuid"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/password/forgot": {
             "post": {
                 "operationId": "passwordReset.requestLink",
@@ -4362,6 +4499,12 @@
                             "observaciones"
                         ]
                     },
+                    "allergies": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "user_uuid": {
                         "type": [
                             "string",
@@ -4394,6 +4537,7 @@
                     "has_current_consent",
                     "consent_outdated",
                     "medical_history",
+                    "allergies",
                     "created_at"
                 ],
                 "title": "PatientResource"

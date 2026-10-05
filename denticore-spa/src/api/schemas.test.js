@@ -39,6 +39,7 @@ describe('generated API schemas', () => {
         has_current_consent: false,
         consent_outdated: false,
         medical_history: null,
+        allergies: [],
         created_at: '2026-09-27T23:00:00.000000Z',
       }).success,
     ).toBe(true)

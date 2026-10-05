@@ -41,8 +41,10 @@ class PatientResource extends ApiResource
             'has_current_consent' => app(ConsentGate::class)->hasCurrent($this->resource),
             /** @var bool */
             'consent_outdated' => app(ConsentGate::class)->outdated($this->resource),
-            /** @var array{alergias: list<string>, enfermedades: list<string>, medicamentos: list<string>, observaciones: string|null}|null */
             'medical_history' => $this->medical_history,
+            // RF-064, RNF-149: aviso permanente de alergias en la ficha, la atención y el plan.
+            /** @var list<string> */
+            'allergies' => $this->medical_history['alergias'] ?? [],
             'user_uuid' => $this->whenLoaded('user', fn () => $this->user?->uuid),
             'created_at' => $this->created_at,
         ];

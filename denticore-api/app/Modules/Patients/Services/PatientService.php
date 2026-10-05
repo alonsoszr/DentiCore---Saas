@@ -168,6 +168,35 @@ class PatientService
         });
     }
 
+    /**
+     * RF-064 (SDD §2.14.1): listas sin elementos vacíos, observación recortada y `null` si todo
+     * queda vacío.
+     *
+     * @param  array{alergias: list<string|null>, enfermedades: list<string|null>, medicamentos: list<string|null>, observaciones: string|null}  $data
+     */
+    public function updateMedicalHistory(Patient $patient, array $data): Patient
+    {
+        $clean = fn (array $items): array => array_values(array_filter(
+            array_map(fn (?string $item) => trim((string) $item), $items),
+            fn (string $item) => $item !== '',
+        ));
+
+        $history = [
+            'alergias' => $clean($data['alergias']),
+            'enfermedades' => $clean($data['enfermedades']),
+            'medicamentos' => $clean($data['medicamentos']),
+            'observaciones' => trim((string) $data['observaciones']) ?: null,
+        ];
+
+        $isEmpty = $history['alergias'] === [] && $history['enfermedades'] === [] && $history['medicamentos'] === []
+            && $history['observaciones'] === null;
+
+        $patient->medical_history = $isEmpty ? null : $history;
+        $patient->save();
+
+        return $patient;
+    }
+
     private function changeDocument(Patient $patient, string $type, string $number): void
     {
         $number = PatientIdentity::normalizedNumber($number);
