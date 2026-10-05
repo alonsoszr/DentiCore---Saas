@@ -46,6 +46,7 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/users/{user}/invitation', 'cus' => 'CUS-11', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
 
     ['method' => 'GET', 'uri' => 'api/v1/patients', 'cus' => 'CUS-13', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/patients/lookup', 'cus' => 'CUS-13', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/patients', 'cus' => 'CUS-14', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}', 'cus' => 'CUS-21', 'denied' => ['super_admin']],
     ['method' => 'PATCH', 'uri' => 'api/v1/patients/{patient}', 'cus' => 'CUS-15', 'denied' => ['super_admin', 'dentist', 'patient']],

@@ -9,6 +9,7 @@ use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
 use App\Support\Encryption\TenantEncryption;
 use App\Support\Http\BusinessRuleException;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
@@ -28,18 +29,39 @@ class PatientService
         private TenantEncryption $encryption,
         private AuditLogger $audit,
         private LegalRepresentativeService $representatives,
+        private PatientSearchRepository $search,
     ) {}
 
     /**
+     * CUS-13 (RF-054, RF-010): los ids salen de {@see PatientSearchRepository} (índice de
+     * trigramas, `tenant_id` explícito) y las fichas se cargan con la conexión de la API, bajo RLS
+     * y el Global Scope, conservando el orden de la búsqueda.
+     *
+     * @param  array{q?: string|null, archive_status?: string|null, per_page?: int|null}  $filters
      * @return LengthAwarePaginator<int, Patient>
      */
-    public function paginate(): LengthAwarePaginator
+    public function paginate(array $filters = []): LengthAwarePaginator
+    {
+        $page = $this->search->query(TenantContext::idOrFail(), $filters)->paginate($filters['per_page'] ?? 15);
+        /** @var list<int> $ids */
+        $ids = $page->getCollection()->map(fn (object $row): int => (int) $row->id)->all();
+        $patients = Patient::query()->whereKey($ids)->with('user')->get()->keyBy('id');
+
+        $page->setCollection(collect($ids)->map(fn (int $id) => $patients->get($id))->filter()->values());
+
+        /** @var LengthAwarePaginator<int, Patient> $page */
+        return $page;
+    }
+
+    /**
+     * CUS-13, RF-056: búsqueda exacta por documento mediante el índice ciego.
+     */
+    public function lookup(Tenant $tenant, string $type, string $number): ?Patient
     {
         return Patient::query()
+            ->where('document_hash', $this->documentHash($tenant, $type, PatientIdentity::normalizedNumber($number)))
             ->with('user')
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->paginate(15);
+            ->first();
     }
 
     /**

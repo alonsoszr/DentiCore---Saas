@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Modules\Identity\Services\InactivityPolicy;
+use App\Modules\Patients\Services\PatientSearchRepository;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Encryption\BlindIndex;
 use App\Support\Encryption\KeyRing;
@@ -16,6 +17,7 @@ use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -32,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(KeyRing::class);
         $this->app->scoped(BlindIndex::class);
         $this->app->scoped(TenantEncryption::class);
+
+        // Búsqueda de pacientes con el índice de trigramas: ids por la conexión de plataforma con
+        // `tenant_id` explícito (SDD §1.6.3; ver PatientSearchRepository).
+        $this->app->bind(PatientSearchRepository::class, fn () => new PatientSearchRepository(DB::connection('pgsql_platform')));
 
         $this->app->bind(EvidenceSealer::class, fn () => new EvidenceSealer((string) config('services.evidence.hmac_key')));
 

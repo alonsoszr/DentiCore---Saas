@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant'])->group(function () {
     Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
         Route::get('/patients', [PatientController::class, 'index']);
+        // Antes de /patients/{patient} para que «lookup» no se tome como uuid.
+        Route::get('/patients/lookup', [PatientController::class, 'lookup']);
         Route::post('/patients', [PatientController::class, 'store'])->middleware('idempotent');
     });
 

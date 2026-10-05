@@ -118,6 +118,11 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
 
     // Pacientes
     $check($this->actingWithToken($admin)->getJson('/api/v1/patients'), 'GET', '/patients');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/patients?q=ana&per_page=5'), 'GET', '/patients');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/patients?per_page=101'), 'GET', '/patients');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/patients/lookup?document_type=dni&document_number=99999999'), 'GET', '/patients/lookup');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/patients/lookup?document_type=dni&document_number='.$patient->document_number), 'GET', '/patients/lookup');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/patients/lookup'), 'GET', '/patients/lookup');
     $check($this->actingWithToken($portal)->getJson('/api/v1/patients'), 'GET', '/patients');
     $registered = $this->actingWithToken($admin)->postJson('/api/v1/patients', [
         'document_type' => 'dni', 'document_number' => '70000001', 'first_name' => 'Ana', 'last_name' => 'Quispe',
