@@ -38,6 +38,14 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'string', Password::defaults()],
             'role' => ['required', 'string', Rule::in(User::TENANT_ROLES)],
             'is_active' => ['sometimes', 'boolean'],
+            // RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.
+            'cop_number' => [
+                'required_if:role,dentist',
+                'nullable',
+                'string',
+                'max:10',
+                Rule::unique('users', 'cop_number')->where('tenant_id', TenantContext::id()),
+            ],
         ];
     }
 }

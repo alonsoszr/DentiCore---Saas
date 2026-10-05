@@ -34,6 +34,29 @@ describe('UsersPage', () => {
     expect(JSON.parse(post.data)).toMatchObject({ name: 'Luis', role: 'receptionist', is_active: true })
   })
 
+  it('asks for the COP number only for dentists and sends it', async () => {
+    const calls = mockApi((config) => {
+      if (config.method === 'post') return { status: 201, data: { data: { id: 'u-9', name: 'Dra. Ríos' } } }
+      return { data: { data: [{ ...admin }] } }
+    })
+    renderPage(<UsersPage />, ROUTE)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Nuevo usuario' }))
+    await userEvent.selectOptions(screen.getByLabelText('Rol'), 'receptionist')
+    expect(screen.queryByLabelText('Número de COP')).not.toBeInTheDocument()
+
+    await userEvent.selectOptions(screen.getByLabelText('Rol'), 'dentist')
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Dra. Ríos')
+    await userEvent.type(screen.getByLabelText('Correo electrónico'), 'rios@x.test')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'secreta123')
+    await userEvent.type(screen.getByLabelText('Número de COP'), '12345')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByText('Se creó la cuenta de Dra. Ríos.')).toBeInTheDocument()
+    const post = calls.find((call) => call.method === 'post')
+    expect(JSON.parse(post.data)).toMatchObject({ role: 'dentist', cop_number: '12345' })
+  })
+
   it('edits a user without sending an empty password', async () => {
     const calls = mockApi((config) => {
       if (config.method === 'patch') return { data: { data: { id: 'u-2', name: 'Dra. Paz' } } }

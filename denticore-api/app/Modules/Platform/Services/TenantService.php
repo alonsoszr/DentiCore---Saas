@@ -45,6 +45,8 @@ class TenantService
             // Solo estos tres campos del payload: el rol y la clínica los fija el servidor.
             $clinicAdmin = new User([...Arr::only($admin, ['name', 'email', 'password']), 'role' => 'clinic_admin']);
             $clinicAdmin->tenant_id = $tenant->id;
+            // RF-047: el primer administrador de la clínica es su oficial de datos.
+            $clinicAdmin->is_data_officer = true;
             $clinicAdmin->save();
 
             // Evento de plataforma (cadena de tenant_id nulo, SDD §2.12).

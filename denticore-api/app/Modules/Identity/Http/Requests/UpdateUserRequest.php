@@ -38,6 +38,19 @@ class UpdateUserRequest extends FormRequest
             'password' => ['sometimes', 'string', Password::defaults()],
             'role' => ['sometimes', 'string', Rule::in(User::TENANT_ROLES)],
             'is_active' => ['sometimes', 'boolean'],
+            // RN-75, RF-043: quien pasa a odontólogo sin COP registrado debe indicarlo.
+            'cop_number' => [
+                Rule::requiredIf(fn (): bool => $this->input('role') === 'dentist' && User::query()
+                    ->where('tenant_id', TenantContext::id())
+                    ->where('uuid', $this->route('user'))
+                    ->value('cop_number') === null),
+                'nullable',
+                'string',
+                'max:10',
+                Rule::unique('users', 'cop_number')
+                    ->where('tenant_id', TenantContext::id())
+                    ->ignore($this->route('user'), 'uuid'),
+            ],
         ];
     }
 }

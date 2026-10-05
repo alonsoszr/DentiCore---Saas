@@ -97,7 +97,8 @@ class UserService
             $this->audit->record($user->is_active ? AuditEvent::UserReactivated : AuditEvent::UserDeactivated, $user, ['is_active']);
         }
 
-        $otherFields = array_values(array_diff($changed, ['role', 'is_active']));
+        // `status` cambia junto con `is_active` mientras conviven (TASK-026): es el mismo evento.
+        $otherFields = array_values(array_diff($changed, ['role', 'is_active', 'status']));
 
         if ($otherFields !== []) {
             $this->audit->record(AuditEvent::UserUpdated, $user, $otherFields);

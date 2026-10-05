@@ -41,7 +41,7 @@ it('writes one audit row for each auditable event type without clinical values',
 
     // user.created, user.updated, user.role_changed, user.deactivated, user.reactivated
     $this->actingAs($admin, 'sanctum')->postJson('/api/v1/users', [
-        'name' => 'Diego Dentista', 'email' => 'diego@sonrisa.test', 'password' => 'password123', 'role' => 'dentist',
+        'name' => 'Diego Dentista', 'email' => 'diego@sonrisa.test', 'password' => 'password123', 'role' => 'dentist', 'cop_number' => '12345',
     ])->assertCreated();
     $dentist = User::query()->where('email', 'diego@sonrisa.test')->sole();
     $this->actingAs($admin, 'sanctum')->patchJson("/api/v1/users/{$dentist->uuid}", ['name' => 'Diego D.'])->assertOk();

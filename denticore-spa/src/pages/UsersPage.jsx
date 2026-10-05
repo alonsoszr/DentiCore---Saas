@@ -8,7 +8,7 @@ import { useClinic } from '../auth/useClinic'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 
-const EMPTY_FORM = { name: '', email: '', password: '', role: 'dentist', is_active: true }
+const EMPTY_FORM = { name: '', email: '', password: '', role: 'dentist', cop_number: '', is_active: true }
 
 export function UsersPage() {
   const { user: currentUser } = useAuth()
@@ -46,7 +46,14 @@ export function UsersPage() {
   const openEdit = (user) => {
     saveUser.reset()
     setNotice(null)
-    setForm({ name: user.name, email: user.email, password: '', role: user.role, is_active: user.is_active })
+    setForm({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role,
+      cop_number: user.cop_number ?? '',
+      is_active: user.is_active,
+    })
     setEditing({ id: user.id })
   }
 
@@ -65,6 +72,8 @@ export function UsersPage() {
     const payload = { ...form }
     // En edición, la contraseña vacía significa "no cambiarla".
     if (editing.id && !payload.password) delete payload.password
+    // RN-75: el número de COP solo aplica a odontólogos.
+    if (payload.role !== 'dentist' || !payload.cop_number) delete payload.cop_number
     saveUser.mutate({ id: editing.id, payload })
   }
 
@@ -126,6 +135,16 @@ export function UsersPage() {
                   ))}
                 </select>
               </Field>
+              {form.role === 'dentist' && (
+                <Field
+                  label="Número de COP"
+                  name="cop_number"
+                  value={form.cop_number}
+                  onChange={handleChange}
+                  error={errors.cop_number}
+                  hint="Colegio Odontológico del Perú."
+                />
+              )}
             </div>
             <label className="checkbox" style={{ marginTop: 14 }}>
               <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} />
