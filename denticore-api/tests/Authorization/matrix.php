@@ -14,6 +14,9 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/auth/logout', 'cus' => 'CUS-10', 'denied' => []],
     ['method' => 'GET', 'uri' => 'api/v1/auth/me', 'cus' => 'CUS-78', 'denied' => []],
     ['method' => 'POST', 'uri' => 'api/v1/auth/keepalive', 'cus' => 'CUS-06', 'denied' => []],
+    ['method' => 'POST', 'uri' => 'api/v1/auth/2fa/verify', 'cus' => 'CUS-07', 'denied' => []],
+    ['method' => 'POST', 'uri' => 'api/v1/auth/2fa/setup', 'cus' => 'CUS-08', 'denied' => []],
+    ['method' => 'POST', 'uri' => 'api/v1/auth/2fa/confirm', 'cus' => 'CUS-08', 'denied' => []],
     ['method' => 'GET', 'uri' => 'api/v1/public/clinics/{slug}', 'cus' => 'CUS-06', 'denied' => []],
 
     ['method' => 'GET', 'uri' => 'api/v1/platform/plans', 'cus' => 'CUS-03', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],

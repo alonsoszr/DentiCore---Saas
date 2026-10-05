@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 // M03 — Pacientes y consentimientos (SDD §4.3.3). STAFF (SDD §4.2).
 
-Route::middleware(['auth:sanctum', 'token.fresh', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant'])->group(function () {
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant'])->group(function () {
     Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
         Route::get('/patients', [PatientController::class, 'index']);
         Route::post('/patients', [PatientController::class, 'store']);

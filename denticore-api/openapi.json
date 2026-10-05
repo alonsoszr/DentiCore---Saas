@@ -1781,6 +1781,251 @@
                 }
             }
         },
+        "/auth/2fa/verify": {
+            "post": {
+                "operationId": "twoFactor.verify",
+                "summary": "CUS-07: c\u00f3digo TOTP o c\u00f3digo de recuperaci\u00f3n",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "minLength": 6,
+                                        "maxLength": 6
+                                    },
+                                    "recovery_code": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 20
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "abilities": {
+                                            "type": "array",
+                                            "prefixItems": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "full"
+                                                }
+                                            ],
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                        },
+                                        "requires_2fa": {
+                                            "type": "boolean"
+                                        },
+                                        "requires_2fa_setup": {
+                                            "type": "boolean"
+                                        },
+                                        "expires_at": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "abilities",
+                                        "requires_2fa",
+                                        "requires_2fa_setup",
+                                        "expires_at",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/2fa/setup": {
+            "post": {
+                "operationId": "twoFactor.setup",
+                "summary": "CUS-08: secreto y URL `otpauth://` para escanear con la aplicaci\u00f3n autenticadora",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "secret": {
+                                            "type": "string"
+                                        },
+                                        "otpauth_url": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "secret",
+                                        "otpauth_url"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/2fa/confirm": {
+            "post": {
+                "operationId": "twoFactor.confirm",
+                "summary": "CUS-08: activa el 2FA, devuelve los 10 c\u00f3digos de recuperaci\u00f3n (se muestran una sola vez)\ny un token `full` que reemplaza al actual (PEND-04)",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "maxLength": 6
+                                    }
+                                },
+                                "required": [
+                                    "code"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "recovery_codes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "abilities": {
+                                            "type": "array",
+                                            "prefixItems": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "full"
+                                                }
+                                            ],
+                                            "minItems": 1,
+                                            "maxItems": 1
+                                        },
+                                        "requires_2fa": {
+                                            "type": "boolean"
+                                        },
+                                        "requires_2fa_setup": {
+                                            "type": "boolean"
+                                        },
+                                        "expires_at": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "recovery_codes",
+                                        "token",
+                                        "abilities",
+                                        "requires_2fa",
+                                        "requires_2fa_setup",
+                                        "expires_at",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "operationId": "user.index",

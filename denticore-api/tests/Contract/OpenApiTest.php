@@ -14,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\OpenApiContract;
 
 it('keeps openapi.json in sync with the code', function () {
@@ -45,6 +46,16 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
     $check($this->actingWithToken($superAdmin)->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
     $check($this->actingWithToken($admin)->postJson('/api/v1/auth/keepalive'), 'POST', '/auth/keepalive');
+    $twoFactorUser = User::factory()->for($tenant)->create(['role' => 'receptionist']);
+    $check($this->actingWithToken($twoFactorUser)->postJson('/api/v1/auth/2fa/setup'), 'POST', '/auth/2fa/setup');
+    $check($this->actingWithToken($twoFactorUser)->postJson('/api/v1/auth/2fa/confirm', ['code' => '000000']), 'POST', '/auth/2fa/confirm');
+    $check($this->actingWithToken($twoFactorUser)->postJson('/api/v1/auth/2fa/confirm', [
+        'code' => (new Google2FA)->getCurrentOtp($twoFactorUser->fresh()->two_factor_secret),
+    ]), 'POST', '/auth/2fa/confirm');
+    $check($this->actingWithToken($twoFactorUser->fresh(), ['2fa:pending'])->postJson('/api/v1/auth/2fa/verify', ['code' => '000000']), 'POST', '/auth/2fa/verify');
+    $check($this->actingWithToken($twoFactorUser->fresh(), ['2fa:pending'])->postJson('/api/v1/auth/2fa/verify', [
+        'code' => (new Google2FA)->getCurrentOtp($twoFactorUser->fresh()->two_factor_secret),
+    ]), 'POST', '/auth/2fa/verify');
     $check($this->getJson('/api/v1/public/clinics/'.$tenant->slug), 'GET', '/public/clinics/{slug}');
     $check($this->getJson('/api/v1/public/clinics/no-existe'), 'GET', '/public/clinics/{slug}');
 
