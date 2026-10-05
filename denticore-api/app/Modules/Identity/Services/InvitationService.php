@@ -6,6 +6,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Scheduling\Enums\NotificationEvent;
 use App\Modules\Scheduling\Services\NotificationService;
 use App\Support\Tenancy\TenantContext;
+use App\Support\Tokens\OneTimeToken;
 use App\Support\Tokens\OneTimeTokenService;
 use App\Support\Tokens\TokenPurpose;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,21 @@ class InvitationService
     public function __construct(
         private OneTimeTokenService $tokens,
         private NotificationService $notifications,
+        private PasswordService $passwords,
     ) {}
+
+    /**
+     * Activa la cuenta invitada: define su contraseña (RF-040) y pasa a `activo`; el enlace
+     * queda usado.
+     */
+    public function accept(OneTimeToken $token, User $user, string $password): void
+    {
+        DB::transaction(function () use ($token, $user, $password): void {
+            $this->passwords->set($user, $password);
+            $user->forceFill(['status' => 'activo'])->save();
+            $this->tokens->consume($token);
+        });
+    }
 
     public function send(User $user): void
     {

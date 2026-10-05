@@ -6,8 +6,10 @@
  */
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\InvitationService;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\Notification;
 use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\UploadedFile;
@@ -58,6 +60,22 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     ]), 'POST', '/auth/2fa/verify');
     $check($this->getJson('/api/v1/public/clinics/'.$tenant->slug), 'GET', '/public/clinics/{slug}');
     $check($this->getJson('/api/v1/public/clinics/no-existe'), 'GET', '/public/clinics/{slug}');
+
+    // Recuperación de contraseña e invitación
+    $tokenFrom = fn (string $link): string => substr($link, strrpos($link, '/') + 1);
+    $check($this->postJson('/api/v1/auth/password/forgot', ['tenant_slug' => 'clinica-contrato', 'email' => 'admin@contrato.test']), 'POST', '/auth/password/forgot');
+    $check($this->postJson('/api/v1/auth/password/forgot', ['tenant_slug' => 'clinica-contrato']), 'POST', '/auth/password/forgot');
+    $resetToken = $tokenFrom(Notification::query()->where('event', 'restablecimiento_contrasena')->latest('id')->first()->payload['links']['reset']);
+    $check($this->postJson('/api/v1/auth/password/reset', ['token' => $resetToken, 'password' => 'corta', 'password_confirmation' => 'corta']), 'POST', '/auth/password/reset');
+    $check($this->postJson('/api/v1/auth/password/reset', ['token' => $resetToken, 'password' => 'Contrato-Seguro-2026', 'password_confirmation' => 'Contrato-Seguro-2026']), 'POST', '/auth/password/reset');
+    $check($this->postJson('/api/v1/auth/password/reset', ['token' => $resetToken, 'password' => 'Contrato-Seguro-2026', 'password_confirmation' => 'Contrato-Seguro-2026']), 'POST', '/auth/password/reset');
+    $invited = User::factory()->for($tenant)->create(['role' => 'receptionist', 'password' => null]);
+    app(InvitationService::class)->send($invited);
+    $invitationToken = $tokenFrom(Notification::query()->where('event', 'invitacion_activacion')->latest('id')->first()->payload['links']['activate']);
+    $check($this->getJson("/api/v1/auth/invitations/{$invitationToken}"), 'GET', '/auth/invitations/{token}');
+    $check($this->postJson("/api/v1/auth/invitations/{$invitationToken}/accept", ['password' => 'corta', 'password_confirmation' => 'corta']), 'POST', '/auth/invitations/{token}/accept');
+    $check($this->postJson("/api/v1/auth/invitations/{$invitationToken}/accept", ['password' => 'Invitado-Seguro-2026', 'password_confirmation' => 'Invitado-Seguro-2026']), 'POST', '/auth/invitations/{token}/accept');
+    $check($this->getJson("/api/v1/auth/invitations/{$invitationToken}"), 'GET', '/auth/invitations/{token}');
 
     // Plataforma
     $check($this->actingWithToken($superAdmin)->getJson('/api/v1/platform/plans'), 'GET', '/platform/plans');

@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Middleware `tenant.token:<propósito>` (SDD §1.6.2, §4.2; DI-15, RNF-112): resuelve la
- * clínica desde el token de un solo uso de la ruta (`{token}`) y la fija en TenantContext
+ * clínica desde el token de un solo uso (`{token}` de la ruta o `token` del cuerpo) y la fija en TenantContext
  * antes de cargar el recurso. Un token inexistente, vencido o usado responde el mismo 404.
  * El token vigente queda en `$request->attributes->get('one_time_token')`.
  */
@@ -24,7 +24,8 @@ class ResolveTenantByToken
      */
     public function handle(Request $request, Closure $next, string $purpose): Response
     {
-        $plain = $request->route('token');
+        // En la ruta (`{token}`) o, en `POST /auth/password/reset`, en el cuerpo.
+        $plain = $request->route('token') ?? $request->input('token');
         $record = is_string($plain) ? $this->tokens->find($plain, TokenPurpose::from($purpose)) : null;
 
         abort_if($record === null, 404);

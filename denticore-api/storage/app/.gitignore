@@ -1,4 +1,7 @@
 *
 !private/
 !public/
+# Lista de contraseñas comunes de la política de contraseñas (SDD §1.7, RF-040).
+!security/
+!security/**
 !.gitignore
