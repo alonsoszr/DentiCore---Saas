@@ -3,10 +3,12 @@
 namespace App\Modules\Platform\Services;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Platform\Models\ClinicSetting;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
 use App\Support\Encryption\TenantEncryption;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +40,7 @@ class TenantService
         return DB::transaction(function () use ($attributes, $admin): Tenant {
             $tenant = Tenant::create($attributes);
 
-            $this->encryption->generateKeyFor($tenant);
+            $this->provision($tenant);
 
             // Solo estos tres campos del payload: el rol y la clínica los fija el servidor.
             $clinicAdmin = new User([...Arr::only($admin, ['name', 'email', 'password']), 'role' => 'clinic_admin']);
@@ -49,6 +51,26 @@ class TenantService
             $this->audit->record(AuditEvent::TenantCreated, $tenant);
 
             return $tenant;
+        });
+    }
+
+    /**
+     * Lo que toda clínica tiene desde que existe: su clave de cifrado v1 (SDD §1.7.1), su fila
+     * de `clinic_settings` con los valores por defecto (RF-015) y sus dos secuencias de
+     * documentos en cero (DD-23). Debe llamarse dentro de la transacción del alta.
+     */
+    public function provision(Tenant $tenant): void
+    {
+        $this->encryption->generateKeyFor($tenant);
+
+        TenantContext::run($tenant, function () use ($tenant): void {
+            ClinicSetting::create();
+
+            // `document_sequences` no tiene modelo hasta MS-03; la RLS exige el contexto.
+            DB::table('document_sequences')->insert([
+                ['tenant_id' => $tenant->id, 'doc_type' => 'presupuesto'],
+                ['tenant_id' => $tenant->id, 'doc_type' => 'recibo'],
+            ]);
         });
     }
 }
