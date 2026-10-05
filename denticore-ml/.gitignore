@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+# Artefactos locales del modelo: la fuente es el bucket (models/<version>/, DI-18).
+/models/
+/build/

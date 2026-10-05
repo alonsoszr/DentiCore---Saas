@@ -107,16 +107,20 @@ services:
       retries: 20
       start_period: 300s
 
-  # Motor ML provisional: solo GET /v1/health hasta TASK-074.
+  # Motor ML (denticore-ml; TASK-074, SDD §4.6). Toda ruta exige X-ML-Service-Key; la
+  # API usa el mismo valor en ML_SERVICE_KEY.
   ml:
-    image: python:3.12-slim
-    command: ['python', '/app/server.py']
-    volumes:
-      - ./infra/ml-stub:/app:ro
+    build: ./denticore-ml
+    environment:
+      ML_SERVICE_KEY: ${ML_SERVICE_KEY:-ml_local_key}
     ports:
       - '${FORWARD_ML_PORT:-8001}:8000'
     healthcheck:
-      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/health')"]
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os, urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/v1/health', headers={'X-ML-Service-Key': os.environ['ML_SERVICE_KEY']}))"
       interval: 5s
       timeout: 3s
       retries: 20

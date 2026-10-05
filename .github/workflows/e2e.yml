@@ -10,6 +10,7 @@ on:
       - 'denticore-spa/**'
       - 'docker-compose.yml'
       - 'infra/**'
+      - 'denticore-ml/**'
       - '.github/workflows/e2e.yml'
   push:
     branches: [main]

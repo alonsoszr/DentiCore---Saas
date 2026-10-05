@@ -1,0 +1,4 @@
+# Dependencias de ejecución del motor ML (fijadas; las audita pip-audit en la CI).
+fastapi==0.142.2
+uvicorn==0.54.0
+pydantic==2.13.5
