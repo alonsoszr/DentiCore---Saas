@@ -157,6 +157,21 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson("{$representatives}/{$representativeId}/end", ['reason' => 'revocada']), 'POST', '/patients/{patient}/representatives/{representative}/end');
     $check($this->actingWithToken($admin)->postJson("{$representatives}/{$representativeId}/end", ['reason' => 'revocada']), 'POST', '/patients/{patient}/representatives/{representative}/end');
 
+    // Consentimiento de datos
+    $adult = Patient::factory()->for($tenant)->create(['document_id' => '45678912', 'birth_date' => '1990-01-31']);
+    $unrepresentedMinor = Patient::factory()->for($tenant)->create(['birth_date' => now()->subYears(10)->toDateString()]);
+    $consents = "/api/v1/patients/{$adult->uuid}/consents";
+    $check($this->actingWithToken($admin)->getJson("{$consents}/preview"), 'GET', '/patients/{patient}/consents/preview');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$unrepresentedMinor->uuid}/consents/preview"), 'GET', '/patients/{patient}/consents/preview');
+    $granted = $this->actingWithToken($admin)->postJson($consents, [
+        'channel' => 'presencial', 'purpose_care' => true, 'purpose_notifications' => true, 'confirmation_document_number' => '45678912',
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($granted, 'POST', '/patients/{patient}/consents');
+    $check($this->actingWithToken($admin)->postJson($consents, [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/consents');
+    $check($this->actingWithToken($admin)->getJson($consents), 'GET', '/patients/{patient}/consents');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/consents/'.$granted->json('data.id').'/certificate'), 'GET', '/consents/{consent}/certificate');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/consents/'.fake()->uuid().'/certificate'), 'GET', '/consents/{consent}/certificate');
+
     // Parámetros de la clínica
     Storage::fake('s3');
     $check($this->actingWithToken($admin)->getJson('/api/v1/clinic/settings'), 'GET', '/clinic/settings');

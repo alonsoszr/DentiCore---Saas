@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Modules\Identity\Services\InactivityPolicy;
+use App\Modules\Patients\Services\ConsentGate;
 use App\Modules\Patients\Services\PatientSearchRepository;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Encryption\BlindIndex;
@@ -34,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(KeyRing::class);
         $this->app->scoped(BlindIndex::class);
         $this->app->scoped(TenantEncryption::class);
+        // Versión vigente de la plantilla de consentimiento, leída una vez por solicitud o job.
+        $this->app->scoped(ConsentGate::class);
 
         // Búsqueda de pacientes con el índice de trigramas: ids por la conexión de plataforma con
         // `tenant_id` explícito (SDD §1.6.3; ver PatientSearchRepository).

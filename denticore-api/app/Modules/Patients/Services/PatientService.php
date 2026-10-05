@@ -45,7 +45,7 @@ class PatientService
         $page = $this->search->query(TenantContext::idOrFail(), $filters)->paginate($filters['per_page'] ?? 15);
         /** @var list<int> $ids */
         $ids = $page->getCollection()->map(fn (object $row): int => (int) $row->id)->all();
-        $patients = Patient::query()->whereKey($ids)->with('user')->get()->keyBy('id');
+        $patients = Patient::query()->whereKey($ids)->with(['user', 'currentConsent'])->get()->keyBy('id');
 
         $page->setCollection(collect($ids)->map(fn (int $id) => $patients->get($id))->filter()->values());
 

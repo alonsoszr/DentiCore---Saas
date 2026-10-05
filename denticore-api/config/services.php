@@ -41,6 +41,14 @@ return [
     ],
 
     // Antivirus de stored_files (SDD DI-16; supuesto S-08: ClamAV, pregunta PL-02).
+    /*
+     * Consentimiento de datos (DD-28, DD-42): texto del marcador {{transferencias}}. Se fija aquí
+     * mientras el proveedor de nube está pendiente de definición (PQ-04).
+     */
+    'consent' => [
+        'transfers' => env('CONSENT_TRANSFERS', 'Para prestar el servicio, la clínica comparte los datos con encargados del tratamiento con contrato de encargo: un proveedor de nube con certificación ISO/IEC 27001, que aloja los datos en el Perú o en un país con un nivel de protección equivalente; un proveedor de correo electrónico y un proveedor de IA generativa.'),
+    ],
+
     'clamav' => [
         'host' => env('CLAMAV_HOST', '127.0.0.1'),
         'port' => (int) env('CLAMAV_PORT', 3310),

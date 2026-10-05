@@ -24,6 +24,25 @@ export const clinicSettingsResourceSchema = z.object({
   budget_terms: z.union([z.string(), z.null()]),
 })
 
+export const consentResourceSchema = z.object({
+  id: z.string(),
+  template_version: z.number().int(),
+  purpose_care: z.boolean(),
+  purpose_notifications: z.boolean(),
+  purpose_ai: z.boolean(),
+  purpose_risk: z.boolean(),
+  purpose_surveys: z.boolean(),
+  granted_by: z.enum(['titular', 'representante']),
+  representative_id: z.union([z.string(), z.null()]),
+  channel: z.enum(['presencial', 'portal', 'papel']),
+  text_sha256: z.string(),
+  granted_at: z.string().datetime({ offset: true }),
+  status: z.enum(['vigente', 'revocado', 'sustituido']),
+  superseded_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  revoked_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  outdated: z.boolean(),
+})
+
 export const legalRepresentativeResourceSchema = z.object({
   id: z.string(),
   document_type: z.string(),
@@ -64,7 +83,8 @@ export const patientResourceSchema = z.object({
   email: z.union([z.string(), z.null()]),
   address: z.union([z.string(), z.null()]),
   archive_status: z.string(),
-  has_current_consent: z.boolean().describe('El consentimiento vigente se calcula con TASK-036 (CUS-17).'),
+  has_current_consent: z.boolean(),
+  consent_outdated: z.boolean(),
   medical_history: z.union([
     z.object({
       alergias: z.array(z.string()),

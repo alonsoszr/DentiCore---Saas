@@ -37,6 +37,7 @@ describe('generated API schemas', () => {
         address: null,
         archive_status: 'activo',
         has_current_consent: false,
+        consent_outdated: false,
         medical_history: null,
         created_at: '2026-09-27T23:00:00.000000Z',
       }).success,

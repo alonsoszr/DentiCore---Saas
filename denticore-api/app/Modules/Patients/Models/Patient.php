@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -125,6 +126,24 @@ class Patient extends Model
     public function representatives(): HasMany
     {
         return $this->hasMany(LegalRepresentative::class);
+    }
+
+    /**
+     * @return HasMany<Consent, $this>
+     */
+    public function consents(): HasMany
+    {
+        return $this->hasMany(Consent::class);
+    }
+
+    /**
+     * Consentimiento `vigente` (a lo sumo uno, índice único parcial de SDD §2.5).
+     *
+     * @return HasOne<Consent, $this>
+     */
+    public function currentConsent(): HasOne
+    {
+        return $this->hasOne(Consent::class)->where('status', 'vigente');
     }
 
     /**
