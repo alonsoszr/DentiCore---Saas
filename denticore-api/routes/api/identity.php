@@ -15,7 +15,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 });
 
 // STAFF (SDD §4.2).
-Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'role:clinic_admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:clinic_admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::patch('/users/{user}', [UserController::class, 'update']);

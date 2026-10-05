@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * (RUC, razón social, plan como FK, estados en español); `subscription_plan` y `settings`
  * conviven hasta la contracción de TASK-038.
  *
+ * @property string $status
  * @property string|null $legal_name
  * @property string|null $ruc
  * @property string|null $address

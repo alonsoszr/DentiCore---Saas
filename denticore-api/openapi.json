@@ -1119,6 +1119,300 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "El administrador ya activ\u00f3 su cuenta (RF-016)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/tenants/{tenant}/plan": {
+            "put": {
+                "operationId": "tenantPlan.update",
+                "tags": [
+                    "TenantPlan"
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "subscription_plan": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "subscription_plan"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`TenantResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/TenantResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "plan"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/tenants/{tenant}/suspend": {
+            "post": {
+                "operationId": "tenantStatus.suspend",
+                "tags": [
+                    "TenantStatus"
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TenantResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/TenantResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "plan"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La cl\u00ednica no est\u00e1 activa (RF-019)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/tenants/{tenant}/reactivate": {
+            "post": {
+                "operationId": "tenantStatus.reactivate",
+                "tags": [
+                    "TenantStatus"
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TenantResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/TenantResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "plan"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La cl\u00ednica no est\u00e1 suspendida (RF-019)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
                     }
                 }
             }

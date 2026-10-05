@@ -7,6 +7,8 @@ use App\Modules\Identity\Services\InvitationService;
 use App\Modules\Platform\Models\ClinicSetting;
 use App\Modules\Platform\Models\SubscriptionPlan;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Enums\NotificationEvent;
+use App\Modules\Scheduling\Services\NotificationService;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
 use App\Support\Encryption\TenantEncryption;
@@ -28,6 +30,7 @@ class TenantService
         private TenantEncryption $encryption,
         private AuditLogger $audit,
         private InvitationService $invitations,
+        private NotificationService $notifications,
     ) {}
 
     /**
@@ -125,6 +128,86 @@ class TenantService
         }
 
         $this->invitations->send($admin);
+    }
+
+    /**
+     * CUS-02 (RF-019): suspende una clínica `activa` con motivo; sus usuarios quedan en solo
+     * lectura (`tenant.writable`) y sus administradores reciben un correo.
+     */
+    public function suspend(Tenant $tenant, string $reason): Tenant
+    {
+        return $this->changeStatus($tenant, from: 'activa', to: 'suspendida', reason: $reason);
+    }
+
+    /**
+     * CUS-02 (RF-019): reactiva una clínica `suspendida` con motivo.
+     */
+    public function reactivate(Tenant $tenant, string $reason): Tenant
+    {
+        return $this->changeStatus($tenant, from: 'suspendida', to: 'activa', reason: $reason);
+    }
+
+    /**
+     * CUS-03: RF-022 rechaza un plan cuyo máximo de odontólogos es menor que los activos e indica
+     * cuántos desactivar; RF-023 (funciones en lectura al bajar de plan) lo aplica `plan.feature`.
+     */
+    public function changePlan(Tenant $tenant, string $planCode): Tenant
+    {
+        return DB::transaction(function () use ($tenant, $planCode): Tenant {
+            $plan = SubscriptionPlan::forCode($planCode);
+            // La fila de la clínica serializa el cambio de plan con las altas y reactivaciones de
+            // odontólogos (RN-08), que la bloquean igual.
+            $tenant = Tenant::query()->whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+            $activeDentists = User::query()
+                ->where('tenant_id', $tenant->id)->where('role', 'dentist')->where('status', 'activo')
+                ->count();
+
+            if ($plan->max_dentists !== null && $activeDentists > $plan->max_dentists) {
+                $excess = $activeDentists - $plan->max_dentists;
+
+                throw new BusinessRuleException(
+                    'RF-022',
+                    "La clínica tiene {$activeDentists} odontólogos activos y el plan {$plan->name} permite {$plan->max_dentists}.",
+                    ['subscription_plan' => ["Desactive {$excess} odontólogo(s) antes de cambiar al plan {$plan->name}."]],
+                    extensions: ['dentists_to_deactivate' => $excess],
+                );
+            }
+
+            $tenant->forceFill(['subscription_plan' => $plan->code, 'subscription_plan_id' => $plan->id])->save();
+            $this->audit->record(AuditEvent::TenantPlanChanged, $tenant, ['subscription_plan_id']);
+
+            return $this->find($tenant->uuid);
+        });
+    }
+
+    private function changeStatus(Tenant $tenant, string $from, string $to, string $reason): Tenant
+    {
+        return DB::transaction(function () use ($tenant, $from, $to, $reason): Tenant {
+            $tenant = Tenant::query()->whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+
+            if ($tenant->status !== $from) {
+                throw new BusinessRuleException('RF-019', "La clínica está {$tenant->status}; solo se puede pasar a {$to} desde {$from}.", status: 409);
+            }
+
+            $tenant->forceFill([
+                'status' => $to,
+                'status_reason' => $reason,
+                'suspended_at' => $to === 'suspendida' ? now() : null,
+            ])->save();
+
+            $this->audit->record($to === 'suspendida' ? AuditEvent::TenantSuspended : AuditEvent::TenantReactivated, $tenant, ['status']);
+
+            // RF-019: correo a los administradores de la clínica.
+            $event = $to === 'suspendida' ? NotificationEvent::ClinicaSuspendida : NotificationEvent::ClinicaReactivada;
+            TenantContext::run($tenant, function () use ($tenant, $event, $reason): void {
+                User::query()
+                    ->where('tenant_id', $tenant->id)->where('role', 'clinic_admin')->where('status', '<>', 'inactivo')
+                    ->orderBy('id')
+                    ->each(fn (User $admin) => $this->notifications->sendEmail($event, $admin, ['reason' => $reason]));
+            });
+
+            return $this->find($tenant->uuid);
+        });
     }
 
     public function pendingAdmin(Tenant $tenant): ?User
