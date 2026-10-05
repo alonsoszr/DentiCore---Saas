@@ -10,12 +10,14 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant'])->group(function () {
     Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
         Route::get('/patients', [PatientController::class, 'index']);
-        Route::post('/patients', [PatientController::class, 'store']);
+        Route::post('/patients', [PatientController::class, 'store'])->middleware('idempotent');
     });
 
     // CUS-21: consulta de la ficha, auditada con clinical_record.viewed (SDD §5.14).
     Route::get('/patients/{patient}', [PatientController::class, 'show'])
         ->middleware(['can:view,patient', AuditClinicalRecordRead::class]);
+    Route::patch('/patients/{patient}', [PatientController::class, 'update'])
+        ->middleware(['role:clinic_admin,receptionist', 'can:updateIdentity,patient']);
 
     // CUS-16: representantes legales (RF-059 a RF-061).
     Route::get('/patients/{patient}/representatives', [LegalRepresentativeController::class, 'index'])

@@ -7,70 +7,61 @@ import { fieldErrors, generalError } from '../../api/errors'
 import { useAuth } from '../../auth/useAuth'
 import { Field } from '../../components/Field'
 import { PageHeader } from '../../components/PageHeader'
+import { DOCUMENT_TYPES, isMinor, today } from './patientIdentity'
+
+const RELATIONSHIPS = { madre: 'Madre', padre: 'Padre', tutor: 'Tutor', curador: 'Curador', otro: 'Otro' }
 
 const EMPTY_FORM = {
-  document_id: '',
+  document_type: 'dni',
+  document_number: '',
   first_name: '',
   last_name: '',
   birth_date: '',
+  sex: '',
   phone: '',
   email: '',
+  address: '',
   user_uuid: '',
-  alergias: '',
-  enfermedades: '',
-  medicamentos: '',
-  observaciones: '',
 }
 
-const HISTORY_FIELDS = ['alergias', 'enfermedades', 'medicamentos', 'observaciones']
-
-/** "Penicilina, Látex" → ['Penicilina', 'Látex'] */
-function toList(text) {
-  return text
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
+const EMPTY_REPRESENTATIVE = {
+  document_type: 'dni',
+  document_number: '',
+  first_name: '',
+  last_name: '',
+  relationship: 'madre',
+  phone: '',
+  email: '',
 }
 
-/**
- * Payload de la API: opcionales vacíos como null y antecedentes con la estructura fija
- * de medical_history (el backend normaliza y guarda null si no hay ninguno).
- */
-function toPayload(form) {
+/** Opcionales vacíos como null; el representante solo para menores (SDD §4.5). */
+function toPayload(form, representative) {
   const payload = {}
-  for (const [key, value] of Object.entries(form)) {
-    if (!HISTORY_FIELDS.includes(key)) payload[key] = value === '' ? null : value
-  }
-  payload.medical_history = {
-    alergias: toList(form.alergias),
-    enfermedades: toList(form.enfermedades),
-    medicamentos: toList(form.medicamentos),
-    observaciones: form.observaciones.trim() || null,
+  for (const [key, value] of Object.entries(form)) payload[key] = value === '' ? null : value
+  if (isMinor(form.birth_date)) {
+    payload.representative = { ...representative, email: representative.email || null, valid_from: today() }
   }
   return payload
 }
 
-/** Error del primer elemento inválido de una lista (p. ej. medical_history.alergias.0). */
-function historyError(errors, key) {
-  const entry = Object.entries(errors).find(
-    ([field]) => field === `medical_history.${key}` || field.startsWith(`medical_history.${key}.`),
-  )
-  return entry?.[1]
-}
-
+/**
+ * Registro de paciente (CUS-14, SRS §11.3). Pantalla funcional de MS-01; el diseño definitivo y
+ * los antecedentes médicos (con consentimiento) llegan con TASK-041.
+ */
 export function PatientCreatePage() {
   const { user } = useAuth()
   const { slug, appPath } = useClinic()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [form, setForm] = useState(EMPTY_FORM)
+  const [representative, setRepresentative] = useState(EMPTY_REPRESENTATIVE)
   // Solo clinic_admin puede listar usuarios (GET /users), así que solo él puede elegir
   // la cuenta de portal a vincular.
   const canLinkPortalAccount = user.role === 'clinic_admin'
 
   const portalUsersQuery = useQuery({
     queryKey: ['users', slug],
-    queryFn: async () => (await apiClient.get('/users')).data.data,
+    queryFn: async () => (await apiClient.get('/users', { params: { role: 'patient', per_page: 100 } })).data.data,
     enabled: canLinkPortalAccount,
     // Solo cuentas de paciente activas que aún no tienen ficha vinculada.
     select: (users) => users.filter((u) => u.role === 'patient' && u.is_active && !u.patient_uuid),
@@ -86,28 +77,60 @@ export function PatientCreatePage() {
   })
 
   const handleChange = (event) => setForm({ ...form, [event.target.name]: event.target.value })
+  const handleRepresentativeChange = (event) =>
+    setRepresentative({ ...representative, [event.target.name.replace('representative_', '')]: event.target.value })
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    createPatient.mutate(toPayload(form))
+    createPatient.mutate(toPayload(form, representative))
   }
 
   const errors = fieldErrors(createPatient.error)
+  // RF-056: si el documento ya existe, la API indica la ficha existente.
+  const existingPatientId = createPatient.error?.response?.data?.existing_patient_id
+  const minor = isMinor(form.birth_date)
 
   return (
     <>
-      <PageHeader title="Registrar paciente" description="El documento y el teléfono se guardan cifrados.">
+      <PageHeader
+        title="Registrar paciente"
+        description="El documento, el teléfono y la dirección se guardan cifrados."
+      >
         <Link to={appPath('/pacientes')} className="btn btn-secondary">
           Volver
         </Link>
       </PageHeader>
 
       <div className="card">
-        {generalError(createPatient.error) && (
+        {existingPatientId && (
+          <div className="alert alert-error">
+            Ya existe una ficha con este documento.{' '}
+            <Link to={appPath(`/pacientes/${existingPatientId}`)}>Ver la ficha existente</Link>
+          </div>
+        )}
+        {generalError(createPatient.error) && !existingPatientId && (
           <div className="alert alert-error">{generalError(createPatient.error)}</div>
         )}
         <form onSubmit={handleSubmit} noValidate autoComplete="off">
           <div className="form-grid">
+            <Field label="Tipo de documento" name="document_type" error={errors.document_type}>
+              <select id="document_type" name="document_type" value={form.document_type} onChange={handleChange}>
+                {Object.entries(DOCUMENT_TYPES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label="Número de documento"
+              name="document_number"
+              autoComplete="off"
+              value={form.document_number}
+              onChange={handleChange}
+              error={errors.document_number}
+              maxLength={12}
+            />
             <Field
               label="Nombres"
               name="first_name"
@@ -125,15 +148,6 @@ export function PatientCreatePage() {
               error={errors.last_name}
             />
             <Field
-              label="Documento de identidad (DNI)"
-              name="document_id"
-              autoComplete="off"
-              value={form.document_id}
-              onChange={handleChange}
-              error={errors.document_id}
-              maxLength={20}
-            />
-            <Field
               label="Fecha de nacimiento"
               name="birth_date"
               type="date"
@@ -141,15 +155,22 @@ export function PatientCreatePage() {
               onChange={handleChange}
               error={errors.birth_date}
             />
+            <Field label="Sexo" name="sex" error={errors.sex}>
+              <select id="sex" name="sex" value={form.sex} onChange={handleChange}>
+                <option value="">Selecciona…</option>
+                <option value="femenino">Femenino</option>
+                <option value="masculino">Masculino</option>
+              </select>
+            </Field>
             <Field
-              label="Teléfono (opcional)"
+              label="Teléfono"
               name="phone"
               autoComplete="off"
               type="tel"
               value={form.phone}
               onChange={handleChange}
               error={errors.phone}
-              maxLength={20}
+              hint="Celular de 9 dígitos (9…) o número internacional (+…)."
             />
             <Field
               label="Correo electrónico (opcional)"
@@ -159,6 +180,14 @@ export function PatientCreatePage() {
               value={form.email}
               onChange={handleChange}
               error={errors.email}
+            />
+            <Field
+              label="Dirección (opcional)"
+              name="address"
+              autoComplete="off"
+              value={form.address}
+              onChange={handleChange}
+              error={errors.address}
             />
             {canLinkPortalAccount && (
               <Field
@@ -179,48 +208,87 @@ export function PatientCreatePage() {
             )}
           </div>
 
-          <h3 className="form-section">Antecedentes médicos (opcional)</h3>
-          {errors.medical_history && <div className="alert alert-error">{errors.medical_history}</div>}
-          <div className="form-grid">
-            <Field
-              label="Alergias"
-              name="alergias"
-              autoComplete="off"
-              value={form.alergias}
-              onChange={handleChange}
-              error={historyError(errors, 'alergias')}
-              hint="Separa varias con comas. Ej.: Penicilina, Látex"
-            />
-            <Field
-              label="Enfermedades"
-              name="enfermedades"
-              autoComplete="off"
-              value={form.enfermedades}
-              onChange={handleChange}
-              error={historyError(errors, 'enfermedades')}
-              hint="Separa varias con comas. Ej.: Diabetes, Hipertensión"
-            />
-            <Field
-              label="Medicamentos"
-              name="medicamentos"
-              autoComplete="off"
-              value={form.medicamentos}
-              onChange={handleChange}
-              error={historyError(errors, 'medicamentos')}
-              hint="Separa varios con comas."
-            />
-          </div>
-          <div className="form-grid" style={{ marginTop: 14 }}>
-            <Field label="Observaciones" name="observaciones" error={historyError(errors, 'observaciones')}>
-              <textarea
-                id="observaciones"
-                name="observaciones"
-                value={form.observaciones}
-                onChange={handleChange}
-                maxLength={2000}
-              />
-            </Field>
-          </div>
+          {minor && (
+            <>
+              <h3 className="form-section">Representante legal (paciente menor de 18 años)</h3>
+              {errors.representative && <div className="alert alert-error">{errors.representative}</div>}
+              <div className="form-grid">
+                <Field
+                  label="Tipo de documento del representante"
+                  name="representative_document_type"
+                  error={errors['representative.document_type']}
+                >
+                  <select
+                    id="representative_document_type"
+                    name="representative_document_type"
+                    value={representative.document_type}
+                    onChange={handleRepresentativeChange}
+                  >
+                    {Object.entries(DOCUMENT_TYPES).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field
+                  label="Número de documento del representante"
+                  name="representative_document_number"
+                  value={representative.document_number}
+                  onChange={handleRepresentativeChange}
+                  error={errors['representative.document_number']}
+                />
+                <Field
+                  label="Nombres del representante"
+                  name="representative_first_name"
+                  value={representative.first_name}
+                  onChange={handleRepresentativeChange}
+                  error={errors['representative.first_name']}
+                />
+                <Field
+                  label="Apellidos del representante"
+                  name="representative_last_name"
+                  value={representative.last_name}
+                  onChange={handleRepresentativeChange}
+                  error={errors['representative.last_name']}
+                />
+                <Field
+                  label="Parentesco"
+                  name="representative_relationship"
+                  error={errors['representative.relationship']}
+                >
+                  <select
+                    id="representative_relationship"
+                    name="representative_relationship"
+                    value={representative.relationship}
+                    onChange={handleRepresentativeChange}
+                  >
+                    {Object.entries(RELATIONSHIPS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field
+                  label="Teléfono del representante"
+                  name="representative_phone"
+                  type="tel"
+                  value={representative.phone}
+                  onChange={handleRepresentativeChange}
+                  error={errors['representative.phone']}
+                />
+                <Field
+                  label="Correo del representante (opcional)"
+                  name="representative_email"
+                  type="email"
+                  value={representative.email}
+                  onChange={handleRepresentativeChange}
+                  error={errors['representative.email']}
+                />
+              </div>
+            </>
+          )}
 
           <div className="form-actions">
             <button type="submit" className="btn" disabled={createPatient.isPending}>

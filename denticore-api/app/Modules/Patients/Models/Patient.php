@@ -128,6 +128,14 @@ class Patient extends Model
     }
 
     /**
+     * Edad en años cumplidos a la fecha de hoy de la clínica (RF-059).
+     */
+    public function ageYears(): int
+    {
+        return (int) $this->birth_date->diffInYears(ClinicClock::for($this->tenant)->now()->startOfDay());
+    }
+
+    /**
      * RN-12: menor de 18 años a la fecha indicada (por defecto, hoy en la zona de la clínica).
      */
     public function isMinorOn(?string $date = null): bool

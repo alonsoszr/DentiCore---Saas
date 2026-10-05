@@ -28,4 +28,14 @@ class PatientPolicy
 
         return in_array($user->role, ['clinic_admin', 'dentist', 'receptionist'], true);
     }
+
+    /**
+     * CUS-15: Administrador de Clínica y Recepcionista de la misma clínica (SDD §3.4).
+     */
+    public function updateIdentity(User $user, Patient $patient): bool
+    {
+        return $user->tenant_id !== null
+            && $user->tenant_id === $patient->tenant_id
+            && in_array($user->role, ['clinic_admin', 'receptionist'], true);
+    }
 }

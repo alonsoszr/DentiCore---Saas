@@ -1260,11 +1260,28 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BusinessRuleException"
+                                        },
+                                        {
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "403": {
                         "description": "Acceso denegado",
@@ -1278,6 +1295,26 @@
                     },
                     "429": {
                         "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -1343,6 +1380,75 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "patient.update",
+                "summary": "CUS-15 (RF-062): identificaci\u00f3n y contacto, con historial cifrado de los valores previos",
+                "tags": [
+                    "Patient"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePatientRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`PatientResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PatientResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "429": {
                         "description": "Demasiadas solicitudes",
@@ -3243,6 +3349,42 @@
     },
     "components": {
         "schemas": {
+            "BusinessRuleException": {
+                "type": "object",
+                "properties": {
+                    "rule": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "status": {
+                        "type": "integer"
+                    },
+                    "extensions": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "rule",
+                    "errors",
+                    "status",
+                    "extensions"
+                ],
+                "title": "BusinessRuleException"
+            },
             "ClinicSettingsResource": {
                 "type": "object",
                 "properties": {
@@ -3435,7 +3577,19 @@
                     "id": {
                         "type": "string"
                     },
-                    "document_id": {
+                    "document_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "document_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "clinical_record_number": {
                         "type": [
                             "string",
                             "null"
@@ -3450,6 +3604,18 @@
                     "birth_date": {
                         "type": "string"
                     },
+                    "age_years": {
+                        "type": "integer"
+                    },
+                    "is_minor": {
+                        "type": "boolean"
+                    },
+                    "sex": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "phone": {
                         "type": [
                             "string",
@@ -3461,6 +3627,19 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "archive_status": {
+                        "type": "string"
+                    },
+                    "has_current_consent": {
+                        "type": "boolean",
+                        "description": "El consentimiento vigente se calcula con TASK-036 (CUS-17)."
                     },
                     "medical_history": {
                         "type": [
@@ -3516,12 +3695,20 @@
                 },
                 "required": [
                     "id",
-                    "document_id",
+                    "document_type",
+                    "document_number",
+                    "clinical_record_number",
                     "first_name",
                     "last_name",
                     "birth_date",
+                    "age_years",
+                    "is_minor",
+                    "sex",
                     "phone",
                     "email",
+                    "address",
+                    "archive_status",
+                    "has_current_consent",
                     "medical_history",
                     "created_at"
                 ],
@@ -3569,18 +3756,28 @@
             },
             "StorePatientRequest": {
                 "type": "object",
-                "description": "Alta de paciente (CUS-14, contrato heredado). Los l\u00edmites de longitud se aplican sobre el valor en\nclaro (las columnas cifradas son `text`). La unicidad del DNI y la validez de\nuser_uuid se comprueban en PatientService (requieren el \u00edndice ciego y el tenant).",
+                "description": "Alta de paciente (CUS-14; contrato de SDD \u00a74.5 y datos de SRS \u00a711.3). La fecha de nacimiento no\npuede ser posterior a hoy ni dar m\u00e1s de 120 a\u00f1os (fecha de la cl\u00ednica). Un menor de 18 a\u00f1os\ndebe traer su representante legal (RN-12, CA-14.4). La unicidad del documento la comprueba\nPatientService con el \u00edndice ciego. `user_uuid` es heredado y se retira en TASK-038 (S-14).",
                 "properties": {
-                    "document_id": {
+                    "document_type": {
                         "type": "string",
-                        "maxLength": 20
+                        "enum": [
+                            "dni",
+                            "ce",
+                            "pasaporte",
+                            "cpp"
+                        ]
+                    },
+                    "document_number": {
+                        "type": "string"
                     },
                     "first_name": {
                         "type": "string",
+                        "minLength": 1,
                         "maxLength": 100
                     },
                     "last_name": {
                         "type": "string",
+                        "minLength": 1,
                         "maxLength": 100
                     },
                     "birth_date": {
@@ -3588,12 +3785,16 @@
                         "format": "date",
                         "description": "Fecha civil (SDD \u00a72.1): AAAA-MM-DD."
                     },
+                    "sex": {
+                        "type": "string",
+                        "enum": [
+                            "femenino",
+                            "masculino"
+                        ]
+                    },
                     "phone": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 20
+                        "type": "string",
+                        "pattern": "^(9\\d{8}|\\+[1-9]\\d{7,14})$"
                     },
                     "email": {
                         "type": [
@@ -3603,54 +3804,22 @@
                         "format": "email",
                         "maxLength": 180
                     },
-                    "medical_history": {
-                        "type": "object",
-                        "description": "Estructura de SDD \u00a72.14.1.",
-                        "properties": {
-                            "alergias": {
-                                "type": "array",
-                                "items": {
-                                    "type": [
-                                        "string",
-                                        "null"
-                                    ],
-                                    "maxLength": 150
-                                }
-                            },
-                            "enfermedades": {
-                                "type": "array",
-                                "items": {
-                                    "type": [
-                                        "string",
-                                        "null"
-                                    ],
-                                    "maxLength": 150
-                                }
-                            },
-                            "medicamentos": {
-                                "type": "array",
-                                "items": {
-                                    "type": [
-                                        "string",
-                                        "null"
-                                    ],
-                                    "maxLength": 150
-                                }
-                            },
-                            "observaciones": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ],
-                                "maxLength": 2000
-                            }
-                        },
-                        "required": [
-                            "alergias",
-                            "enfermedades",
-                            "medicamentos",
-                            "observaciones"
-                        ]
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 5,
+                        "maxLength": 200
+                    },
+                    "representative": {
+                        "type": [
+                            "array",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string"
+                        }
                     },
                     "user_uuid": {
                         "type": [
@@ -3661,10 +3830,13 @@
                     }
                 },
                 "required": [
-                    "document_id",
+                    "document_type",
+                    "document_number",
                     "first_name",
                     "last_name",
-                    "birth_date"
+                    "birth_date",
+                    "sex",
+                    "phone"
                 ],
                 "title": "StorePatientRequest"
             },
@@ -4000,6 +4172,66 @@
                     }
                 },
                 "title": "UpdateClinicSettingsRequest"
+            },
+            "UpdatePatientRequest": {
+                "type": "object",
+                "description": "Actualizaci\u00f3n de la identificaci\u00f3n y el contacto del paciente (CUS-15; RF-062, SRS \u00a711.3). El\nn\u00famero de historia cl\u00ednica no cambia (RN-79). El tipo y el n\u00famero de documento van juntos.",
+                "properties": {
+                    "document_type": {
+                        "type": "string",
+                        "enum": [
+                            "dni",
+                            "ce",
+                            "pasaporte",
+                            "cpp"
+                        ]
+                    },
+                    "document_number": {
+                        "type": "string"
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "birth_date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "sex": {
+                        "type": "string",
+                        "enum": [
+                            "femenino",
+                            "masculino"
+                        ]
+                    },
+                    "phone": {
+                        "type": "string",
+                        "pattern": "^(9\\d{8}|\\+[1-9]\\d{7,14})$"
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "email",
+                        "maxLength": 180
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 5,
+                        "maxLength": 200
+                    }
+                },
+                "title": "UpdatePatientRequest"
             },
             "UpdateTenantRequest": {
                 "type": "object",

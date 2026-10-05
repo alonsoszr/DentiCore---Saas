@@ -8,7 +8,7 @@ const patient = (n) => ({
   id: `p-${n}`,
   first_name: `Ana ${n}`,
   last_name: 'Núñez',
-  document_id: `4000000${n}`,
+  document_number: `4000000${n}`,
   birth_date: '1990-01-31',
   phone: null,
 })

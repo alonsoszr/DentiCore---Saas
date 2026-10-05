@@ -8,19 +8,27 @@ use App\Modules\Platform\Models\Tenant;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
 use App\Support\Encryption\TenantEncryption;
+use App\Support\Http\BusinessRuleException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Ficha del paciente (M03; CUS-13 y CUS-14 heredados de las fases 0–3, que TASK-032
- * y TASK-033 completan). Patient lleva Global Scope, así que
- * las consultas ya quedan acotadas al tenant activo.
+ * Ficha del paciente (M03; CUS-14, CUS-15; RF-055 a RF-059, RF-062, RN-09, RN-12, RN-79).
+ * Patient lleva Global Scope, así que las consultas quedan acotadas a la clínica activa.
  */
 class PatientService
 {
-    public function __construct(private TenantEncryption $encryption, private AuditLogger $audit) {}
+    /** Campos de identificación y contacto editables (CUS-15). El número de HC no cambia. */
+    public const IDENTITY_FIELDS = ['document_type', 'document_number', 'first_name', 'last_name', 'birth_date', 'sex', 'phone', 'email', 'address'];
+
+    public function __construct(
+        private TenantEncryption $encryption,
+        private AuditLogger $audit,
+        private LegalRepresentativeService $representatives,
+    ) {}
 
     /**
      * @return LengthAwarePaginator<int, Patient>
@@ -35,38 +43,54 @@ class PatientService
     }
 
     /**
-     * El tenant_id sale siempre del contexto de sesión (BelongsToTenant). La unicidad del
-     * DNI por clínica se comprueba sobre el índice ciego, ya que document_id está cifrado.
+     * CUS-14: el documento se normaliza a `TIPO:NUMERO`; si su índice ciego ya existe en la clínica
+     * responde 422 con la ficha existente (RF-056). El número de HC es el DNI o el número con el
+     * prefijo del tipo (RN-79). Un menor se registra con su representante en la misma transacción
+     * (RN-12).
      *
-     * @param  array{document_id: string, first_name: string, last_name: string, birth_date: string, phone?: string|null, email?: string|null, medical_history?: array<string, mixed>|null, user_uuid?: string|null}  $attributes
+     * @param  array{document_type: string, document_number: string, first_name: string, last_name: string, birth_date: string, sex: string, phone: string, email?: string|null, address?: string|null, representative?: array<string, mixed>|null, user_uuid?: string|null}  $data
      *
-     * @throws ValidationException
+     * @throws BusinessRuleException|ValidationException
      */
-    public function create(Tenant $tenant, array $attributes): Patient
+    public function register(Tenant $tenant, array $data, User $creator): Patient
     {
-        $documentHash = $this->encryption->blindIndex($tenant->id, $attributes['document_id']);
+        $type = $data['document_type'];
+        $number = PatientIdentity::normalizedNumber($data['document_number']);
+        $documentHash = $this->documentHash($tenant, $type, $number);
+        $this->ensureDocumentIsFree($documentHash);
 
-        if (Patient::query()->where('document_id_hash', $documentHash)->exists()) {
-            throw $this->duplicatedDocument();
-        }
+        $record = PatientIdentity::clinicalRecordNumber($type, $number);
 
-        $attributes['medical_history'] = $this->normalizeMedicalHistory($attributes['medical_history'] ?? null);
+        $patient = new Patient(Arr::only($data, ['first_name', 'last_name', 'birth_date', 'sex', 'phone', 'email', 'address']));
+        // `document_id` heredado (NOT NULL hasta TASK-038) guarda el documento normalizado.
+        $patient->document_id = PatientIdentity::normalizedDocument($type, $number);
+        $patient->document_type = $type;
+        $patient->document_number = $number;
+        $patient->document_hash = $documentHash;
+        $patient->clinical_record_number = $record;
+        $patient->clinical_record_hash = $this->encryption->blindIndex($tenant->id, $record);
+        $patient->created_by = $creator->id;
 
-        $patient = new Patient($attributes);
-
-        if (! empty($attributes['user_uuid'])) {
-            $patient->user_id = $this->portalUserId($tenant, $attributes['user_uuid']);
+        if (! empty($data['user_uuid'])) {
+            $patient->user_id = $this->portalUserId($tenant, $data['user_uuid']);
         }
 
         try {
-            DB::transaction(function () use ($patient): void {
+            DB::transaction(function () use ($patient, $data): void {
                 $patient->save();
+
+                if (! empty($data['representative'])) {
+                    /** @var array{document_type: string, document_number: string, first_name: string, last_name: string, relationship: string, phone: string, email?: string|null, valid_from: string} $representative */
+                    $representative = $data['representative'];
+                    $this->representatives->register($patient, $representative);
+                }
+
                 $this->audit->record(AuditEvent::PatientCreated, $patient);
             });
         } catch (UniqueConstraintViolationException) {
-            // Alta concurrente del mismo DNI o de la misma cuenta de portal.
+            // FE-2 de CUS-14: alta concurrente del mismo documento o de la misma cuenta de portal.
             throw ValidationException::withMessages([
-                'document_id' => 'Ya existe una ficha con este documento o esta cuenta en la clínica.',
+                'document_number' => 'El documento ya está registrado en la clínica.',
             ]);
         }
 
@@ -74,8 +98,96 @@ class PatientService
     }
 
     /**
-     * La cuenta de portal debe ser de rol 'patient', de la misma clínica, y no estar
-     * vinculada ya a otra ficha.
+     * CUS-15 (RF-062): guarda los campos que cambiaron, conserva sus valores anteriores cifrados
+     * en `patient_identity_history` y audita solo los nombres de los campos.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws BusinessRuleException
+     */
+    public function updateIdentity(Patient $patient, array $data, User $actor): Patient
+    {
+        return DB::transaction(function () use ($patient, $data, $actor): Patient {
+            $previous = [];
+
+            foreach (Arr::only($data, self::IDENTITY_FIELDS) as $field => $value) {
+                $current = $field === 'birth_date' ? $patient->birth_date->toDateString() : $patient->getAttribute($field);
+                $new = $field === 'document_number' ? PatientIdentity::normalizedNumber((string) $value) : $value;
+
+                if ($current !== $new) {
+                    $previous[$field] = $current;
+                }
+            }
+
+            if ($previous === []) {
+                return $patient;
+            }
+
+            $patient->fill(Arr::only($data, ['first_name', 'last_name', 'birth_date', 'sex', 'phone', 'email', 'address']));
+
+            if (array_key_exists('document_type', $previous) || array_key_exists('document_number', $previous)) {
+                $this->changeDocument($patient, (string) $data['document_type'], (string) $data['document_number']);
+            }
+
+            $patient->save();
+
+            DB::table('patient_identity_history')->insert([
+                'tenant_id' => $patient->tenant_id,
+                'patient_id' => $patient->id,
+                'changed_fields' => json_encode(array_keys($previous)),
+                'previous_values' => $this->encryption->encrypt($patient->tenant_id, (string) json_encode($previous)),
+                'changed_by' => $actor->id,
+                'created_at' => now(),
+            ]);
+
+            $this->audit->record(AuditEvent::PatientIdentityUpdated, $patient, array_keys($previous));
+
+            return $patient->load('user');
+        });
+    }
+
+    private function changeDocument(Patient $patient, string $type, string $number): void
+    {
+        $number = PatientIdentity::normalizedNumber($number);
+        $hash = $this->documentHash($patient->tenant, $type, $number);
+        $this->ensureDocumentIsFree($hash, except: $patient);
+
+        $patient->document_id = PatientIdentity::normalizedDocument($type, $number);
+        $patient->document_type = $type;
+        $patient->document_number = $number;
+        $patient->document_hash = $hash;
+    }
+
+    private function documentHash(Tenant $tenant, string $type, string $number): string
+    {
+        return $this->encryption->blindIndex($tenant->id, PatientIdentity::normalizedDocument($type, $number));
+    }
+
+    /**
+     * RF-056, CA-14.1: un documento ya registrado responde 422 con la ficha existente.
+     *
+     * @throws BusinessRuleException
+     */
+    private function ensureDocumentIsFree(string $documentHash, ?Patient $except = null): void
+    {
+        $existing = Patient::query()
+            ->where('document_hash', $documentHash)
+            ->when($except, fn ($query) => $query->whereKeyNot($except?->id))
+            ->first();
+
+        if ($existing !== null) {
+            throw new BusinessRuleException(
+                'RN-09',
+                'El documento ya está registrado en la clínica.',
+                ['document_number' => ['El documento ya está registrado en la clínica.']],
+                extensions: ['existing_patient_id' => $existing->uuid],
+            );
+        }
+    }
+
+    /**
+     * La cuenta de portal debe ser de rol 'patient', de la misma clínica, y no estar vinculada ya
+     * a otra ficha (contrato heredado, S-14).
      *
      * @throws ValidationException
      */
@@ -100,43 +212,5 @@ class PatientService
         }
 
         return $user->id;
-    }
-
-    /**
-     * Guarda siempre las cuatro claves (listas sin elementos vacíos ni espacios sobrantes)
-     * o null si no se registró ningún antecedente.
-     *
-     * @param  array{alergias?: list<string>, enfermedades?: list<string>, medicamentos?: list<string>, observaciones?: string|null}|null  $history
-     * @return array{alergias: list<string>, enfermedades: list<string>, medicamentos: list<string>, observaciones: string|null}|null
-     */
-    private function normalizeMedicalHistory(?array $history): ?array
-    {
-        if ($history === null) {
-            return null;
-        }
-
-        $cleanList = fn (?array $items): array => array_values(array_filter(
-            array_map(fn (?string $item): string => trim((string) $item), $items ?? []),
-            fn (string $item): bool => $item !== '',
-        ));
-
-        $normalized = [
-            'alergias' => $cleanList($history['alergias'] ?? null),
-            'enfermedades' => $cleanList($history['enfermedades'] ?? null),
-            'medicamentos' => $cleanList($history['medicamentos'] ?? null),
-            'observaciones' => trim((string) ($history['observaciones'] ?? '')) ?: null,
-        ];
-
-        $isEmpty = $normalized['alergias'] === [] && $normalized['enfermedades'] === []
-            && $normalized['medicamentos'] === [] && $normalized['observaciones'] === null;
-
-        return $isEmpty ? null : $normalized;
-    }
-
-    private function duplicatedDocument(): ValidationException
-    {
-        return ValidationException::withMessages([
-            'document_id' => 'Ya existe un paciente con este documento en la clínica.',
-        ]);
     }
 }

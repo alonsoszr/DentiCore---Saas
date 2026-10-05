@@ -12,6 +12,7 @@ use App\Support\Http\BusinessRuleException;
 use App\Support\Http\RedactPersonalData;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -50,7 +51,7 @@ it('renders 401, 403, 404, 409, 422 and 429 as problem+json in Spanish', functio
     assertProblem($conflict = $this->getJson('/api/v1/_prueba/conflicto'), 409);
     expect($conflict->json('title'))->toBe('Conflicto');
 
-    assertProblem($invalid = $this->postJson('/api/v1/patients', []), 422);
+    assertProblem($invalid = $this->postJson('/api/v1/patients', [], ['Idempotency-Key' => (string) Str::uuid()]), 422);
     expect($invalid->json('errors.first_name.0'))->toBe('El campo nombres es obligatorio.');
 
     assertProblem($rule = $this->getJson('/api/v1/_prueba/regla'), 422);
@@ -79,9 +80,9 @@ it('exposes no numeric id in any API response', function () {
         $this->actingWithToken($admin)->getJson('/api/v1/patients'),
         $this->actingWithToken($admin)->getJson("/api/v1/patients/{$patient->uuid}"),
         $this->actingWithToken($admin)->postJson('/api/v1/patients', [
-            'document_id' => '70000009', 'first_name' => 'Ana', 'last_name' => 'Quispe',
-            'birth_date' => '1990-01-01', 'user_uuid' => $portal->uuid,
-        ]),
+            'document_type' => 'dni', 'document_number' => '70000009', 'first_name' => 'Ana', 'last_name' => 'Quispe',
+            'birth_date' => '1990-01-01', 'sex' => 'femenino', 'phone' => '987654321', 'user_uuid' => $portal->uuid,
+        ], ['Idempotency-Key' => (string) Str::uuid()]),
     ];
 
     $numericIds = function (mixed $data, string $path = '') use (&$numericIds): array {
@@ -122,9 +123,9 @@ it('finds no personal data patterns in logs of a synthetic run', function () {
     $tenant = Tenant::factory()->create();
     $this->actingAsRole('receptionist', $tenant);
     $this->postJson('/api/v1/patients', [
-        'document_id' => '45678912', 'first_name' => 'Rosa', 'last_name' => 'Quispe',
-        'birth_date' => '1990-05-10', 'phone' => '987654321', 'email' => 'rosa@correo.test',
-    ])->assertCreated();
+        'document_type' => 'dni', 'document_number' => '45678912', 'first_name' => 'Rosa', 'last_name' => 'Quispe',
+        'birth_date' => '1990-05-10', 'sex' => 'femenino', 'phone' => '987654321', 'email' => 'rosa@correo.test',
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
 
     // Un registro que por error incluye datos personales en el contexto.
     Log::warning('prueba.privacidad', [

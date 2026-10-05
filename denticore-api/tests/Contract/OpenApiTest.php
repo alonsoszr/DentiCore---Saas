@@ -119,11 +119,21 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     // Pacientes
     $check($this->actingWithToken($admin)->getJson('/api/v1/patients'), 'GET', '/patients');
     $check($this->actingWithToken($portal)->getJson('/api/v1/patients'), 'GET', '/patients');
+    $registered = $this->actingWithToken($admin)->postJson('/api/v1/patients', [
+        'document_type' => 'dni', 'document_number' => '70000001', 'first_name' => 'Ana', 'last_name' => 'Quispe',
+        'birth_date' => '1990-01-01', 'sex' => 'femenino', 'phone' => '987654321', 'address' => 'Jr. Junín 456, Lima',
+        'user_uuid' => $portal->uuid,
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($registered, 'POST', '/patients');
     $check($this->actingWithToken($admin)->postJson('/api/v1/patients', [
-        'document_id' => '70000001', 'first_name' => 'Ana', 'last_name' => 'Quispe', 'birth_date' => '1990-01-01',
-        'medical_history' => ['alergias' => ['Látex']], 'user_uuid' => $portal->uuid,
-    ]), 'POST', '/patients');
-    $check($this->actingWithToken($admin)->postJson('/api/v1/patients', []), 'POST', '/patients');
+        'document_type' => 'dni', 'document_number' => '70000001', 'first_name' => 'Otra', 'last_name' => 'Ficha',
+        'birth_date' => '1990-01-01', 'sex' => 'femenino', 'phone' => '987654321',
+    ], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/patients', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients');
+    $registeredId = $registered->json('data.id');
+    $check($this->actingWithToken($admin)->patchJson("/api/v1/patients/{$registeredId}", ['phone' => '911222333']), 'PATCH', '/patients/{patient}');
+    $check($this->actingWithToken($admin)->patchJson("/api/v1/patients/{$registeredId}", ['phone' => '014567890']), 'PATCH', '/patients/{patient}');
+    $check($this->actingWithToken($admin)->patchJson("/api/v1/patients/{$registeredId}", ['document_type' => 'dni', 'document_number' => (string) $patient->document_number]), 'PATCH', '/patients/{patient}');
     $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
     $check($this->actingWithToken($admin)->getJson('/api/v1/patients/'.fake()->uuid()), 'GET', '/patients/{patient}');
     $check($this->actingWithToken($portal)->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
