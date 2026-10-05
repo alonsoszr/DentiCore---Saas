@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Support\Str;
 
 it('ignores a tenant_id injected in any write payload', function () {
     $tenant = Tenant::factory()->create();
@@ -28,7 +29,7 @@ it('ignores a tenant_id injected in any write payload', function () {
         'email' => 'luis@clinica.test',
         'password' => 'password123',
         'role' => 'receptionist',
-    ])->assertCreated();
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
 
     $user = User::query()->where('email', 'luis@clinica.test')->sole();
     $this->actingWithToken($admin)->patchJson("/api/v1/users/{$user->uuid}", [
