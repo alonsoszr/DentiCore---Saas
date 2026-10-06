@@ -55,7 +55,7 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     // Usuarios
     $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/users'), 'GET', '/users');
     $created = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/users', [
-        'name' => 'Luis', 'email' => 'luis@contrato.test', 'password' => 'password123', 'role' => 'dentist',
+        'name' => 'Luis', 'email' => 'luis@contrato.test', 'password' => 'password123', 'role' => 'dentist', 'cop_number' => '12345',
     ]);
     $check($created, 'POST', '/users');
     $check($this->actingAs($admin, 'sanctum')->postJson('/api/v1/users', []), 'POST', '/users');

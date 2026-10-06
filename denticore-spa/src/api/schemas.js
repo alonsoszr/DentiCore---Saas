@@ -75,6 +75,13 @@ export const storeUserRequestSchema = z.object({
   password: z.string(),
   role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']),
   is_active: z.boolean().optional(),
+  cop_number: z
+    .union([
+      z.string().max(10).describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.'),
+      z.null().describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.'),
+    ])
+    .describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.')
+    .optional(),
 })
 
 export const tenantResourceSchema = z.object({
@@ -93,6 +100,13 @@ export const updateUserRequestSchema = z.object({
   password: z.string().optional(),
   role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']).optional(),
   is_active: z.boolean().optional(),
+  cop_number: z
+    .union([
+      z.string().max(10).describe('RN-75, RF-043: quien pasa a odontólogo sin COP registrado debe indicarlo.'),
+      z.null().describe('RN-75, RF-043: quien pasa a odontólogo sin COP registrado debe indicarlo.'),
+    ])
+    .describe('RN-75, RF-043: quien pasa a odontólogo sin COP registrado debe indicarlo.')
+    .optional(),
 })
 
 export const userResourceSchema = z.object({
@@ -100,6 +114,7 @@ export const userResourceSchema = z.object({
   name: z.string(),
   email: z.string(),
   role: z.string(),
+  cop_number: z.union([z.string(), z.null()]),
   is_active: z.boolean(),
   tenant: z
     .union([

@@ -1168,6 +1168,14 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "cop_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "RN-75, RF-043: n\u00famero de COP obligatorio para odont\u00f3logos y \u00fanico en la cl\u00ednica.",
+                        "maxLength": 10
                     }
                 },
                 "required": [
@@ -1248,6 +1256,14 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "cop_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "RN-75, RF-043: quien pasa a odont\u00f3logo sin COP registrado debe indicarlo.",
+                        "maxLength": 10
                     }
                 },
                 "title": "UpdateUserRequest"
@@ -1266,6 +1282,12 @@
                     },
                     "role": {
                         "type": "string"
+                    },
+                    "cop_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "is_active": {
                         "type": "boolean"
@@ -1292,6 +1314,7 @@
                     "name",
                     "email",
                     "role",
+                    "cop_number",
                     "is_active"
                 ],
                 "title": "UserResource"

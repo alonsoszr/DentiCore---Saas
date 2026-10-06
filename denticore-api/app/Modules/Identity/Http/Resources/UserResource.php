@@ -25,6 +25,7 @@ class UserResource extends ApiResource
             'name' => $this->name,
             'email' => $this->email,
             'role' => $this->role,
+            'cop_number' => $this->cop_number,
             'is_active' => $this->is_active,
             'tenant' => TenantResource::make($this->whenLoaded('tenant')),
             'patient_uuid' => $this->when(

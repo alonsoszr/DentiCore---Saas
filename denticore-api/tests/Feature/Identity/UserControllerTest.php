@@ -51,6 +51,7 @@ class UserControllerTest extends TestCase
             'email' => 'perez@clinica.test',
             'password' => 'password-segura',
             'role' => 'dentist',
+            'cop_number' => '12345',
         ]);
 
         $response->assertCreated()->assertJsonPath('data.role', 'dentist');
@@ -97,7 +98,7 @@ class UserControllerTest extends TestCase
         $user = User::factory()->for($this->tenant)->create(['role' => 'receptionist']);
 
         $response = $this->actingAs($this->clinicAdmin, 'sanctum')
-            ->patchJson("/api/v1/users/{$user->uuid}", ['role' => 'dentist']);
+            ->patchJson("/api/v1/users/{$user->uuid}", ['role' => 'dentist', 'cop_number' => '54321']);
 
         $response->assertOk()->assertJsonPath('data.role', 'dentist');
         $this->assertSame('dentist', $user->fresh()->role);
