@@ -10,7 +10,7 @@ use App\Support\Audit\AuditLog;
 use Illuminate\Support\Facades\Route;
 
 it('changes the plan of a clinic and audits it', function () {
-    $tenant = Tenant::factory()->create(['subscription_plan' => 'basic']);
+    $tenant = Tenant::factory()->plan('basic')->create();
     $this->actingAsRole('super_admin');
 
     $this->putJson("/api/v1/platform/tenants/{$tenant->uuid}/plan", ['subscription_plan' => 'enterprise'])
@@ -22,9 +22,9 @@ it('changes the plan of a clinic and audits it', function () {
 })->group('RF-022', 'CUS-03');
 
 it('rejects a plan whose dentist maximum is below the active dentists and says how many to deactivate', function () {
-    $tenant = Tenant::factory()->create(['subscription_plan' => 'pro']);
+    $tenant = Tenant::factory()->plan('pro')->create();
     User::factory()->for($tenant)->count(5)->create(['role' => 'dentist']);
-    User::factory()->for($tenant)->create(['role' => 'dentist', 'is_active' => false]);
+    User::factory()->for($tenant)->create(['role' => 'dentist', 'status' => 'inactivo']);
     $this->actingAsRole('super_admin');
 
     $this->putJson("/api/v1/platform/tenants/{$tenant->uuid}/plan", ['subscription_plan' => 'basic'])
@@ -39,7 +39,7 @@ it('rejects a plan whose dentist maximum is below the active dentists and says h
 it('answers 403 plan_feature_unavailable for a feature outside the plan', function (string $plan, int $status) {
     Route::middleware(['api', 'auth:sanctum', 'tenant', 'plan.feature:risk'])
         ->get('/api/v1/_prueba/riesgo', fn () => response()->json(['data' => 'ok']));
-    $tenant = Tenant::factory()->create(['subscription_plan' => $plan]);
+    $tenant = Tenant::factory()->plan($plan)->create();
     $this->actingAsRole('dentist', $tenant);
 
     $response = $this->getJson('/api/v1/_prueba/riesgo')->assertStatus($status);
@@ -55,7 +55,7 @@ it('answers 403 plan_feature_unavailable for a feature outside the plan', functi
 it('keeps history readable after downgrading to a plan without the feature', function () {
     Route::middleware(['api', 'auth:sanctum', 'tenant', 'plan.feature:ai'])
         ->post('/api/v1/_prueba/ia', fn () => response()->json(['data' => 'ok']));
-    $tenant = Tenant::factory()->create(['subscription_plan' => 'pro']);
+    $tenant = Tenant::factory()->plan('pro')->create();
     $this->actingAsRole('super_admin');
     $this->putJson("/api/v1/platform/tenants/{$tenant->uuid}/plan", ['subscription_plan' => 'basic'])->assertOk();
 

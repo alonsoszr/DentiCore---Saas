@@ -28,8 +28,7 @@ use Laravel\Sanctum\HasApiTokens;
  * fillable, ver #[Fillable] abajo) y se asigna explícitamente en el servicio que crea
  * el usuario, nunca desde el payload del cliente.
  *
- * TASK-026 expandió el esquema (SDD §2.4): `status` en español convive con `is_active` hasta
- * la contracción de TASK-038 y ambos se mantienen sincronizados al guardar.
+ * El estado de la cuenta es `status` (SDD §2.4; DI-03).
  *
  * @property string|null $password
  * @property string $status
@@ -46,7 +45,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $password_changed_at
  * @property Carbon|null $deactivated_at
  */
-#[Fillable(['name', 'email', 'password', 'role', 'is_active', 'status', 'cop_number', 'specialty', 'rne_number'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'cop_number', 'specialty', 'rne_number'])]
 #[Hidden(['password', 'two_factor_secret'])]
 #[UseFactory(UserFactory::class)]
 class User extends Authenticatable
@@ -63,42 +62,24 @@ class User extends Authenticatable
     public const TENANT_ROLES = ['clinic_admin', 'dentist', 'receptionist', 'patient'];
 
     /**
-     * Espeja el default de columna (is_active default true) a nivel de PHP: ver nota
-     * equivalente en Tenant::$attributes.
+     * Defaults de columna espejados en PHP (ver Tenant::$attributes).
      *
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'is_active' => true,
         'is_data_officer' => false,
         'two_factor_reset_required' => false,
         'failed_login_count' => 0,
     ];
 
     /**
-     * Escritura doble de la etapa de expansión (Plan §1.5): `status` y el `is_active` heredado
-     * se mantienen coherentes mientras conviven. Un usuario nuevo sin contraseña nace
-     * `pendiente_activacion` (DD-22). Se retira en TASK-038.
+     * Un usuario nuevo sin contraseña nace `pendiente_activacion` (DD-22); con contraseña,
+     * `activo`.
      */
     protected static function booted(): void
     {
-        static::saving(function (User $user): void {
-            if (! $user->exists) {
-                $user->status ??= match (true) {
-                    $user->password === null => 'pendiente_activacion',
-                    $user->is_active => 'activo',
-                    default => 'inactivo',
-                };
-                $user->is_active = $user->status !== 'inactivo';
-
-                return;
-            }
-
-            if ($user->isDirty('status') && ! $user->isDirty('is_active')) {
-                $user->is_active = $user->status !== 'inactivo';
-            } elseif ($user->isDirty('is_active') && ! $user->isDirty('status')) {
-                $user->status = $user->is_active ? 'activo' : 'inactivo';
-            }
+        static::creating(function (User $user): void {
+            $user->status ??= $user->password === null ? 'pendiente_activacion' : 'activo';
         });
     }
 
@@ -109,7 +90,6 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'is_active' => 'boolean',
             'is_data_officer' => 'boolean',
             'two_factor_secret' => 'encrypted',
             'two_factor_confirmed_at' => 'datetime',

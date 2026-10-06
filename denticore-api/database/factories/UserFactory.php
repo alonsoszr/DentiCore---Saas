@@ -35,7 +35,6 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => fake()->randomElement(['clinic_admin', 'dentist', 'receptionist', 'patient']),
-            'is_active' => true,
             // RN-75: todo odontólogo tiene número de COP (sintético, RES-08).
             'cop_number' => fn (array $attributes): ?string => $attributes['role'] === 'dentist' ? fake()->unique()->numerify('#####') : null,
         ];

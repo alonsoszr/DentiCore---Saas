@@ -17,17 +17,17 @@ use Illuminate\Support\Carbon;
 
 /**
  * Clínica (SDD §2.3 `tenants`, raíz del aislamiento). TASK-021 expandió el esquema heredado
- * (RUC, razón social, plan como FK, estados en español); `subscription_plan` y `settings`
- * conviven hasta la contracción de TASK-038.
+ * (RUC, razón social, plan como FK, estados en español) y TASK-038 retiró las columnas
+ * heredadas `subscription_plan` y `settings`.
  *
  * @property string $status
- * @property string|null $legal_name
- * @property string|null $ruc
- * @property string|null $address
+ * @property string $legal_name
+ * @property string $ruc
+ * @property string $address
  * @property string|null $phone
  * @property string|null $contact_email
  * @property int|null $logo_file_id
- * @property int|null $subscription_plan_id
+ * @property int $subscription_plan_id
  * @property string|null $status_reason
  * @property Carbon|null $suspended_at
  * @property Carbon|null $cancelled_at
@@ -35,8 +35,8 @@ use Illuminate\Support\Carbon;
  * @property string $timezone
  */
 #[Fillable([
-    'name', 'legal_name', 'ruc', 'slug', 'address', 'phone', 'contact_email', 'subscription_plan',
-    'subscription_plan_id', 'status', 'settings', 'timezone',
+    'name', 'legal_name', 'ruc', 'slug', 'address', 'phone', 'contact_email', 'subscription_plan_id',
+    'status', 'timezone',
 ])]
 #[UseFactory(TenantFactory::class)]
 class Tenant extends Model
@@ -57,25 +57,11 @@ class Tenant extends Model
     ];
 
     /**
-     * Escritura doble de la etapa de expansión (Plan §1.5): mientras el código heredado envía
-     * el código del plan, la FK se resuelve a partir de él. Se retira en TASK-038.
-     */
-    protected static function booted(): void
-    {
-        static::saving(function (Tenant $tenant): void {
-            if ($tenant->isDirty('subscription_plan') || $tenant->subscription_plan_id === null) {
-                $tenant->subscription_plan_id = SubscriptionPlan::forCode($tenant->subscription_plan)->id;
-            }
-        });
-    }
-
-    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'settings' => 'array',
             'suspended_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'purged_at' => 'datetime',

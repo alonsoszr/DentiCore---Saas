@@ -7,6 +7,7 @@
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\PatientSearchRepository;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Platform\Services\RucValidator;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -58,9 +59,9 @@ it('limits per_page to 100', function () {
 it('looks a patient up by document type and number through the blind index', function () {
     $tenant = Tenant::factory()->create();
     $this->actingAsRole('receptionist', $tenant);
-    $patient = TenantContext::run($tenant, fn () => Patient::factory()->for($tenant)->create(['document_id' => '45678912']));
+    $patient = TenantContext::run($tenant, fn () => Patient::factory()->for($tenant)->create(['document_number' => '45678912']));
     $foreign = Tenant::factory()->create();
-    TenantContext::run($foreign, fn () => Patient::factory()->for($foreign)->create(['document_id' => '11112222']));
+    TenantContext::run($foreign, fn () => Patient::factory()->for($foreign)->create(['document_number' => '11112222']));
 
     $this->getJson('/api/v1/patients/lookup?document_type=dni&document_number=45678912')
         ->assertOk()
@@ -80,21 +81,33 @@ it('searches 20 000 synthetic patients through the trigram index filtering the c
     $owner->beginTransaction();
 
     try {
-        $newTenant = fn (string $name) => $owner->table('tenants')->insertGetId([
-            'uuid' => (string) Str::uuid(), 'name' => $name, 'slug' => 'clinica-volumen-'.Str::lower(Str::random(8)),
-            'subscription_plan' => 'pro', 'subscription_plan_id' => $owner->table('subscription_plans')->where('code', 'pro')->value('id'),
-            'status' => 'activa', 'created_at' => now(),
-        ]);
-        $tenantId = $newTenant('Clínica Volumen');
-        $otherTenantId = $newTenant('Clínica Vecina');
+        $newTenant = function (string $name, string $rucBody) use ($owner): int {
+            $tenantId = $owner->table('tenants')->insertGetId([
+                'uuid' => (string) Str::uuid(), 'name' => $name, 'legal_name' => "{$name} S.A.C.",
+                'ruc' => $rucBody.RucValidator::checkDigit($rucBody), 'address' => 'Av. Sintética 123, Lima',
+                'slug' => 'clinica-volumen-'.Str::lower(Str::random(8)),
+                'subscription_plan_id' => $owner->table('subscription_plans')->where('code', 'pro')->value('id'),
+                'status' => 'activa', 'created_at' => now(),
+            ]);
+            // RN-67: quien registra las fichas.
+            $owner->table('users')->insert([
+                'uuid' => (string) Str::uuid(), 'tenant_id' => $tenantId, 'name' => 'Recepción', 'role' => 'receptionist',
+                'email' => "recepcion{$tenantId}@volumen.test", 'status' => 'activo', 'created_at' => now(),
+            ]);
+
+            return $tenantId;
+        };
+        $tenantId = $newTenant('Clínica Volumen', '2099999901');
+        $otherTenantId = $newTenant('Clínica Vecina', '2099999902');
         $insert = fn (int $tenant, string $searchName, int $first, int $last) => $owner->unprepared(<<<SQL
             SELECT set_config('app.tenant_id', '{$tenant}', true);
-            INSERT INTO patients (uuid, tenant_id, document_id, document_id_hash, first_name, last_name, birth_date,
-                                  search_name, document_type, document_number, document_hash, clinical_record_number,
-                                  clinical_record_hash, archive_status, created_at)
-            SELECT gen_random_uuid(), {$tenant}, 'v1:x', encode(sha256(('d-' || g)::bytea), 'hex'), 'Nombre' || g,
-                   'Apellido' || g, DATE '1990-01-01', {$searchName}, 'dni', 'v1:x',
-                   encode(sha256(('h-' || g)::bytea), 'hex'), 'v1:x', encode(sha256(('c-' || g)::bytea), 'hex'), 'activo', now()
+            INSERT INTO patients (uuid, tenant_id, first_name, last_name, birth_date, sex, phone, search_name,
+                                  document_type, document_number, document_hash, clinical_record_number,
+                                  clinical_record_hash, archive_status, created_by, created_at)
+            SELECT gen_random_uuid(), {$tenant}, 'Nombre' || g, 'Apellido' || g, DATE '1990-01-01', 'femenino', 'v1:x',
+                   {$searchName}, 'dni', 'v1:x', encode(sha256(('h-' || g)::bytea), 'hex'), 'v1:x',
+                   encode(sha256(('c-' || g)::bytea), 'hex'), 'activo',
+                   (SELECT id FROM users WHERE tenant_id = {$tenant} LIMIT 1), now()
               FROM generate_series({$first}, {$last}) AS g;
             SQL);
 

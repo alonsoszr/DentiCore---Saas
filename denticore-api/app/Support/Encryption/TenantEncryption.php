@@ -6,7 +6,6 @@ use App\Modules\Platform\Models\EncryptionKey;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Encryption\DecryptException;
-use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\Crypt;
 
 /**
@@ -14,8 +13,8 @@ use Illuminate\Support\Facades\Crypt;
  *
  * Formato: `v{version}:{base64(iv ‖ ciphertext ‖ tag)}` con AES-256-GCM, IV de 12 bytes y
  * tag de 16. La versión identifica la clave con la que se descifra durante una rotación.
- * El formato heredado de las fases 0–3 (AES-256-CBC de Laravel, sin versión) todavía se
- * descifra; `encryption:reencrypt-legacy` lo convierte y TASK-038 retira su soporte.
+ * El formato heredado de las fases 0–3 (AES-256-CBC sin versión) ya no se descifra
+ * (TASK-038).
  */
 class TenantEncryption
 {
@@ -42,7 +41,6 @@ class TenantEncryption
             'key_ciphertext' => Crypt::encryptString(base64_encode($key)),
             'version' => 1,
             'status' => 'activa',
-            'is_active' => true,
         ]));
     }
 
@@ -72,7 +70,7 @@ class TenantEncryption
     public function decrypt(int $tenantId, string $payload): string
     {
         if (! preg_match(self::ENVELOPE, $payload, $matches)) {
-            return $this->decryptLegacy($tenantId, $payload);
+            throw new DecryptException('El valor cifrado no tiene el formato versionado v{n}:.');
         }
 
         $binary = base64_decode($matches[2], true);
@@ -108,15 +106,5 @@ class TenantEncryption
     public function blindIndex(int $tenantId, string $value): string
     {
         return $this->blindIndex->compute($tenantId, $value);
-    }
-
-    /**
-     * Formato de las fases 0–3: Encrypter de Laravel (AES-256-CBC + MAC) con la clave v1.
-     *
-     * @throws DecryptException
-     */
-    private function decryptLegacy(int $tenantId, string $payload): string
-    {
-        return (new Encrypter($this->keys->rawKey($tenantId, 1), 'aes-256-cbc'))->decryptString($payload);
     }
 }

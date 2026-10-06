@@ -47,10 +47,9 @@ class KeyRing
     }
 
     /**
-     * Clave AES-256 de la clínica sin derivar. Solo la usa el descifrado del formato heredado
-     * de las fases 0–3 (AES-256-CBC con la clave directa), que TASK-038 retira.
+     * Clave AES-256 de la clínica sin derivar; solo se usa para derivar las claves de HKDF.
      */
-    public function rawKey(int $tenantId, int $version): string
+    private function rawKey(int $tenantId, int $version): string
     {
         return $this->rawKeys["{$tenantId}:{$version}"] ??= $this->loadRawKey($tenantId, $version);
     }

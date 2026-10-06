@@ -12,7 +12,7 @@ use RuntimeException;
  * (SDD §1.7.1, DD-04).
  *
  * Uso: 'phone' => TenantEncrypted::class, o con índice ciego:
- * 'document_id' => TenantEncrypted::class.':document_id_hash'.
+ * 'document_number' => TenantEncrypted::class.':document_hash'.
  *
  * @implements CastsAttributes<string|null, string|null>
  */

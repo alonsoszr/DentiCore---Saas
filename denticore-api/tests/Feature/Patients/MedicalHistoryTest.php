@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 function historyPatient(Tenant $tenant, bool $withConsent = true): Patient
 {
     $patient = TenantContext::run($tenant, fn () => Patient::factory()->for($tenant)->create([
-        'document_id' => '45678912', 'birth_date' => '1990-01-31',
+        'document_number' => '45678912', 'birth_date' => '1990-01-31',
     ]));
 
     if ($withConsent) {

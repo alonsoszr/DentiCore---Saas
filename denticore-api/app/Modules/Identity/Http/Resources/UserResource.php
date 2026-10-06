@@ -30,8 +30,6 @@ class UserResource extends ApiResource
             'cop_number' => $this->cop_number,
             'specialty' => $this->specialty,
             'rne_number' => $this->rne_number,
-            // Heredado: la SPA lo lee hasta la contracción (TASK-038).
-            'is_active' => $this->is_active,
             'last_login_at' => $this->last_login_at,
             'tenant' => TenantResource::make($this->whenLoaded('tenant')),
             'patient_uuid' => $this->when(

@@ -4115,10 +4115,7 @@
                         "type": "string"
                     },
                     "address": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "phone": {
                         "type": [
@@ -4584,7 +4581,7 @@
             },
             "StorePatientRequest": {
                 "type": "object",
-                "description": "Alta de paciente (CUS-14; contrato de SDD \u00a74.5 y datos de SRS \u00a711.3). La fecha de nacimiento no\npuede ser posterior a hoy ni dar m\u00e1s de 120 a\u00f1os (fecha de la cl\u00ednica). Un menor de 18 a\u00f1os\ndebe traer su representante legal (RN-12, CA-14.4). La unicidad del documento la comprueba\nPatientService con el \u00edndice ciego. `user_uuid` es heredado y se retira en TASK-038 (S-14).",
+                "description": "Alta de paciente (CUS-14; contrato de SDD \u00a74.5 y datos de SRS \u00a711.3). La fecha de nacimiento no\npuede ser posterior a hoy ni dar m\u00e1s de 120 a\u00f1os (fecha de la cl\u00ednica). Un menor de 18 a\u00f1os\ndebe traer su representante legal (RN-12, CA-14.4). La unicidad del documento la comprueba\nPatientService con el \u00edndice ciego.",
                 "properties": {
                     "document_type": {
                         "type": "string",
@@ -4648,13 +4645,6 @@
                         "items": {
                             "type": "string"
                         }
-                    },
-                    "user_uuid": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "uuid"
                     }
                 },
                 "required": [
@@ -4835,25 +4825,16 @@
                         "type": "string"
                     },
                     "legal_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "ruc": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "slug": {
                         "type": "string"
                     },
                     "address": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "phone": {
                         "type": [
@@ -5176,10 +5157,6 @@
                             "null"
                         ]
                     },
-                    "is_active": {
-                        "type": "boolean",
-                        "description": "Heredado: la SPA lo lee hasta la contracci\u00f3n (TASK-038)."
-                    },
                     "last_login_at": {
                         "type": [
                             "string",
@@ -5214,7 +5191,6 @@
                     "cop_number",
                     "specialty",
                     "rne_number",
-                    "is_active",
                     "last_login_at"
                 ],
                 "title": "UserResource"

@@ -9,18 +9,7 @@ const ROUTE = { route: '/c/clinica-demo/app/pacientes/nuevo', path: '/c/:slug/ap
 
 describe('PatientCreatePage', () => {
   it('sends the identification of SDD §4.5 and opens the new record', async () => {
-    const calls = mockApi((config) => {
-      if (config.method === 'get') {
-        return {
-          data: {
-            data: [
-              { id: 'u-1', role: 'patient', is_active: true, name: 'Pablo', email: 'p@x.test', patient_uuid: null },
-            ],
-          },
-        }
-      }
-      return { status: 201, data: { data: { id: 'p-9' } } }
-    })
+    const calls = mockApi(() => ({ status: 201, data: { data: { id: 'p-9' } } }))
     renderPage(<PatientCreatePage />, { user: makeUser('clinic_admin'), ...ROUTE })
 
     await userEvent.selectOptions(screen.getByLabelText('Tipo de documento'), 'ce')
@@ -30,7 +19,6 @@ describe('PatientCreatePage', () => {
     await userEvent.type(screen.getByLabelText('Fecha de nacimiento'), '1990-01-31')
     await userEvent.selectOptions(screen.getByLabelText('Sexo'), 'femenino')
     await userEvent.type(screen.getByLabelText('Teléfono'), '987654321')
-    await userEvent.selectOptions(await screen.findByLabelText('Cuenta de portal (opcional)'), 'u-1')
     expect(screen.queryByText(/Representante legal/)).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Registrar paciente' }))
@@ -47,7 +35,6 @@ describe('PatientCreatePage', () => {
       phone: '987654321',
       email: null,
       address: null,
-      user_uuid: 'u-1',
     })
   })
 
@@ -87,7 +74,6 @@ describe('PatientCreatePage', () => {
     }))
     renderPage(<PatientCreatePage />, { user: makeUser('receptionist'), ...ROUTE })
 
-    expect(screen.queryByLabelText('Cuenta de portal (opcional)')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Registrar paciente' }))
 
     expect(await screen.findByText('El documento ya está registrado en la clínica.')).toBeInTheDocument()

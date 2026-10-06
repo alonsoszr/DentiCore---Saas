@@ -12,7 +12,7 @@ export function makeUser(role, overrides = {}) {
     name: `Usuario ${role}`,
     email: `${role}@clinica-demo.test`,
     role,
-    is_active: true,
+    status: 'activo',
     tenant: role === 'super_admin' ? null : CLINIC,
     ...overrides,
   }

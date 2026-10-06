@@ -32,14 +32,14 @@ beforeEach(function () {
 /** @param  array<string, mixed>  $attributes */
 function consentClinic(string $plan = 'pro', array $attributes = []): Tenant
 {
-    return Tenant::factory()->create(['subscription_plan' => $plan, 'contact_email' => 'contacto@sonrisa.test', ...$attributes]);
+    return Tenant::factory()->plan($plan)->create(['contact_email' => 'contacto@sonrisa.test', ...$attributes]);
 }
 
 /** @param  array<string, mixed>  $attributes */
 function consentPatient(Tenant $tenant, array $attributes = []): Patient
 {
     return TenantContext::run($tenant, fn () => Patient::factory()->for($tenant)->create([
-        'document_id' => '45678912', 'first_name' => 'Ana', 'last_name' => 'Núñez', 'birth_date' => '1990-01-31',
+        'document_number' => '45678912', 'first_name' => 'Ana', 'last_name' => 'Núñez', 'birth_date' => '1990-01-31',
         'email' => 'ana@correo.test', ...$attributes,
     ]));
 }
@@ -47,7 +47,7 @@ function consentPatient(Tenant $tenant, array $attributes = []): Patient
 /** Paciente de 15 años con su madre como representante vigente. */
 function minorWithRepresentative(Tenant $tenant, ?User $portalUser = null): Patient
 {
-    $minor = consentPatient($tenant, ['document_id' => '71234567', 'birth_date' => '2011-06-01', 'email' => null]);
+    $minor = consentPatient($tenant, ['document_number' => '71234567', 'birth_date' => '2011-06-01', 'email' => null]);
 
     TenantContext::run($tenant, function () use ($minor, $portalUser) {
         $representative = app(LegalRepresentativeService::class)->add($minor, [

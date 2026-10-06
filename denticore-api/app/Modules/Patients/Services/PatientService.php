@@ -70,7 +70,7 @@ class PatientService
      * prefijo del tipo (RN-79). Un menor se registra con su representante en la misma transacción
      * (RN-12).
      *
-     * @param  array{document_type: string, document_number: string, first_name: string, last_name: string, birth_date: string, sex: string, phone: string, email?: string|null, address?: string|null, representative?: array<string, mixed>|null, user_uuid?: string|null}  $data
+     * @param  array{document_type: string, document_number: string, first_name: string, last_name: string, birth_date: string, sex: string, phone: string, email?: string|null, address?: string|null, representative?: array<string, mixed>|null}  $data
      *
      * @throws BusinessRuleException|ValidationException
      */
@@ -84,18 +84,12 @@ class PatientService
         $record = PatientIdentity::clinicalRecordNumber($type, $number);
 
         $patient = new Patient(Arr::only($data, ['first_name', 'last_name', 'birth_date', 'sex', 'phone', 'email', 'address']));
-        // `document_id` heredado (NOT NULL hasta TASK-038) guarda el documento normalizado.
-        $patient->document_id = PatientIdentity::normalizedDocument($type, $number);
         $patient->document_type = $type;
         $patient->document_number = $number;
         $patient->document_hash = $documentHash;
         $patient->clinical_record_number = $record;
         $patient->clinical_record_hash = $this->encryption->blindIndex($tenant->id, $record);
         $patient->created_by = $creator->id;
-
-        if (! empty($data['user_uuid'])) {
-            $patient->user_id = $this->portalUserId($tenant, $data['user_uuid']);
-        }
 
         try {
             DB::transaction(function () use ($patient, $data): void {
@@ -110,7 +104,7 @@ class PatientService
                 $this->audit->record(AuditEvent::PatientCreated, $patient);
             });
         } catch (UniqueConstraintViolationException) {
-            // FE-2 de CUS-14: alta concurrente del mismo documento o de la misma cuenta de portal.
+            // FE-2 de CUS-14: alta concurrente del mismo documento.
             throw ValidationException::withMessages([
                 'document_number' => 'El documento ya está registrado en la clínica.',
             ]);
@@ -203,7 +197,6 @@ class PatientService
         $hash = $this->documentHash($patient->tenant, $type, $number);
         $this->ensureDocumentIsFree($hash, except: $patient);
 
-        $patient->document_id = PatientIdentity::normalizedDocument($type, $number);
         $patient->document_type = $type;
         $patient->document_number = $number;
         $patient->document_hash = $hash;
@@ -234,34 +227,5 @@ class PatientService
                 extensions: ['existing_patient_id' => $existing->uuid],
             );
         }
-    }
-
-    /**
-     * La cuenta de portal debe ser de rol 'patient', de la misma clínica, y no estar vinculada ya
-     * a otra ficha (contrato heredado, S-14).
-     *
-     * @throws ValidationException
-     */
-    private function portalUserId(Tenant $tenant, string $userUuid): int
-    {
-        $user = User::query()
-            ->where('tenant_id', $tenant->id)
-            ->where('uuid', $userUuid)
-            ->where('role', 'patient')
-            ->first();
-
-        if (! $user) {
-            throw ValidationException::withMessages([
-                'user_uuid' => 'El usuario no existe en la clínica o no tiene rol patient.',
-            ]);
-        }
-
-        if (Patient::query()->where('user_id', $user->id)->exists()) {
-            throw ValidationException::withMessages([
-                'user_uuid' => 'Este usuario ya está vinculado a otra ficha de paciente.',
-            ]);
-        }
-
-        return $user->id;
     }
 }

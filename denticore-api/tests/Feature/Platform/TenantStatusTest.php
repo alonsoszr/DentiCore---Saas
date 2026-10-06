@@ -36,7 +36,7 @@ it('forbids writes in a suspended clinic and allows reads', function () {
     $this->getJson('/api/v1/patients')->assertOk();
 
     $this->postJson('/api/v1/patients', [
-        'document_id' => '45678912', 'first_name' => 'Rosa', 'last_name' => 'Quispe', 'birth_date' => '1990-05-10',
+        'document_number' => '45678912', 'first_name' => 'Rosa', 'last_name' => 'Quispe', 'birth_date' => '1990-05-10',
     ], ['Idempotency-Key' => (string) Str::uuid()])
         ->assertForbidden()
         ->assertJsonPath('rule', 'RN-07');
@@ -111,7 +111,7 @@ it('requires the reason and a valid current status', function () {
 })->group('RF-019');
 
 it('limits each clinic to the requests per minute of its plan', function () {
-    $tenant = Tenant::factory()->create(['subscription_plan' => 'basic']);
+    $tenant = Tenant::factory()->plan('basic')->create();
     $tenant->plan()->update(['rate_limit_per_minute' => 3]);
     $this->actingAsRole('receptionist', $tenant);
 

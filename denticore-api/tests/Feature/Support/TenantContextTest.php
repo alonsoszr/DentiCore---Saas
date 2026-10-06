@@ -91,7 +91,7 @@ it('throws TenantMutationException when a tenant_id is changed', function () {
 
 it('refuses to create a clinic record without a resolved clinic', function () {
     expect(fn () => Patient::query()->create([
-        'document_id' => '12345678',
+        'document_number' => '12345678',
         'first_name' => 'Ana',
         'last_name' => 'Quispe',
         'birth_date' => '1990-01-01',

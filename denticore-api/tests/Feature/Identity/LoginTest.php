@@ -73,7 +73,7 @@ it('locks the user for 15 minutes after 5 consecutive failures', function () {
 
 it('returns the same status and message for an unknown email and a wrong password', function () {
     userIn('sonrisa', 'receptionist', ['email' => 'rosa@correo.test']);
-    userIn('sonrisa', 'receptionist', ['email' => 'inactiva@correo.test', 'is_active' => false]);
+    userIn('sonrisa', 'receptionist', ['email' => 'inactiva@correo.test', 'status' => 'inactivo']);
 
     $unknown = login('sonrisa', 'nadie@correo.test', 'clave-equivocada');
     $wrongPassword = login('sonrisa', 'rosa@correo.test', 'clave-equivocada');

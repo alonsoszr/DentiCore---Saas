@@ -158,7 +158,7 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson("{$representatives}/{$representativeId}/end", ['reason' => 'revocada']), 'POST', '/patients/{patient}/representatives/{representative}/end');
 
     // Consentimiento de datos
-    $adult = Patient::factory()->for($tenant)->create(['document_id' => '45678912', 'birth_date' => '1990-01-31']);
+    $adult = Patient::factory()->for($tenant)->create(['document_number' => '45678912', 'birth_date' => '1990-01-31']);
     $unrepresentedMinor = Patient::factory()->for($tenant)->create(['birth_date' => now()->subYears(10)->toDateString()]);
     $consents = "/api/v1/patients/{$adult->uuid}/consents";
     $check($this->actingWithToken($admin)->getJson("{$consents}/preview"), 'GET', '/patients/{patient}/consents/preview');
