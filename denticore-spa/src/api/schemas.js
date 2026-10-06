@@ -149,6 +149,14 @@ export const consentResourceSchema = z.object({
   outdated: z.boolean(),
 })
 
+export const findingNoTreatDecisionResourceSchema = z.object({
+  id: z.string(),
+  finding_id: z.string(),
+  reason: z.string(),
+  decided_by: z.object({ id: z.string(), name: z.string() }),
+  created_at: z.string().datetime({ offset: true }),
+})
+
 export const legalRepresentativeResourceSchema = z.object({
   id: z.string(),
   document_type: z.string(),
@@ -241,6 +249,58 @@ export const patientResourceSchema = z.object({
   user_uuid: z.union([z.string(), z.null()]).optional(),
   created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
 })
+
+export const planItemRequestSchema = z
+  .object({
+    procedure_id: z.string().optional(),
+    tooth: z.union([z.number().int(), z.null()]).optional(),
+    surfaces: z.union([z.array(z.string().min(1).max(1)).max(7), z.null()]).optional(),
+    quantity: z.number().int().gte(1).lte(32).optional(),
+    session_number: z.union([z.number().int().gte(1).lte(32767), z.null()]).optional(),
+    observations: z.union([z.string().max(500), z.null()]).optional(),
+  })
+  .describe(
+    'Edición de un ítem `propuesto` del plan en borrador (CUS-33; RF-110, RN-26). Los campos son\nopcionales; la pieza y las superficies se validan con el valor nuevo o el guardado.',
+  )
+
+export const planItemResourceSchema = z.object({
+  id: z.string(),
+  position: z.number().int(),
+  procedure: z.object({ id: z.string(), code: z.string(), name: z.string() }),
+  tooth: z.union([z.number().int(), z.null()]),
+  surfaces: z.array(z.enum(['M', 'D', 'O', 'I', 'V', 'L', 'P'])),
+  quantity: z.number().int(),
+  performed_quantity: z.number().int(),
+  session_number: z.union([z.number().int(), z.null()]),
+  observations: z.union([z.string(), z.null()]),
+  status: z.enum(['propuesto', 'aceptado', 'realizado', 'descartado']),
+  discard_reason: z.union([z.string(), z.null()]),
+  origin: z.enum(['manual', 'ia']),
+  finding_ids: z.array(z.string()),
+})
+
+export const planItemsRequestSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          procedure_id: z.string(),
+          tooth: z.union([z.number().int(), z.null()]).optional(),
+          surfaces: z.union([z.array(z.string().min(1).max(1)).max(7), z.null()]).optional(),
+          quantity: z.number().int().gte(1).lte(32).optional(),
+          session_number: z.union([z.number().int().gte(1).lte(32767), z.null()]).optional(),
+          observations: z.union([z.string().max(500), z.null()]).optional(),
+          finding_ids: z
+            .array(z.string().uuid())
+            .refine((arr) => arr.every((item, i) => arr.indexOf(item) == i), 'All items must be unique!')
+            .optional(),
+        }),
+      )
+      .min(1),
+  })
+  .describe(
+    'Ítems nuevos de un plan (CUS-33; RF-110, RF-111, RN-26): procedimiento activo del catálogo,\npieza, superficies, cantidad (1–32), sesión opcional, observaciones y hallazgos que atiende.\nLa pieza y las superficies según el procedimiento las valida ClinicalValidator en el servicio.',
+  )
 
 export const problemDetailsSchema = z.object({
   type: z.string(),
@@ -387,6 +447,66 @@ export const tenantResourceSchema = z.object({
   active_dentists: z.union([z.number().int(), z.null()]).optional(),
   admin: z.object({ id: z.string(), name: z.string(), email: z.string(), status: z.string() }).optional(),
   created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+})
+
+export const treatmentPlanRequestSchema = z
+  .object({
+    title: z.string().max(150),
+    items: z
+      .array(
+        z.object({
+          procedure_id: z.string(),
+          tooth: z.union([z.number().int(), z.null()]).optional(),
+          surfaces: z.union([z.array(z.string().min(1).max(1)).max(7), z.null()]).optional(),
+          quantity: z.number().int().gte(1).lte(32).optional(),
+          session_number: z.union([z.number().int().gte(1).lte(32767), z.null()]).optional(),
+          observations: z.union([z.string().max(500), z.null()]).optional(),
+          finding_ids: z
+            .array(z.string().uuid())
+            .refine((arr) => arr.every((item, i) => arr.indexOf(item) == i), 'All items must be unique!')
+            .optional(),
+        }),
+      )
+      .optional(),
+  })
+  .describe(
+    'Alta y edición del plan de tratamiento (CUS-33; RF-110). El alta admite sus primeros ítems;\nla edición, solo el título (los ítems tienen sus propias rutas).',
+  )
+
+export const treatmentPlanResourceSchema = z.object({
+  id: z.string(),
+  patient_id: z.string(),
+  title: z.string(),
+  status: z.enum(['borrador', 'propuesto', 'aceptado', 'en_ejecucion', 'completado', 'cancelado']),
+  origin: z.enum(['manual', 'ia', 'urgencia', 'alerta']),
+  created_by: z.object({ id: z.string(), name: z.string() }),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      position: z.number().int(),
+      procedure: z.object({ id: z.string(), code: z.string(), name: z.string() }),
+      tooth: z.union([z.number().int(), z.null()]),
+      surfaces: z.array(z.enum(['M', 'D', 'O', 'I', 'V', 'L', 'P'])),
+      quantity: z.number().int(),
+      performed_quantity: z.number().int(),
+      session_number: z.union([z.number().int(), z.null()]),
+      observations: z.union([z.string(), z.null()]),
+      status: z.enum(['propuesto', 'aceptado', 'realizado', 'descartado']),
+      discard_reason: z.union([z.string(), z.null()]),
+      origin: z.enum(['manual', 'ia']),
+      finding_ids: z.array(z.string()),
+    }),
+  ),
+  progress: z.object({
+    items_total: z.number().int(),
+    items_performed: z.number().int(),
+    performed_amount: z.string(),
+    accepted_amount: z.union([z.string(), z.null()]),
+  }),
+  cancel_reason: z.union([z.string(), z.null()]),
+  cancelled_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  completed_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  created_at: z.string().datetime({ offset: true }),
 })
 
 export const updateClinicSettingsRequestSchema = z

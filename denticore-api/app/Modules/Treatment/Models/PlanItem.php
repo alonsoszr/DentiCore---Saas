@@ -2,14 +2,19 @@
 
 namespace App\Modules\Treatment\Models;
 
+use App\Modules\Odontogram\Models\OdontogramEntry;
+use App\Modules\Treatment\Policies\PlanItemPolicy;
 use App\Support\Database\HasUuid;
 use App\Support\Tenancy\BelongsToTenant;
 use Database\Factories\PlanItemFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * Ítem del plan de tratamiento (SDD §2.8 `plan_items`; RF-110, RN-26, RN-27, CA-39.4; estados de
@@ -33,8 +38,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $ai_suggestion_id
  * @property-read TreatmentPlan $plan
  * @property-read Procedure $procedure
+ * @property-read Collection<int, OdontogramEntry> $findings
  */
 #[UseFactory(PlanItemFactory::class)]
+#[UsePolicy(PlanItemPolicy::class)]
 class PlanItem extends Model
 {
     /** @use HasFactory<PlanItemFactory> */
@@ -83,5 +90,16 @@ class PlanItem extends Model
     public function procedure(): BelongsTo
     {
         return $this->belongsTo(Procedure::class);
+    }
+
+    /**
+     * Hallazgos que atiende el ítem (RF-111, RN-27), por el uuid de la entrada del odontograma:
+     * la tabla particionada no admite FK (SDD §2.1).
+     *
+     * @return BelongsToMany<OdontogramEntry, $this>
+     */
+    public function findings(): BelongsToMany
+    {
+        return $this->belongsToMany(OdontogramEntry::class, 'plan_item_findings', 'plan_item_id', 'odontogram_entry_uuid', 'id', 'uuid');
     }
 }
