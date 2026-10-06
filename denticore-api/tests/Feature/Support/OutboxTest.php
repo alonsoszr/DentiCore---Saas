@@ -4,8 +4,14 @@
  * Outbox, colas y tareas programadas (TASK-010; SDD §1.9; DD-41, RNF-078, RNF-087).
  */
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Enums\NotificationEvent;
+use App\Modules\Scheduling\Jobs\SendNotificationJob;
+use App\Modules\Scheduling\Mail\NotificationMail;
+use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Scheduling\Services\NotificationService;
 use App\Support\Outbox\OutboxDispatcher;
 use App\Support\Outbox\OutboxJob;
 use App\Support\Outbox\OutboxMessage;
@@ -16,6 +22,7 @@ use App\Support\Scheduling\ScheduledTaskRun;
 use App\Support\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
 
@@ -176,3 +183,32 @@ it('processes a missed scheduled run from its last success without duplicating e
     expect($processed)->toBe(['08:01', '08:07', '08:12'])
         ->and(ScheduledTaskRun::query()->sole()->watermark->format('H:i'))->toBe('08:15');
 })->group('RNF-087', 'RNF-130');
+
+it('emits no notification for a rolled back transaction and loses none for a committed one', function () {
+    Mail::fake();
+    $tenant = Tenant::factory()->create();
+    $users = User::factory()->for($tenant)->count(2)->create();
+    $notifications = app(NotificationService::class);
+
+    // Transacción revertida: ni notificación ni mensaje.
+    try {
+        DB::transaction(function () use ($tenant, $users, $notifications) {
+            TenantContext::run($tenant, fn () => $notifications->sendEmail(NotificationEvent::CuentaBloqueada, $users[0]));
+            throw new RuntimeException('falla la operación de negocio');
+        });
+    } catch (RuntimeException) {
+    }
+
+    // Transacción confirmada.
+    DB::transaction(fn () => TenantContext::run($tenant, fn () => $notifications->sendEmail(NotificationEvent::CuentaBloqueada, $users[1])));
+
+    expect(Notification::query()->pluck('recipient_user_id')->all())->toBe([$users[1]->id]);
+
+    // El despachador real publica el mensaje y el worker (cola síncrona) lo envía.
+    config(['outbox.handlers' => ['notification.send' => SendNotificationJob::class], 'queue.default' => 'sync']);
+    $this->artisan('outbox:dispatch', ['--once' => true])->assertSuccessful();
+
+    Mail::assertSent(NotificationMail::class, 1);
+    Mail::assertSent(NotificationMail::class, fn (NotificationMail $mail) => $mail->hasTo($users[1]->email));
+    expect(Notification::query()->sole()->status)->toBe('enviada');
+})->group('DD-41', 'RNF-078');

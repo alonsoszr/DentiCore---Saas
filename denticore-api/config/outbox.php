@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Scheduling\Jobs\SendNotificationJob;
 use App\Support\Files\GenerateDocumentJob;
 use App\Support\Files\ScanStoredFileJob;
 
@@ -18,6 +19,7 @@ return [
     'handlers' => [
         'stored_file.scan' => ScanStoredFileJob::class,
         'document.generate' => GenerateDocumentJob::class,
+        'notification.send' => SendNotificationJob::class,
     ],
 
     // Días que se conservan los mensajes despachados antes de `outbox:prune` (SDD §1.9).

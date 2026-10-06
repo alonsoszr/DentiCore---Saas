@@ -102,6 +102,10 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # TASK-022: la prueba de entrega real de correo (RF-155) consulta la API de Mailpit.
+      mailpit:
+        image: axllent/mailpit
+        ports: ['1025:1025', '8025:8025']
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: 5432
