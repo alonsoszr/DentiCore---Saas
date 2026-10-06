@@ -98,20 +98,28 @@ export const storeTenantRequestSchema = z
     'Alta de clínica con invitación (CUS-01; validaciones de SRS §11.1, RF-013, RF-014, DD-22).\nEl primer administrador no recibe contraseña: la define al activar su cuenta.',
   )
 
-export const storeUserRequestSchema = z.object({
-  name: z.string().max(150),
-  email: z.string().email().max(180),
-  password: z.string(),
-  role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']),
-  is_active: z.boolean().optional(),
-  cop_number: z
-    .union([
-      z.string().max(10).describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.'),
-      z.null().describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.'),
-    ])
-    .describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.')
-    .optional(),
-})
+export const storeUserRequestSchema = z
+  .object({
+    name: z.string().min(3).max(150),
+    email: z.string().email().max(180),
+    role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']),
+    cop_number: z
+      .union([
+        z.string().max(10).describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.'),
+        z.null().describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.'),
+      ])
+      .describe('RN-75, RF-043: número de COP obligatorio para odontólogos y único en la clínica.')
+      .optional(),
+    specialty: z.union([z.string().max(100), z.null()]).optional(),
+    rne_number: z.union([z.string().max(10), z.null()]).optional(),
+    is_data_officer: z
+      .boolean()
+      .describe('RF-047: solo un Administrador de Clínica puede ser Oficial de Datos Personales.')
+      .optional(),
+  })
+  .describe(
+    'Alta de usuario de la clínica con invitación (CUS-11; RF-042, RF-043, RF-047, DD-22): sin\ncontraseña, que el usuario define al activar su cuenta. `super_admin` no es asignable (§3.7).',
+  )
 
 export const subscriptionPlanResourceSchema = z.object({
   id: z.string(),
@@ -181,28 +189,38 @@ export const updateTenantRequestSchema = z
     'Edición de los datos de una clínica (CUS-01; RF-013, RF-014). El código de acceso no se\nacepta: es inmutable (DD-29) y el plan se cambia con PUT …/plan (CUS-03).',
   )
 
-export const updateUserRequestSchema = z.object({
-  name: z.string().max(150).optional(),
-  email: z.string().email().max(180).optional(),
-  password: z.string().optional(),
-  role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']).optional(),
-  is_active: z.boolean().optional(),
-  cop_number: z
-    .union([
-      z.string().max(10).describe('RN-75, RF-043: quien pasa a odontólogo sin COP registrado debe indicarlo.'),
-      z.null().describe('RN-75, RF-043: quien pasa a odontólogo sin COP registrado debe indicarlo.'),
-    ])
-    .describe('RN-75, RF-043: quien pasa a odontólogo sin COP registrado debe indicarlo.')
-    .optional(),
-})
+export const updateUserRequestSchema = z
+  .object({
+    name: z.string().min(3).max(150).optional(),
+    email: z.string().email().max(180).optional(),
+    role: z.enum(['clinic_admin', 'dentist', 'receptionist', 'patient']).optional(),
+    cop_number: z
+      .union([
+        z.string().max(10).describe('RN-75, RF-043: quien es (o pasa a ser) odontólogo debe tener COP.'),
+        z.null().describe('RN-75, RF-043: quien es (o pasa a ser) odontólogo debe tener COP.'),
+      ])
+      .describe('RN-75, RF-043: quien es (o pasa a ser) odontólogo debe tener COP.')
+      .optional(),
+    specialty: z.union([z.string().max(100), z.null()]).optional(),
+    rne_number: z.union([z.string().max(10), z.null()]).optional(),
+    is_data_officer: z.boolean().optional(),
+  })
+  .describe(
+    'Edición de un usuario de la clínica (CUS-11; RF-042, RF-043, RF-045, RF-047). La desactivación\ny la reactivación tienen sus propias rutas; la contraseña la define solo su dueño.',
+  )
 
 export const userResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
   role: z.string(),
+  status: z.string(),
+  is_data_officer: z.boolean(),
   cop_number: z.union([z.string(), z.null()]),
-  is_active: z.boolean(),
+  specialty: z.union([z.string(), z.null()]),
+  rne_number: z.union([z.string(), z.null()]),
+  is_active: z.boolean().describe('Heredado: la SPA lo lee hasta la contracción (TASK-038).'),
+  last_login_at: z.union([z.string().datetime({ offset: true }), z.null()]),
   tenant: z
     .union([
       z.object({

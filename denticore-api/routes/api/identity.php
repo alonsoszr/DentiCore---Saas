@@ -35,6 +35,10 @@ Route::middleware(['auth:sanctum', 'token.fresh', 'throttle:api'])->group(functi
 // STAFF (SDD §4.2).
 Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:clinic_admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
-    Route::post('/users', [UserController::class, 'store']);
+    Route::post('/users', [UserController::class, 'store'])->middleware('idempotent');
+    Route::get('/users/{user}', [UserController::class, 'show']);
     Route::patch('/users/{user}', [UserController::class, 'update']);
+    Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate']);
+    Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate']);
+    Route::post('/users/{user}/invitation', [UserController::class, 'resendInvitation']);
 });

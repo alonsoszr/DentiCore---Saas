@@ -102,9 +102,16 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->getJson('/api/v1/users'), 'GET', '/users');
     $created = $this->actingWithToken($admin)->postJson('/api/v1/users', [
         'name' => 'Luis', 'email' => 'luis@contrato.test', 'password' => 'password123', 'role' => 'dentist', 'cop_number' => '12345',
-    ]);
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
     $check($created, 'POST', '/users');
-    $check($this->actingWithToken($admin)->postJson('/api/v1/users', []), 'POST', '/users');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/users', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/users');
+    $createdId = $created->json('data.id');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/users/{$createdId}"), 'GET', '/users/{user}');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$createdId}/invitation"), 'POST', '/users/{user}/invitation');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$createdId}/deactivate"), 'POST', '/users/{user}/deactivate');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$createdId}/reactivate"), 'POST', '/users/{user}/reactivate');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$admin->uuid}/deactivate"), 'POST', '/users/{user}/deactivate');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$admin->uuid}/invitation"), 'POST', '/users/{user}/invitation');
     $check($this->actingWithToken($admin)->patchJson('/api/v1/users/'.$created->json('data.id'), ['name' => 'Luis R.']), 'PATCH', '/users/{user}');
     $check($this->actingWithToken($admin)->patchJson('/api/v1/users/'.fake()->uuid(), ['name' => 'X']), 'PATCH', '/users/{user}');
     $check($this->actingWithToken($admin)->patchJson('/api/v1/users/'.$created->json('data.id'), ['email' => 'no-es-correo']), 'PATCH', '/users/{user}');

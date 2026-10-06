@@ -8,8 +8,28 @@ import { useClinic } from '../auth/useClinic'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 
-const EMPTY_FORM = { name: '', email: '', password: '', role: 'dentist', cop_number: '', is_active: true }
+const EMPTY_FORM = {
+  name: '',
+  email: '',
+  role: 'dentist',
+  cop_number: '',
+  specialty: '',
+  rne_number: '',
+  is_data_officer: false,
+}
 
+const STATUS_LABELS = {
+  pendiente_activacion: 'Pendiente de activación',
+  activo: 'Activo',
+  bloqueado_temporal: 'Bloqueado temporalmente',
+  inactivo: 'Inactivo',
+}
+
+/**
+ * Usuarios de la clínica (CUS-11, RF-042 a RF-047). El alta es por invitación (DD-22): el
+ * usuario define su contraseña al activar su cuenta. Pantalla funcional de MS-01; el diseño
+ * definitivo llega con TASK-040.
+ */
 export function UsersPage() {
   const { user: currentUser } = useAuth()
   const { slug } = useClinic()
@@ -21,8 +41,10 @@ export function UsersPage() {
 
   const usersQuery = useQuery({
     queryKey: ['users', slug],
-    queryFn: async () => (await apiClient.get('/users')).data.data,
+    queryFn: async () => (await apiClient.get('/users', { params: { per_page: 100 } })).data.data,
   })
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['users', slug] })
 
   const saveUser = useMutation({
     mutationFn: async ({ id, payload }) => {
@@ -30,9 +52,23 @@ export function UsersPage() {
       return response.data.data
     },
     onSuccess: (user, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['users', slug] })
-      setNotice(id ? `Se actualizó a ${user.name}.` : `Se creó la cuenta de ${user.name}.`)
+      refresh()
+      setNotice(id ? `Se actualizó a ${user.name}.` : `Se envió la invitación a ${user.email} (vence en 72 horas).`)
       closeForm()
+    },
+  })
+
+  const userAction = useMutation({
+    mutationFn: async ({ user, action }) => (await apiClient.post(`/users/${user.id}/${action}`)).data?.data,
+    onSuccess: (_data, { user, action }) => {
+      refresh()
+      setNotice(
+        {
+          deactivate: `Se desactivó a ${user.name} y se cerraron sus sesiones.`,
+          reactivate: `Se reactivó a ${user.name}.`,
+          invitation: `Se reenvió la invitación a ${user.email}.`,
+        }[action],
+      )
     },
   })
 
@@ -49,10 +85,11 @@ export function UsersPage() {
     setForm({
       name: user.name,
       email: user.email,
-      password: '',
       role: user.role,
       cop_number: user.cop_number ?? '',
-      is_active: user.is_active,
+      specialty: user.specialty ?? '',
+      rne_number: user.rne_number ?? '',
+      is_data_officer: Boolean(user.is_data_officer),
     })
     setEditing({ id: user.id })
   }
@@ -69,17 +106,29 @@ export function UsersPage() {
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    const payload = { ...form }
-    // En edición, la contraseña vacía significa "no cambiarla".
-    if (editing.id && !payload.password) delete payload.password
-    // RN-75: el número de COP solo aplica a odontólogos.
-    if (payload.role !== 'dentist' || !payload.cop_number) delete payload.cop_number
+    const payload = { name: form.name, email: form.email, role: form.role }
+    // RN-75, RF-043: COP, especialidad y RNE solo aplican a odontólogos.
+    if (form.role === 'dentist') {
+      if (form.cop_number) payload.cop_number = form.cop_number
+      payload.specialty = form.specialty || null
+      payload.rne_number = form.rne_number || null
+    }
+    // RF-047: el Oficial de Datos Personales es un Administrador de Clínica.
+    if (form.role === 'clinic_admin') payload.is_data_officer = form.is_data_officer
     saveUser.mutate({ id: editing.id, payload })
+  }
+
+  const deactivate = (user) => {
+    // RNF-063: la acción pide confirmación con sus efectos.
+    if (window.confirm(`¿Desactivar a ${user.name}? Se cerrarán todas sus sesiones abiertas.`)) {
+      userAction.mutate({ user, action: 'deactivate' })
+    }
   }
 
   const errors = fieldErrors(saveUser.error)
   const users = usersQuery.data ?? []
   const isEditing = Boolean(editing?.id)
+  const actionError = generalError(userAction.error)
 
   return (
     <>
@@ -92,6 +141,7 @@ export function UsersPage() {
       </PageHeader>
 
       {notice && <div className="alert alert-success">{notice}</div>}
+      {actionError && <div className="alert alert-error">{actionError}</div>}
 
       {editing && (
         <div className="card">
@@ -115,16 +165,7 @@ export function UsersPage() {
                 value={form.email}
                 onChange={handleChange}
                 error={errors.email}
-              />
-              <Field
-                label="Contraseña"
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                error={errors.password}
-                autoComplete="new-password"
-                hint={isEditing ? 'Déjala vacía para no cambiarla.' : 'Mínimo 8 caracteres.'}
+                hint={isEditing ? undefined : 'Recibirá una invitación para crear su contraseña.'}
               />
               <Field label="Rol" name="role" error={errors.role}>
                 <select id="role" name="role" value={form.role} onChange={handleChange}>
@@ -136,21 +177,40 @@ export function UsersPage() {
                 </select>
               </Field>
               {form.role === 'dentist' && (
-                <Field
-                  label="Número de COP"
-                  name="cop_number"
-                  value={form.cop_number}
-                  onChange={handleChange}
-                  error={errors.cop_number}
-                  hint="Colegio Odontológico del Perú."
-                />
+                <>
+                  <Field
+                    label="Número de COP"
+                    name="cop_number"
+                    value={form.cop_number}
+                    onChange={handleChange}
+                    error={errors.cop_number}
+                    hint="Colegio Odontológico del Perú."
+                  />
+                  <Field
+                    label="Especialidad"
+                    name="specialty"
+                    value={form.specialty}
+                    onChange={handleChange}
+                    error={errors.specialty}
+                  />
+                  <Field
+                    label="Número de RNE"
+                    name="rne_number"
+                    value={form.rne_number}
+                    onChange={handleChange}
+                    error={errors.rne_number}
+                    hint="Registro Nacional de Especialista."
+                  />
+                </>
               )}
             </div>
-            <label className="checkbox" style={{ marginTop: 14 }}>
-              <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} />
-              Cuenta activa
-              {isEditing && <span className="muted">(al desactivarla se cierran sus sesiones abiertas)</span>}
-            </label>
+            {form.role === 'clinic_admin' && (
+              <label className="checkbox" style={{ marginTop: 14 }}>
+                <input type="checkbox" name="is_data_officer" checked={form.is_data_officer} onChange={handleChange} />
+                Oficial de Datos Personales
+              </label>
+            )}
+            {errors.is_data_officer && <div className="alert alert-error">{errors.is_data_officer}</div>}
             <div className="form-actions">
               <button type="submit" className="btn" disabled={saveUser.isPending}>
                 {saveUser.isPending ? 'Guardando…' : 'Guardar'}
@@ -184,18 +244,43 @@ export function UsersPage() {
                     <td>
                       {user.name}
                       {user.id === currentUser.id && <span className="muted"> (tú)</span>}
+                      {user.is_data_officer && <span className="muted"> · Oficial de datos</span>}
                     </td>
                     <td className="muted">{user.email}</td>
                     <td>{ROLE_LABELS[user.role]}</td>
                     <td>
-                      <span className={user.is_active ? 'badge' : 'badge badge-muted'}>
-                        {user.is_active ? 'Activo' : 'Inactivo'}
+                      <span className={user.status === 'activo' ? 'badge' : 'badge badge-muted'}>
+                        {STATUS_LABELS[user.status] ?? user.status}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                       <button type="button" className="btn-link" onClick={() => openEdit(user)}>
                         Editar
                       </button>
+                      {user.status === 'pendiente_activacion' && (
+                        <button
+                          type="button"
+                          className="btn-link"
+                          onClick={() => userAction.mutate({ user, action: 'invitation' })}
+                        >
+                          Reenviar invitación
+                        </button>
+                      )}
+                      {user.status === 'inactivo' ? (
+                        <button
+                          type="button"
+                          className="btn-link"
+                          onClick={() => userAction.mutate({ user, action: 'reactivate' })}
+                        >
+                          Reactivar
+                        </button>
+                      ) : (
+                        user.id !== currentUser.id && (
+                          <button type="button" className="btn-link" onClick={() => deactivate(user)}>
+                            Desactivar
+                          </button>
+                        )
+                      )}
                     </td>
                   </tr>
                 ))}

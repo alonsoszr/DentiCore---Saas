@@ -25,8 +25,14 @@ class UserResource extends ApiResource
             'name' => $this->name,
             'email' => $this->email,
             'role' => $this->role,
+            'status' => $this->status,
+            'is_data_officer' => $this->is_data_officer,
             'cop_number' => $this->cop_number,
+            'specialty' => $this->specialty,
+            'rne_number' => $this->rne_number,
+            // Heredado: la SPA lo lee hasta la contracción (TASK-038).
             'is_active' => $this->is_active,
+            'last_login_at' => $this->last_login_at,
             'tenant' => TenantResource::make($this->whenLoaded('tenant')),
             'patient_uuid' => $this->when(
                 $this->role === 'patient' && $this->relationLoaded('patient'),

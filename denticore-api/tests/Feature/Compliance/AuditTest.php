@@ -48,12 +48,12 @@ it('writes one audit row for each auditable event type without clinical values',
     // user.created, user.updated, user.role_changed, user.deactivated, user.reactivated
     $this->actingWithToken($admin)->postJson('/api/v1/users', [
         'name' => 'Diego Dentista', 'email' => 'diego@sonrisa.test', 'password' => 'password123', 'role' => 'dentist', 'cop_number' => '12345',
-    ])->assertCreated();
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
     $dentist = User::query()->where('email', 'diego@sonrisa.test')->sole();
     $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['name' => 'Diego D.'])->assertOk();
     $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['role' => 'receptionist'])->assertOk();
-    $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['is_active' => false])->assertOk();
-    $this->actingWithToken($admin)->patchJson("/api/v1/users/{$dentist->uuid}", ['is_active' => true])->assertOk();
+    $this->actingWithToken($admin)->postJson("/api/v1/users/{$dentist->uuid}/deactivate")->assertOk();
+    $this->actingWithToken($admin)->postJson("/api/v1/users/{$dentist->uuid}/reactivate")->assertOk();
 
     // patient.created y clinical_record.viewed
     $patientUuid = $this->actingWithToken($admin)->postJson('/api/v1/patients', [
