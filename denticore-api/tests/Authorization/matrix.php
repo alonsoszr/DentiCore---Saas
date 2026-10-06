@@ -24,6 +24,10 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/platform/tenants/{tenant}/reactivate', 'cus' => 'CUS-02', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'PUT', 'uri' => 'api/v1/platform/tenants/{tenant}/plan', 'cus' => 'CUS-03', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
 
+    ['method' => 'GET', 'uri' => 'api/v1/clinic/settings', 'cus' => 'CUS-04', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/clinic/settings', 'cus' => 'CUS-04', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/clinic/logo', 'cus' => 'CUS-04', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+
     ['method' => 'GET', 'uri' => 'api/v1/users', 'cus' => 'CUS-11', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/users', 'cus' => 'CUS-11', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'PATCH', 'uri' => 'api/v1/users/{user}', 'cus' => 'CUS-11', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
