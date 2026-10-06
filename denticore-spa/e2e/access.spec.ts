@@ -4,7 +4,10 @@ import { MAILPIT_URL, SUPER_ADMIN, syntheticRuc, totp } from './support/auth'
 // Flujos completos de MS-01 (TASK-039 y TASK-040): alta de clínica → invitación en Mailpit →
 // activación → configuración del 2FA → acceso completo. Crean datos nuevos en cada ejecución,
 // así que corren en un solo proyecto de la matriz (la del login cubre navegadores y anchos).
-test.skip(({ browserName }, testInfo) => browserName !== 'chromium' || !testInfo.project.name.endsWith('1280'))
+test.skip(
+  ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
+  'Flujo con datos nuevos: solo en Chrome a 1280 px',
+)
 test.describe.configure({ mode: 'serial' })
 
 async function typeCode(page: Page, code: string) {
