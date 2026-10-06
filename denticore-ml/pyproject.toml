@@ -23,8 +23,9 @@ allowed-confusables = ["–"]
 [tool.mypy]
 strict = true
 python_version = "3.12"
-mypy_path = "src"
+mypy_path = ["src", "tests"]
 files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
 
 # scikit-learn y moto no publican tipos.
 [[tool.mypy.overrides]]

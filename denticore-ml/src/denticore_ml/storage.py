@@ -14,7 +14,8 @@ else:
     S3Client = Any
 
 
-def s3_client_from_env() -> "S3Client":
-    endpoint = os.environ.get("ML_S3_ENDPOINT") or None
+def s3_client_from_env(endpoint: str = "") -> "S3Client":
+    """Cliente S3; el endpoint recibido tiene prioridad sobre `ML_S3_ENDPOINT`."""
+    endpoint = endpoint or os.environ.get("ML_S3_ENDPOINT", "")
     region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
-    return boto3.client("s3", endpoint_url=endpoint, region_name=region)
+    return boto3.client("s3", endpoint_url=endpoint or None, region_name=region)
