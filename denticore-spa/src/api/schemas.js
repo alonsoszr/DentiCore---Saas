@@ -94,6 +94,7 @@ export const patientResourceSchema = z.object({
     }),
     z.null(),
   ]),
+  allergies: z.array(z.string()),
   user_uuid: z.union([z.string(), z.null()]).optional(),
   created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
 })

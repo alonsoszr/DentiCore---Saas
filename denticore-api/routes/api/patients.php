@@ -2,6 +2,7 @@
 
 use App\Modules\Patients\Http\Controllers\ConsentController;
 use App\Modules\Patients\Http\Controllers\LegalRepresentativeController;
+use App\Modules\Patients\Http\Controllers\MedicalHistoryController;
 use App\Modules\Patients\Http\Controllers\PatientController;
 use App\Support\Audit\AuditClinicalRecordRead;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,10 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         ->middleware(['can:view,patient', AuditClinicalRecordRead::class]);
     Route::patch('/patients/{patient}', [PatientController::class, 'update'])
         ->middleware(['role:clinic_admin,receptionist', 'can:updateIdentity,patient']);
+
+    // CUS-14, CUS-21: antecedentes médicos solo con consentimiento vigente (RF-064, RN-10).
+    Route::put('/patients/{patient}/medical-history', [MedicalHistoryController::class, 'update'])
+        ->middleware(['role:clinic_admin,dentist,receptionist', 'consent:atencion']);
 
     // CUS-17: consentimiento de datos (RF-065 a RF-067).
     Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {

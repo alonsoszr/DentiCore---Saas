@@ -48,6 +48,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_attention_at
  * @property Carbon|null $deceased_on
  * @property int|null $created_by
+ * @property array{alergias: list<string>, enfermedades: list<string>, medicamentos: list<string>, observaciones: string|null}|null $medical_history
  */
 #[Fillable(['document_id', 'first_name', 'last_name', 'birth_date', 'phone', 'email', 'medical_history', 'sex', 'address'])]
 #[Hidden(['document_id_hash', 'document_hash', 'clinical_record_hash'])]
