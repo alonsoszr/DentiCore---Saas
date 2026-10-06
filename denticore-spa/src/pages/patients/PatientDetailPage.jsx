@@ -3,6 +3,7 @@ import { generalError } from '../../api/errors'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
 import { NotFoundPage } from '../SimplePages'
+import { ClinicalRecordPage } from './ClinicalRecordPage'
 import { ConsentPage } from './ConsentPage'
 import { MedicalHistoryPage } from './MedicalHistoryPage'
 import { PatientEditPage } from './PatientEditPage'
@@ -14,7 +15,7 @@ import { usePatient } from './usePatient'
 const IDENTITY_ROLES = ['clinic_admin', 'receptionist']
 
 /**
- * Ficha del paciente (/c/:slug/app/pacientes/:uuid/*; CUS-13 a CUS-17, CUS-21). La cabecera
+ * Ficha del paciente (/c/:slug/app/pacientes/:uuid/*; CUS-13 a CUS-17, CUS-21, CUS-24). La cabecera
  * con la identidad del paciente encabeza todas sus pantallas (RNF-146).
  */
 export function PatientDetailPage() {
@@ -31,6 +32,7 @@ export function PatientDetailPage() {
 
   const tabs = [
     { to: base, label: 'Ficha', end: true },
+    { to: `${base}/hc`, label: 'Historia clínica' },
     { to: `${base}/antecedentes`, label: 'Antecedentes' },
     { to: `${base}/consentimiento`, label: 'Consentimiento' },
     { to: `${base}/representantes`, label: 'Representantes' },
@@ -58,6 +60,7 @@ export function PatientDetailPage() {
 
       <Routes>
         <Route index element={<PatientRecord query={patientQuery} />} />
+        <Route path="hc" element={<ClinicalRecordPage patient={patient} />} />
         <Route path="antecedentes" element={<MedicalHistoryPage patient={patient} />} />
         <Route path="consentimiento" element={<ConsentPage patient={patient} />} />
         <Route path="representantes" element={<RepresentativesPage patient={patient} />} />
