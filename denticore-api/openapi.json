@@ -1759,6 +1759,131 @@
                 }
             }
         },
+        "/finding-catalog": {
+            "get": {
+                "operationId": "findingCatalog.index",
+                "tags": [
+                    "FindingCatalog"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "acronym": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "level": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "pieza",
+                                                            "superficie",
+                                                            "tramo"
+                                                        ]
+                                                    },
+                                                    "dentition": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "permanente",
+                                                            "temporal",
+                                                            "ambas"
+                                                        ]
+                                                    },
+                                                    "states": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "code": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "color": {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "azul",
+                                                                        "rojo"
+                                                                    ]
+                                                                },
+                                                                "acronym": {
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "code",
+                                                                "name",
+                                                                "color",
+                                                                "acronym"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "code",
+                                                    "name",
+                                                    "acronym",
+                                                    "level",
+                                                    "dentition",
+                                                    "states"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/invitations/{token}": {
             "get": {
                 "operationId": "invitation.show",
@@ -2350,6 +2475,282 @@
                     },
                     "429": {
                         "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/odontogram-entries/{entry}/corrections": {
+            "post": {
+                "operationId": "odontogramCorrection.store",
+                "tags": [
+                    "OdontogramCorrection"
+                ],
+                "parameters": [
+                    {
+                        "name": "entry",
+                        "in": "path",
+                        "required": true,
+                        "description": "The entry UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                            "anulacion",
+                                            "reemplazo"
+                                        ]
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 500
+                                    },
+                                    "tooth": {
+                                        "type": "integer",
+                                        "description": "Datos de reemplazo: las mismas validaciones que CUS-22 (SRS \u00a711.6)."
+                                    },
+                                    "tooth_end": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
+                                    },
+                                    "surfaces": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 1
+                                        },
+                                        "maxItems": 7
+                                    },
+                                    "finding_code": {
+                                        "type": "string",
+                                        "maxLength": 20
+                                    },
+                                    "state_code": {
+                                        "type": "string",
+                                        "maxLength": 20
+                                    }
+                                },
+                                "required": [
+                                    "kind",
+                                    "reason",
+                                    "tooth",
+                                    "finding_code",
+                                    "state_code"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`OdontogramEntryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/OdontogramEntryResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/attentions/{attention}/odontogram-entries": {
+            "post": {
+                "operationId": "odontogramEntry.store",
+                "tags": [
+                    "OdontogramEntry"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "tooth": {
+                                        "type": "integer"
+                                    },
+                                    "tooth_end": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
+                                    },
+                                    "surfaces": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 1
+                                        },
+                                        "maxItems": 7
+                                    },
+                                    "finding_code": {
+                                        "type": "string",
+                                        "maxLength": 20
+                                    },
+                                    "state_code": {
+                                        "type": "string",
+                                        "maxLength": 20
+                                    },
+                                    "note": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 500
+                                    }
+                                },
+                                "required": [
+                                    "tooth",
+                                    "finding_code",
+                                    "state_code"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`OdontogramEntryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/OdontogramEntryResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -5518,6 +5919,185 @@
                     "password"
                 ],
                 "title": "LoginRequest"
+            },
+            "OdontogramEntryResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "entry_type": {
+                        "type": "string",
+                        "enum": [
+                            "inicial",
+                            "evolucion",
+                            "correccion"
+                        ]
+                    },
+                    "tooth": {
+                        "type": "integer"
+                    },
+                    "tooth_end": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "surfaces": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "M",
+                                "D",
+                                "O",
+                                "I",
+                                "V",
+                                "L",
+                                "P"
+                            ]
+                        }
+                    },
+                    "finding": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "acronym": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "code",
+                            "name",
+                            "acronym"
+                        ]
+                    },
+                    "state": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "acronym": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "code",
+                            "name",
+                            "acronym"
+                        ]
+                    },
+                    "color": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "azul",
+                            "rojo",
+                            null
+                        ]
+                    },
+                    "origin": {
+                        "type": "string",
+                        "enum": [
+                            "manual",
+                            "ia",
+                            "procedimiento"
+                        ]
+                    },
+                    "note": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "corrects_entry_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "correction_kind": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "anulacion",
+                            "reemplazo",
+                            null
+                        ]
+                    },
+                    "correction_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "author": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "cop": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "cop"
+                        ]
+                    },
+                    "recorded_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "entry_type",
+                    "tooth",
+                    "tooth_end",
+                    "surfaces",
+                    "finding",
+                    "state",
+                    "color",
+                    "origin",
+                    "note",
+                    "corrects_entry_id",
+                    "correction_kind",
+                    "correction_reason",
+                    "author",
+                    "recorded_at"
+                ],
+                "title": "OdontogramEntryResource"
             },
             "PatientResource": {
                 "type": "object",

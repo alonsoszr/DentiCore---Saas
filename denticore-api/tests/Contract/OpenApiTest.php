@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
+use Tests\Support\ClinicalFixtures;
 use Tests\Support\OpenApiContract;
 
 it('keeps openapi.json in sync with the code', function () {
@@ -213,6 +214,21 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($dentist)->deleteJson("{$diagnoses}/".$added->json('data.id')), 'DELETE', '/attentions/{attention}/diagnoses/{diagnosis}');
     $check($this->actingWithToken($dentist)->deleteJson("{$diagnoses}/".fake()->uuid()), 'DELETE', '/attentions/{attention}/diagnoses/{diagnosis}');
     $this->actingWithToken($dentist)->postJson($diagnoses, ['cie10_code' => 'K02.1', 'type' => 'definitivo']);
+    // Hallazgos y correcciones del odontograma
+    ClinicalFixtures::cariesFinding();
+    $check($this->actingWithToken($admin)->getJson('/api/v1/finding-catalog'), 'GET', '/finding-catalog');
+    $entries = "/api/v1/attentions/{$attentionId}/odontogram-entries";
+    $finding = ['tooth' => 36, 'surfaces' => ['O'], 'finding_code' => 'PRUEBA_CARIES', 'state_code' => 'ACTIVA'];
+    $recorded = $this->actingWithToken($dentist)->postJson($entries, $finding, ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($recorded, 'POST', '/attentions/{attention}/odontogram-entries');
+    $check($this->actingWithToken($dentist)->postJson($entries, [...$finding, 'tooth' => 19], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/attentions/{attention}/odontogram-entries');
+    $corrections = '/api/v1/odontogram-entries/'.$recorded->json('data.id').'/corrections';
+    $check($this->actingWithToken($dentist)->postJson($corrections, ['kind' => 'anulacion', 'reason' => 'Corta'], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/odontogram-entries/{entry}/corrections');
+    $check($this->actingWithToken($dentist)->postJson($corrections, [
+        'kind' => 'reemplazo', 'reason' => 'Se registró en la pieza equivocada', ...$finding, 'tooth' => 37,
+    ], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/odontogram-entries/{entry}/corrections');
+    $check($this->actingWithToken($dentist)->postJson($corrections, ['kind' => 'anulacion', 'reason' => 'Segunda corrección'], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/odontogram-entries/{entry}/corrections');
+
     $addenda = "/api/v1/attentions/{$attentionId}/addenda";
     $check($this->actingWithToken($dentist)->postJson($addenda, ['text' => 'Antes del cierre']), 'POST', '/attentions/{attention}/addenda');
     $check($close(), 'POST', '/attentions/{attention}/close');

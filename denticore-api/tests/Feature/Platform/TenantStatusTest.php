@@ -7,6 +7,7 @@
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Odontogram\Models\Attention;
+use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
@@ -61,6 +62,7 @@ it('applies the read-only rule to every registered staff route', function () {
             return $attention->uuid;
         },
         // Diagnóstico de la misma atención: el binding anidado lo resuelve antes de la regla RN-07.
+        '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => function () use ($tenant, &$attention) {
             return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([
                 'cie10_code' => 'K02.1', 'type' => 'definitivo', 'origin' => 'nota', 'created_by' => $attention->dentist_id,
