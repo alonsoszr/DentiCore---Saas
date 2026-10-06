@@ -59,10 +59,11 @@ it('seeds the platform settings with a defined value', function () {
 })->group('RNF-131', 'RN-30');
 
 it('creates a clinic with its plan as foreign key, its settings row and the Spanish status', function () {
-    $tenant = app(TenantService::class)->create(
-        ['name' => 'Clínica Sonrisa', 'slug' => 'clinica-sonrisa', 'subscription_plan' => 'pro'],
-        ['name' => 'Ana Admin', 'email' => 'ana@sonrisa.test', 'password' => 'password'],
-    );
+    $tenant = app(TenantService::class)->create([
+        'name' => 'Clínica Sonrisa', 'legal_name' => 'Clínica Sonrisa S.A.C.', 'ruc' => '20600000013',
+        'slug' => 'clinica-sonrisa', 'address' => 'Av. Arequipa 1234, Lima', 'subscription_plan' => 'pro',
+        'admin' => ['name' => 'Ana Admin', 'email' => 'ana@sonrisa.test'],
+    ]);
 
     $tenant->refresh();
     expect($tenant->status)->toBe('activa')

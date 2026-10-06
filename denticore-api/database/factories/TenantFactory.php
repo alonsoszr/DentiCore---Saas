@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Platform\Services\RucValidator;
 use App\Modules\Platform\Services\TenantService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -26,8 +27,14 @@ class TenantFactory extends Factory
     {
         $name = fake()->unique()->company();
 
+        // RUC sintético de persona jurídica con dígito verificador válido (RF-014).
+        $rucPrefix = '20'.fake()->unique()->numerify('########');
+
         return [
             'name' => $name,
+            'legal_name' => "{$name} S.A.C.",
+            'ruc' => $rucPrefix.RucValidator::checkDigit($rucPrefix),
+            'address' => fake()->streetAddress(),
             // SDD §2.3: slug de 3 a 50 caracteres que no termina en guion.
             'slug' => rtrim(str($name)->slug()->limit(50, '')->toString(), '-'),
             'subscription_plan' => fake()->randomElement(['basic', 'pro', 'enterprise']),

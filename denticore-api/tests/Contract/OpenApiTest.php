@@ -12,6 +12,7 @@ use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\Support\OpenApiContract;
 
 it('keeps openapi.json in sync with the code', function () {
@@ -44,13 +45,20 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
 
     // Plataforma
-    $check($this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/tenants'), 'GET', '/tenants');
-    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/tenants'), 'GET', '/tenants');
-    $check($this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/tenants', [
-        'name' => 'Clínica Nueva', 'slug' => 'clinica-nueva', 'subscription_plan' => 'basic',
-        'admin' => ['name' => 'Ana', 'email' => 'ana@nueva.test', 'password' => 'password123'],
-    ]), 'POST', '/tenants');
-    $check($this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/tenants', []), 'POST', '/tenants');
+    $check($this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/platform/plans'), 'GET', '/platform/plans');
+    $check($this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/platform/tenants'), 'GET', '/platform/tenants');
+    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/platform/tenants'), 'GET', '/platform/tenants');
+    $created = $this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/platform/tenants', [
+        'name' => 'Clínica Nueva', 'legal_name' => 'Clínica Nueva S.A.C.', 'ruc' => '20600000013',
+        'slug' => 'clinica-nueva', 'address' => 'Jr. Junín 456, Lima', 'subscription_plan' => 'basic',
+        'admin' => ['name' => 'Ana', 'email' => 'ana@nueva.test'],
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($created, 'POST', '/platform/tenants');
+    $check($this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/platform/tenants', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/platform/tenants');
+    $newTenant = $created->json('data.id');
+    $check($this->actingAs($superAdmin, 'sanctum')->getJson("/api/v1/platform/tenants/{$newTenant}"), 'GET', '/platform/tenants/{tenant}');
+    $check($this->actingAs($superAdmin, 'sanctum')->patchJson("/api/v1/platform/tenants/{$newTenant}", ['name' => 'Clínica Renovada']), 'PATCH', '/platform/tenants/{tenant}');
+    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/admin-invitation"), 'POST', '/platform/tenants/{tenant}/admin-invitation');
 
     // Usuarios
     $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/users'), 'GET', '/users');

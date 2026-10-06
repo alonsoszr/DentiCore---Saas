@@ -13,7 +13,8 @@ describe('TenantsPage', () => {
         id: 't-1',
         name: 'Clínica Demo',
         slug: 'clinica-demo',
-        subscription_plan: 'basic',
+        plan: { id: 'p-1', code: 'basic', name: 'Basic' },
+        active_dentists: 2,
         status: 'activa',
         created_at: '2026-09-21T15:00:00Z',
       },
@@ -30,24 +31,47 @@ describe('TenantsPage', () => {
     expect(screen.getByText('21/09/2026')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Registrar clínica' }))
-    const [clinicName] = screen.getAllByLabelText('Nombre')
-    await userEvent.type(clinicName, 'Sonrisa Ñaña')
+    await userEvent.type(screen.getByLabelText('Nombre comercial'), 'Sonrisa Ñaña')
     expect(screen.getByLabelText('Código de acceso')).toHaveValue('sonrisa-nana')
 
+    await userEvent.type(screen.getByLabelText('Razón social'), 'Sonrisa Ñaña S.A.C.')
+    await userEvent.type(screen.getByLabelText('RUC'), '20600000013')
+    await userEvent.type(screen.getByLabelText('Dirección'), 'Av. Arequipa 1234, Lima')
     await userEvent.selectOptions(screen.getByLabelText('Plan'), 'pro')
-    await userEvent.type(screen.getAllByLabelText('Nombre')[1], 'Rosa Admin')
-    await userEvent.type(screen.getAllByLabelText('Correo electrónico')[0], 'rosa@sonrisa.test')
-    await userEvent.type(screen.getByLabelText('Contraseña'), 'secreta123')
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Rosa Admin')
+    await userEvent.type(screen.getByLabelText('Correo electrónico'), 'rosa@sonrisa.test')
+    expect(screen.queryByLabelText('Contraseña')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
     expect(await screen.findByText(/Clínica «Sonrisa Ñaña» registrada/)).toBeInTheDocument()
+    expect(screen.getByText(/Se envió la/)).toBeInTheDocument()
     const post = calls.find((call) => call.method === 'post')
+    expect(post.url).toBe('/platform/tenants')
     expect(JSON.parse(post.data)).toEqual({
       name: 'Sonrisa Ñaña',
+      legal_name: 'Sonrisa Ñaña S.A.C.',
+      ruc: '20600000013',
       slug: 'sonrisa-nana',
+      address: 'Av. Arequipa 1234, Lima',
       subscription_plan: 'pro',
-      admin: { name: 'Rosa Admin', email: 'rosa@sonrisa.test', password: 'secreta123' },
+      admin: { name: 'Rosa Admin', email: 'rosa@sonrisa.test' },
     })
+  })
+
+  it('shows the RUC error next to its field and keeps the typed value', async () => {
+    mockApi((config) =>
+      config.method === 'post'
+        ? { status: 422, data: { errors: { ruc: ['El RUC no es válido.'] } } }
+        : { data: { data: [] } },
+    )
+    renderPage(<TenantsPage />, ROUTE)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Registrar clínica' }))
+    await userEvent.type(screen.getByLabelText('RUC'), '20600000014')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByText('El RUC no es válido.')).toBeInTheDocument()
+    expect(screen.getByLabelText('RUC')).toHaveValue('20600000014')
   })
 
   it('keeps a manually edited access code and shows field errors', async () => {
@@ -61,7 +85,7 @@ describe('TenantsPage', () => {
     expect(await screen.findByText('Aún no hay clínicas registradas.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Registrar clínica' }))
     await userEvent.type(screen.getByLabelText('Código de acceso'), 'propio')
-    await userEvent.type(screen.getAllByLabelText('Nombre')[0], 'Otra')
+    await userEvent.type(screen.getByLabelText('Nombre comercial'), 'Otra')
     expect(screen.getByLabelText('Código de acceso')).toHaveValue('propio')
 
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))

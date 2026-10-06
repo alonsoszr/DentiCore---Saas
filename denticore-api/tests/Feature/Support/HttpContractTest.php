@@ -73,7 +73,7 @@ it('exposes no numeric id in any API response', function () {
     $patient = Patient::factory()->for($tenant)->create();
 
     $responses = [
-        $this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/tenants'),
+        $this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/platform/tenants'),
         $this->actingAs($admin, 'sanctum')->getJson('/api/v1/auth/me'),
         $this->actingAs($admin, 'sanctum')->getJson('/api/v1/users'),
         $this->actingAs($admin, 'sanctum')->getJson('/api/v1/patients'),

@@ -27,10 +27,19 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@denticore.test',
         ]);
 
-        $clinic = $tenants->create(
-            ['name' => 'Clínica Demo', 'slug' => 'clinica-demo', 'subscription_plan' => 'pro'],
-            ['name' => 'Carla Administradora', 'email' => 'admin@clinica-demo.test', 'password' => 'password'],
-        );
+        $clinic = $tenants->create([
+            'name' => 'Clínica Demo',
+            'legal_name' => 'Clínica Demo S.A.C.',
+            'ruc' => '20600000013',
+            'slug' => 'clinica-demo',
+            'address' => 'Av. Arequipa 1234, Lima',
+            'subscription_plan' => 'pro',
+            'admin' => ['name' => 'Carla Administradora', 'email' => 'admin@clinica-demo.test'],
+        ]);
+
+        // La semilla activa al administrador sin pasar por la invitación (DD-22) para poder
+        // entrar directamente con los datos de demostración.
+        $tenants->firstAdmin($clinic)?->forceFill(['password' => 'password', 'status' => 'activo'])->save();
 
         $accounts = [
             'dentist' => ['Diego Odontólogo', 'dentista@clinica-demo.test'],

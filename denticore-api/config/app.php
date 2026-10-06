@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Origen de la SPA (SDD §1.10): base de los enlaces de los correos (activación,
+    // restablecimiento, confirmación de cita).
+    'spa_url' => rtrim((string) env('SPA_URL', 'http://localhost:5173'), '/'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

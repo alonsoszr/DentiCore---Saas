@@ -14,6 +14,7 @@ use App\Support\Audit\AuditLogger;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 function auditActions(): array
 {
@@ -24,14 +25,19 @@ it('writes one audit row for each auditable event type without clinical values',
     $superAdmin = User::factory()->superAdmin()->create(['email' => 'sa@denticore.test']);
 
     // tenant.created
-    $this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/tenants', [
+    $this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/platform/tenants', [
         'name' => 'Clínica Sonrisa',
+        'legal_name' => 'Clínica Sonrisa S.A.C.',
+        'ruc' => '20600000013',
         'slug' => 'clinica-sonrisa',
+        'address' => 'Av. Arequipa 1234, Lima',
         'subscription_plan' => 'pro',
-        'admin' => ['name' => 'Ana Admin', 'email' => 'ana@sonrisa.test', 'password' => 'password123'],
-    ])->assertCreated();
+        'admin' => ['name' => 'Ana Admin', 'email' => 'ana@sonrisa.test'],
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
     $tenant = Tenant::query()->where('slug', 'clinica-sonrisa')->sole();
     $admin = User::query()->where('email', 'ana@sonrisa.test')->sole();
+    // La activación por invitación es de TASK-029: aquí se simula que el administrador ya la aceptó.
+    $admin->forceFill(['password' => 'password123', 'status' => 'activo'])->save();
 
     // auth.login_failed y auth.login_ok
     $this->postJson('/api/v1/auth/login', ['tenant_slug' => 'clinica-sonrisa', 'email' => 'ana@sonrisa.test', 'password' => 'mala-clave'])

@@ -510,36 +510,264 @@
                 }
             }
         },
-        "/tenants": {
-            "post": {
-                "operationId": "tenant.store",
+        "/platform/plans": {
+            "get": {
+                "operationId": "subscriptionPlan.index",
                 "tags": [
-                    "Tenant"
+                    "SubscriptionPlan"
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StoreTenantRequest"
-                            }
-                        }
-                    }
-                },
                 "responses": {
-                    "201": {
-                        "description": "`TenantResource`",
+                    "200": {
+                        "description": "Array of `SubscriptionPlanResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/components/schemas/TenantResource"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SubscriptionPlanResource"
+                                            }
                                         }
                                     },
                                     "required": [
                                         "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/tenants": {
+            "get": {
+                "operationId": "tenant.index",
+                "summary": "RF-018 y RF-010: listado paginado con b\u00fasqueda y filtros",
+                "tags": [
+                    "Tenant"
+                ],
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 150
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "activa",
+                                "suspendida",
+                                "cancelada",
+                                "eliminada",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "plan",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `TenantResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/TenantResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "plan"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -573,24 +801,135 @@
                     }
                 }
             },
-            "get": {
-                "operationId": "tenant.index",
+            "post": {
+                "operationId": "tenant.store",
                 "tags": [
                     "Tenant"
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreTenantRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
-                    "200": {
-                        "description": "Array of `TenantResource`",
+                    "201": {
+                        "description": "`TenantResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/TenantResource"
-                                            }
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/TenantResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "plan"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/tenants/{tenant}": {
+            "get": {
+                "operationId": "tenant.show",
+                "tags": [
+                    "Tenant"
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`TenantResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/TenantResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "plan"
+                                                    ]
+                                                }
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -605,6 +944,164 @@
                     },
                     "403": {
                         "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "tenant.update",
+                "tags": [
+                    "Tenant"
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTenantRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`TenantResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/TenantResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "plan"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/tenants/{tenant}/admin-invitation": {
+            "post": {
+                "operationId": "tenant.resendInvitation",
+                "summary": "FA-1 de CUS-01 (RF-016): nuevo enlace de 72 h; el anterior deja de servir",
+                "tags": [
+                    "Tenant"
+                ],
+                "parameters": [
+                    {
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -1085,58 +1582,60 @@
             },
             "StoreTenantRequest": {
                 "type": "object",
+                "description": "Alta de cl\u00ednica con invitaci\u00f3n (CUS-01; validaciones de SRS \u00a711.1, RF-013, RF-014, DD-22).\nEl primer administrador no recibe contrase\u00f1a: la define al activar su cuenta.",
                 "properties": {
                     "name": {
                         "type": "string",
+                        "minLength": 3,
                         "maxLength": 150
+                    },
+                    "legal_name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 200
+                    },
+                    "ruc": {
+                        "type": "string"
                     },
                     "slug": {
                         "type": "string",
-                        "maxLength": 150
+                        "description": "SRS \u00a711.1: 3\u201350 caracteres [a-z0-9-], sin guion al inicio ni al final.",
+                        "pattern": "^[a-z0-9]([a-z0-9-]{1,48})[a-z0-9]$"
+                    },
+                    "address": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 200
                     },
                     "subscription_plan": {
-                        "type": "string",
-                        "enum": [
-                            "basic",
-                            "pro",
-                            "enterprise"
-                        ]
-                    },
-                    "settings": {
-                        "type": [
-                            "array",
-                            "null"
-                        ],
-                        "items": {
-                            "type": "string"
-                        }
+                        "type": "string"
                     },
                     "admin": {
                         "type": "object",
                         "properties": {
                             "name": {
                                 "type": "string",
+                                "minLength": 3,
                                 "maxLength": 150
                             },
                             "email": {
                                 "type": "string",
                                 "format": "email",
                                 "maxLength": 180
-                            },
-                            "password": {
-                                "type": "string"
                             }
                         },
                         "required": [
                             "name",
-                            "email",
-                            "password"
+                            "email"
                         ]
                     }
                 },
                 "required": [
                     "name",
+                    "legal_name",
+                    "ruc",
                     "slug",
+                    "address",
                     "subscription_plan",
                     "admin"
                 ],
@@ -1186,6 +1685,45 @@
                 ],
                 "title": "StoreUserRequest"
             },
+            "SubscriptionPlanResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "max_dentists": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "includes_ai": {
+                        "type": "boolean"
+                    },
+                    "includes_risk": {
+                        "type": "boolean"
+                    },
+                    "includes_analytics": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "max_dentists",
+                    "includes_ai",
+                    "includes_risk",
+                    "includes_analytics"
+                ],
+                "title": "SubscriptionPlanResource"
+            },
             "TenantResource": {
                 "type": "object",
                 "properties": {
@@ -1195,21 +1733,82 @@
                     "name": {
                         "type": "string"
                     },
+                    "legal_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ruc": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "slug": {
                         "type": "string"
                     },
-                    "subscription_plan": {
-                        "type": "string"
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "contact_email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "plan": {
+                        "$ref": "#/components/schemas/SubscriptionPlanResource"
                     },
                     "status": {
                         "type": "string"
                     },
-                    "settings": {
+                    "status_reason": {
                         "type": [
-                            "object",
+                            "string",
                             "null"
-                        ],
-                        "additionalProperties": {}
+                        ]
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "active_dentists": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "admin": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "email": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "email",
+                            "status"
+                        ]
                     },
                     "created_at": {
                         "type": [
@@ -1222,13 +1821,43 @@
                 "required": [
                     "id",
                     "name",
+                    "legal_name",
+                    "ruc",
                     "slug",
-                    "subscription_plan",
+                    "address",
+                    "phone",
+                    "contact_email",
                     "status",
-                    "settings",
+                    "status_reason",
+                    "timezone",
                     "created_at"
                 ],
                 "title": "TenantResource"
+            },
+            "UpdateTenantRequest": {
+                "type": "object",
+                "description": "Edici\u00f3n de los datos de una cl\u00ednica (CUS-01; RF-013, RF-014). El c\u00f3digo de acceso no se\nacepta: es inmutable (DD-29) y el plan se cambia con PUT \u2026/plan (CUS-03).",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 150
+                    },
+                    "legal_name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 200
+                    },
+                    "ruc": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 200
+                    }
+                },
+                "title": "UpdateTenantRequest"
             },
             "UpdateUserRequest": {
                 "type": "object",

@@ -11,11 +11,13 @@ const STATUS_LABELS = { activa: 'Activa', suspendida: 'Suspendida', cancelada: '
 
 const EMPTY_FORM = {
   name: '',
+  legal_name: '',
+  ruc: '',
   slug: '',
+  address: '',
   subscription_plan: 'basic',
   admin_name: '',
   admin_email: '',
-  admin_password: '',
 }
 
 function slugify(text) {
@@ -37,11 +39,11 @@ export function TenantsPage() {
 
   const tenantsQuery = useQuery({
     queryKey: ['tenants'],
-    queryFn: async () => (await apiClient.get('/tenants')).data.data,
+    queryFn: async () => (await apiClient.get('/platform/tenants')).data.data,
   })
 
   const createTenant = useMutation({
-    mutationFn: async (payload) => (await apiClient.post('/tenants', payload)).data.data,
+    mutationFn: async (payload) => (await apiClient.post('/platform/tenants', payload)).data.data,
     onSuccess: (tenant, payload) => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] })
       setCreated({ ...tenant, adminEmail: payload.admin.email })
@@ -64,11 +66,15 @@ export function TenantsPage() {
   const handleSubmit = (event) => {
     event.preventDefault()
     setCreated(null)
+    // DD-22: el administrador no recibe contraseña; la define al activar su cuenta.
     createTenant.mutate({
       name: form.name,
+      legal_name: form.legal_name,
+      ruc: form.ruc,
       slug: form.slug,
+      address: form.address,
       subscription_plan: form.subscription_plan,
-      admin: { name: form.admin_name, email: form.admin_email, password: form.admin_password },
+      admin: { name: form.admin_name, email: form.admin_email },
     })
   }
 
@@ -87,8 +93,8 @@ export function TenantsPage() {
 
       {created && (
         <div className="alert alert-success">
-          Clínica «{created.name}» registrada. Su administrador ya puede ingresar con el código{' '}
-          <strong>{created.slug}</strong> y el correo <strong>{created.adminEmail}</strong>.
+          Clínica «{created.name}» registrada con el código <strong>{created.slug}</strong>. Se envió la invitación de
+          activación a <strong>{created.adminEmail}</strong> (vence en 72 horas).
         </div>
       )}
 
@@ -101,12 +107,30 @@ export function TenantsPage() {
           <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-grid">
               <Field
-                label="Nombre"
+                label="Nombre comercial"
                 name="name"
                 autoComplete="off"
                 value={form.name}
                 onChange={handleChange}
                 error={errors.name}
+              />
+              <Field
+                label="Razón social"
+                name="legal_name"
+                autoComplete="off"
+                value={form.legal_name}
+                onChange={handleChange}
+                error={errors.legal_name}
+              />
+              <Field
+                label="RUC"
+                name="ruc"
+                autoComplete="off"
+                inputMode="numeric"
+                maxLength={11}
+                value={form.ruc}
+                onChange={handleChange}
+                error={errors.ruc}
               />
               <Field
                 label="Código de acceso"
@@ -115,7 +139,15 @@ export function TenantsPage() {
                 value={form.slug}
                 onChange={handleChange}
                 error={errors.slug}
-                hint="Lo usará el personal de la clínica para iniciar sesión."
+                hint="Lo usará el personal de la clínica para iniciar sesión. No se puede cambiar después."
+              />
+              <Field
+                label="Dirección"
+                name="address"
+                autoComplete="off"
+                value={form.address}
+                onChange={handleChange}
+                error={errors.address}
               />
               <Field label="Plan" name="subscription_plan" error={errors.subscription_plan}>
                 <select
@@ -152,16 +184,6 @@ export function TenantsPage() {
                 onChange={handleChange}
                 error={errors['admin.email']}
               />
-              <Field
-                label="Contraseña"
-                name="admin_password"
-                type="password"
-                value={form.admin_password}
-                onChange={handleChange}
-                error={errors['admin.password']}
-                autoComplete="new-password"
-                hint="Mínimo 8 caracteres. Compártela de forma segura con el administrador."
-              />
             </div>
 
             <div className="form-actions">
@@ -197,6 +219,7 @@ export function TenantsPage() {
                   <th>Nombre</th>
                   <th>Código de acceso</th>
                   <th>Plan</th>
+                  <th>Odontólogos activos</th>
                   <th>Estado</th>
                   <th>Registrada</th>
                 </tr>
@@ -206,7 +229,8 @@ export function TenantsPage() {
                   <tr key={tenant.id}>
                     <td>{tenant.name}</td>
                     <td className="muted">{tenant.slug}</td>
-                    <td>{PLAN_LABELS[tenant.subscription_plan]}</td>
+                    <td>{PLAN_LABELS[tenant.plan?.code]}</td>
+                    <td>{tenant.active_dentists}</td>
                     <td>
                       <span className={tenant.status === 'activa' ? 'badge' : 'badge badge-muted'}>
                         {STATUS_LABELS[tenant.status]}
