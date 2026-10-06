@@ -8,14 +8,18 @@ async function expectNoAxeViolations(page: Page) {
   expect(violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
 }
 
-// TASK-052: abrir atención → registrar hallazgo → cerrar → ver el historial de la pieza. Crea
+// TASK-052: abrir atención → registrar hallazgo → corregir → cerrar → ver el historial de la pieza. Crea
 // una ficha nueva en cada ejecución (DNI sintético), así que corre en un solo proyecto.
 test.skip(
   ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
   'Flujo con datos nuevos: solo en Chrome a 1280 px',
 )
 
-test('opens an attention, records a finding, closes it and shows the history of the tooth', async ({ page }) => {
+test('opens an attention, records and corrects a finding, closes it and shows the history of the tooth', async ({
+  page,
+}) => {
+  // Flujo clínico completo de MS-02: más largo que el límite general de 30 s.
+  test.setTimeout(90_000)
   const dni = String(10_000_000 + Math.floor(Math.random() * 89_999_999))
 
   await page.goto('/c/clinica-demo/login')
@@ -61,6 +65,25 @@ test('opens an attention, records a finding, closes it and shows the history of 
   await page.getByRole('button', { name: 'Registrar hallazgo' }).click()
   await expect(page.getByText('Hallazgo registrado.')).toBeVisible()
   await expect(page.getByTestId('acronyms-36')).toContainText('CD')
+
+  // Un segundo hallazgo en la superficie equivocada se anula con motivo y confirmación (CUS-23).
+  await page.getByRole('checkbox', { name: 'Mesial' }).check()
+  await page.getByLabel('Hallazgo', { exact: true }).selectOption({ label: 'Lesión de caries dental' })
+  await page
+    .getByLabel('Estado', { exact: true })
+    .selectOption({ label: 'CE · Lesión de caries dental a nivel del esmalte (rojo)' })
+  await page.getByRole('button', { name: 'Registrar hallazgo' }).click()
+  await expect(page.getByTestId('acronyms-36')).toContainText('CE')
+  const mistaken = page.getByRole('listitem').filter({ hasText: 'Superficies: mesial' })
+  await mistaken.getByRole('button', { name: /^Corregir la entrada del/ }).click()
+  const correction = page.getByRole('dialog', { name: 'Corregir la entrada' })
+  await correction.getByRole('radio', { name: 'Anulación' }).check()
+  await correction.getByLabel('Motivo de la corrección').fill('Registrada en la superficie equivocada')
+  await correction.getByRole('button', { name: 'Confirmar corrección' }).click()
+  await expect(page.getByText('Corrección registrada.')).toBeVisible()
+  await expect(mistaken.getByText('Corregida')).toBeVisible()
+  await expect(mistaken.getByText('Motivo de la corrección: Registrada en la superficie equivocada')).toBeVisible()
+  await expect(page.getByTestId('acronyms-36')).not.toContainText('CE')
   await expectNoAxeViolations(page)
 
   // Nota y diagnóstico CIE-10 (CUS-80), y cierre con confirmación (CUS-26, RN-77).
@@ -86,6 +109,7 @@ test('opens an attention, records a finding, closes it and shows the history of 
   await expect(
     history.getByText('Lesión de caries dental · Lesión de caries dental a nivel de la dentina'),
   ).toBeVisible()
-  await expect(history.getByText('Inicial · Manual')).toBeVisible()
+  await expect(history.getByText('Inicial · Manual')).toHaveCount(2)
+  await expect(history.getByText('Corregida')).toBeVisible()
   await expectNoAxeViolations(page)
 })
