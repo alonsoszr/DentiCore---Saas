@@ -60,3 +60,12 @@ it('lists every API route in AUTH_MATRIX', function () {
     expect($registered->diff($inMatrix)->values()->all())->toBe([])
         ->and($inMatrix->diff($registered)->values()->all())->toBe([]);
 })->group('RF-004');
+
+it('covers the use cases of MS-01 in AUTH_MATRIX', function () {
+    $covered = collect(authMatrix())->pluck('cus')->unique();
+
+    foreach (['CUS-01', 'CUS-02', 'CUS-03', 'CUS-04', 'CUS-06', 'CUS-07', 'CUS-08', 'CUS-09', 'CUS-10', 'CUS-11',
+        'CUS-13', 'CUS-14', 'CUS-15', 'CUS-16', 'CUS-17'] as $cus) {
+        expect($covered)->toContain($cus);
+    }
+})->group('T-019', 'RN-06', 'RF-004');
