@@ -6,13 +6,15 @@ import { SessionTimeout } from './SessionTimeout'
 
 const ROUTE = { route: '/c/clinica-demo/app/pacientes', path: '/c/:slug/app/pacientes' }
 
-// Cada prueba empieza un día después de la anterior: la última actividad de la API es estado
-// del módulo y no debe quedar en el futuro.
+// Cada prueba empieza un día después de la hora real: la última actividad de la API es estado
+// del módulo (se fija con la hora real al importarlo) y no debe quedar en el futuro. Una fecha
+// fija deja de servir en cuanto la hora real la supera.
 let day = 0
 beforeEach(() => {
+  const realNow = Date.now()
   vi.useFakeTimers({ shouldAdvanceTime: true })
   day += 1
-  vi.setSystemTime(new Date(2026, 9, 5 + day, 9, 0))
+  vi.setSystemTime(realNow + day * 24 * 60 * 60_000)
 })
 afterEach(() => vi.useRealTimers())
 
