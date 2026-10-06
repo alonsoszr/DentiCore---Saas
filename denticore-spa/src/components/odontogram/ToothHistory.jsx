@@ -9,9 +9,10 @@ const CORRECTION_KINDS = { anulacion: 'anulación', reemplazo: 'reemplazo' }
  * Historial cronológico de una pieza (TASK-051; CUS-24; RF-081, CA-23.1): cada entrada con su
  * hallazgo, sigla y color, superficies, tipo, origen, autor con su COP y fecha. La entrada
  * corregida se muestra tachada, con la etiqueta «Corregida», el motivo y un enlace a su
- * corrección; los datos originales se conservan.
+ * corrección; los datos originales se conservan. Con `onCorrect`, cada entrada aún no corregida
+ * ofrece «Corregir» (CUS-23).
  */
-export function ToothHistory({ tooth, entries }) {
+export function ToothHistory({ tooth, entries, onCorrect }) {
   const byId = new Map(entries.map((entry) => [entry.id, entry]))
 
   return (
@@ -81,6 +82,16 @@ export function ToothHistory({ tooth, entries }) {
                   {entry.author ? `${entry.author.name} · COP ${entry.author.cop}` : null}
                 </p>
                 <p className="m-0 text-on-surface-variant tabular-nums">{formatDateTime(entry.recorded_at)}</p>
+                {onCorrect && !corrected && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary mt-2"
+                    aria-label={`Corregir la entrada del ${formatDateTime(entry.recorded_at)}`}
+                    onClick={() => onCorrect(entry)}
+                  >
+                    Corregir
+                  </button>
+                )}
               </li>
             )
           })}

@@ -6,6 +6,7 @@ import { Layout } from '../components/Layout'
 import { ClinicSettingsPage } from '../pages/ClinicSettingsPage'
 import { ForbiddenPage, NotFoundPage } from '../pages/SimplePages'
 import { UsersPage } from '../pages/UsersPage'
+import { AttentionPage } from '../pages/attentions/AttentionPage'
 import { PatientCreatePage } from '../pages/patients/PatientCreatePage'
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage'
 import { PatientsPage } from '../pages/patients/PatientsPage'
@@ -45,6 +46,14 @@ export default function StaffArea() {
         <Route path="pacientes" element={<PatientsPage />} />
         <Route path="pacientes/nuevo" element={<PatientCreatePage />} />
         <Route path="pacientes/:uuid/*" element={<PatientDetailPage />} />
+        <Route
+          path="atenciones/:uuid"
+          element={
+            <RequireRole allow={['clinic_admin', 'dentist']} forbiddenPath={forbiddenPath}>
+              <AttentionPage />
+            </RequireRole>
+          }
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
