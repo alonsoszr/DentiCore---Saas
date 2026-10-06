@@ -62,6 +62,7 @@ it('applies the read-only rule to every registered staff route', function () {
             return $attention->uuid;
         },
         // Diagnóstico de la misma atención: el binding anidado lo resuelve antes de la regla RN-07.
+        '{tooth}' => fn () => '16',
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => function () use ($tenant, &$attention) {
             return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([

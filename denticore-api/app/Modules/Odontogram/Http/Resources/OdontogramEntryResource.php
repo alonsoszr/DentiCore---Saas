@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
  * Entrada del odontograma (SDD §4.3 `POST /attentions/{attention}/odontogram-entries`; CUS-22,
  * CUS-23; RF-081, RN-17, RN-23, RN-75): pieza, superficies, hallazgo y estado con sus siglas,
  * color, origen, autor con su COP y hora del servidor. Una corrección indica la entrada que
- * corrige, su tipo y su motivo.
+ * corrige, su tipo y su motivo; en el historial, la entrada corregida indica su corrección.
  *
  * @mixin OdontogramEntry
  */
@@ -42,11 +42,14 @@ class OdontogramEntryResource extends ApiResource
             'color' => $this->color,
             /** @var 'manual'|'ia'|'procedimiento' */
             'origin' => $this->origin,
-            'note' => $this->note,
+            // SDD §3.4 CUS-21: recepción ve el odontograma sin notas clínicas.
+            'note' => $this->when($request->user()?->role !== 'receptionist', $this->note),
             'corrects_entry_id' => $this->correctedEntry?->uuid,
             /** @var 'anulacion'|'reemplazo'|null */
             'correction_kind' => $this->correction_kind,
             'correction_reason' => $this->correction_reason,
+            // CA-23.1: la entrada corregida se presenta «corregida», con enlace a su corrección.
+            'corrected_by_id' => $this->whenLoaded('correction', fn () => $this->correction?->uuid),
             'author' => [
                 'id' => $this->author->uuid,
                 'name' => $this->author->name,

@@ -190,10 +190,23 @@ export const odontogramEntryResourceSchema = z.object({
   ]),
   color: z.union([z.literal('azul'), z.literal('rojo'), z.literal(null)]),
   origin: z.enum(['manual', 'ia', 'procedimiento']),
-  note: z.union([z.string(), z.null()]),
+  note: z
+    .union([
+      z.string().describe('SDD §3.4 CUS-21: recepción ve el odontograma sin notas clínicas.'),
+      z.null().describe('SDD §3.4 CUS-21: recepción ve el odontograma sin notas clínicas.'),
+    ])
+    .describe('SDD §3.4 CUS-21: recepción ve el odontograma sin notas clínicas.')
+    .optional(),
   corrects_entry_id: z.union([z.string(), z.null()]),
   correction_kind: z.union([z.literal('anulacion'), z.literal('reemplazo'), z.literal(null)]),
   correction_reason: z.union([z.string(), z.null()]),
+  corrected_by_id: z
+    .union([
+      z.string().describe('CA-23.1: la entrada corregida se presenta «corregida», con enlace a su corrección.'),
+      z.null().describe('CA-23.1: la entrada corregida se presenta «corregida», con enlace a su corrección.'),
+    ])
+    .describe('CA-23.1: la entrada corregida se presenta «corregida», con enlace a su corrección.')
+    .optional(),
   author: z.object({ id: z.string(), name: z.string(), cop: z.string() }),
   recorded_at: z.string().datetime({ offset: true }),
 })

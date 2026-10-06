@@ -112,3 +112,21 @@ it('only lets dentists of the clinic correct entries', function () {
     $this->actingAsRole('dentist');
     correctEntry($original, ['kind' => 'anulacion', 'reason' => 'El hallazgo no debió registrarse'])->assertNotFound();
 })->group('CUS-23', 'RN-19', 'RF-003');
+
+it('excludes an annulled entry from the current state', function () {
+    ['tenant' => $tenant, 'entry' => $annulled] = recordedEntry();
+    $attention = TenantContext::run($tenant, fn () => OdontogramEntry::query()->where('uuid', $annulled)->sole()->attention);
+    $replaced = ClinicalFixtures::recordFinding($attention, ['tooth' => 16, 'surfaces' => ['O']])->json('data.id');
+    $kept = ClinicalFixtures::recordFinding($attention, ['tooth' => 46, 'surfaces' => ['V']])->json('data.id');
+
+    correctEntry($annulled, ['kind' => 'anulacion', 'reason' => 'El hallazgo no debió registrarse'])->assertCreated();
+    $replacement = correctEntry($replaced, [
+        'kind' => 'reemplazo', 'reason' => 'El estado correcto es detenida',
+        'tooth' => 16, 'surfaces' => ['O'], 'finding_code' => 'PRUEBA_CARIES', 'state_code' => 'DETENIDA',
+    ])->json('data.id');
+
+    $patientUuid = TenantContext::run($tenant, fn () => $attention->patient->uuid);
+    $this->getJson("/api/v1/patients/{$patientUuid}/odontogram")->assertOk()
+        ->assertJsonPath('data.entries.*.id', [$replacement, $kept])
+        ->assertJsonPath('data.entries.0.color', 'azul');
+})->group('T-060', 'CA-23.2', 'RN-24');

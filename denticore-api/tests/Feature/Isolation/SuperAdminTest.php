@@ -22,7 +22,11 @@ it('forbids super_admin on every patient and clinical route', function () {
     expect($routes)->not->toBeEmpty();
 
     foreach ($routes as [$method, $uri]) {
-        $path = '/'.preg_replace_callback('/\{[a-z_]+\}/', fn ($match) => $match[0] === '{patient}' ? $patient->uuid : (string) Str::uuid(), $uri);
+        $path = '/'.preg_replace_callback('/\{[a-z_]+\}/', fn ($match) => match ($match[0]) {
+            '{patient}' => $patient->uuid,
+            '{tooth}' => '16',
+            default => (string) Str::uuid(),
+        }, $uri);
         $status = $this->json($method, $path, [], ['Idempotency-Key' => (string) Str::uuid()])->status();
 
         expect($status)->toBe(403, "{$method} {$path} respondió {$status} al Súper Administrador");
