@@ -215,7 +215,19 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/components/schemas/AttentionResource"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/AttentionResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "note",
+                                                        "diagnoses",
+                                                        "addenda"
+                                                    ]
+                                                }
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -325,6 +337,302 @@
                     },
                     "422": {
                         "description": "Datos no v\u00e1lidos",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/attentions/{attention}/addenda": {
+            "post": {
+                "operationId": "attentionAddendum.store",
+                "tags": [
+                    "AttentionAddendum"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "text": {
+                                        "type": "string",
+                                        "maxLength": 2000
+                                    },
+                                    "chief_complaint": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 2000
+                                    },
+                                    "diagnoses": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "cie10_code": {
+                                                    "type": "string",
+                                                    "description": "Mismas reglas que un diagn\u00f3stico de la nota (RF-085).",
+                                                    "maxLength": 7
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "presuntivo",
+                                                        "definitivo"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "cie10_code",
+                                                "type"
+                                            ]
+                                        },
+                                        "maxItems": 20
+                                    }
+                                },
+                                "required": [
+                                    "text"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`AttentionAddendumResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/AttentionAddendumResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "diagnoses",
+                                                        "attention_status"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La atenci\u00f3n sigue abierta: use la nota (RN-78)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/attentions/{attention}/diagnoses": {
+            "post": {
+                "operationId": "attentionDiagnosis.store",
+                "tags": [
+                    "AttentionDiagnosis"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "cie10_code": {
+                                        "type": "string",
+                                        "maxLength": 7
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "presuntivo",
+                                            "definitivo"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "cie10_code",
+                                    "type"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`AttentionDiagnosisResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AttentionDiagnosisResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La atenci\u00f3n est\u00e1 cerrada: use una adenda (RN-78)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/attentions/{attention}/diagnoses/{diagnosis}": {
+            "delete": {
+                "operationId": "attentionDiagnosis.destroy",
+                "tags": [
+                    "AttentionDiagnosis"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "diagnosis",
+                        "in": "path",
+                        "required": true,
+                        "description": "The diagnosis UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La atenci\u00f3n est\u00e1 cerrada (RN-78)",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -543,6 +851,90 @@
                 }
             }
         },
+        "/cie10": {
+            "get": {
+                "operationId": "cie10.search",
+                "tags": [
+                    "Cie10"
+                ],
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "type": "string"
+                                                    },
+                                                    "is_dental": {
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "code",
+                                                    "description",
+                                                    "is_dental"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/clinic/settings": {
             "get": {
                 "operationId": "clinicSettings.show",
@@ -720,6 +1112,123 @@
                     },
                     "429": {
                         "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/attentions/{attention}/note": {
+            "put": {
+                "operationId": "clinicalNote.update",
+                "tags": [
+                    "ClinicalNote"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "chief_complaint": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 2000
+                                    },
+                                    "current_illness": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 5000
+                                    },
+                                    "extraoral_exam": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 5000
+                                    },
+                                    "intraoral_exam": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 5000
+                                    },
+                                    "indications": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 5000
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ClinicalNoteResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ClinicalNoteResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La atenci\u00f3n est\u00e1 cerrada o la nota firmada: use una adenda (RN-78)",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -4395,6 +4904,108 @@
     },
     "components": {
         "schemas": {
+            "AttentionAddendumResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "text": {
+                        "type": "string"
+                    },
+                    "chief_complaint": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "author": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "cop": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "cop"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "diagnoses": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AttentionDiagnosisResource"
+                        }
+                    },
+                    "attention_status": {
+                        "type": "string",
+                        "enum": [
+                            "cerrada",
+                            "cerrada_incompleta"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "text",
+                    "chief_complaint",
+                    "author",
+                    "created_at"
+                ],
+                "title": "AttentionAddendumResource"
+            },
+            "AttentionDiagnosisResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "presuntivo",
+                            "definitivo"
+                        ]
+                    },
+                    "origin": {
+                        "type": "string",
+                        "enum": [
+                            "nota",
+                            "adenda"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "description",
+                    "type",
+                    "origin",
+                    "created_at"
+                ],
+                "title": "AttentionDiagnosisResource"
+            },
             "AttentionResource": {
                 "type": "object",
                 "properties": {
@@ -4489,6 +5100,28 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ClinicalNoteResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "diagnoses": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AttentionDiagnosisResource"
+                        }
+                    },
+                    "addenda": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AttentionAddendumResource"
+                        }
                     }
                 },
                 "required": [
@@ -4632,6 +5265,69 @@
                     "budget_terms"
                 ],
                 "title": "ClinicSettingsResource"
+            },
+            "ClinicalNoteResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "chief_complaint": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "current_illness": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "extraoral_exam": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "intraoral_exam": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "indications": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "borrador",
+                            "firmada"
+                        ]
+                    },
+                    "signed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "chief_complaint",
+                    "current_illness",
+                    "extraoral_exam",
+                    "intraoral_exam",
+                    "indications",
+                    "status",
+                    "signed_at"
+                ],
+                "title": "ClinicalNoteResource"
             },
             "ConsentResource": {
                 "type": "object",

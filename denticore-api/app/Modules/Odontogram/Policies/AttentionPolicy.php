@@ -7,7 +7,7 @@ use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Patients\Models\Patient;
 
 /**
- * Autorización por registro sobre la atención (SDD §3.4; CUS-21, CUS-25, CUS-26).
+ * Autorización por registro sobre la atención (SDD §3.4; CUS-21, CUS-25, CUS-26, CUS-80, CUS-81).
  */
 class AttentionPolicy
 {
@@ -27,6 +27,22 @@ class AttentionPolicy
     public function create(User $user, Patient $patient): bool
     {
         return $user->role === 'dentist' && $user->tenant_id !== null && $user->tenant_id === $patient->tenant_id;
+    }
+
+    /**
+     * CUS-80: nota y diagnósticos, solo en atenciones a cargo del odontólogo (SDD §3.4).
+     */
+    public function write(User $user, Attention $attention): bool
+    {
+        return $user->role === 'dentist' && $user->id === $attention->dentist_id;
+    }
+
+    /**
+     * CUS-81: cualquier odontólogo de la clínica agrega información posterior (RN-78).
+     */
+    public function addendum(User $user, Attention $attention): bool
+    {
+        return $user->role === 'dentist' && $user->tenant_id !== null && $user->tenant_id === $attention->tenant_id;
     }
 
     /**

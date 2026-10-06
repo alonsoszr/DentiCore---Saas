@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 /**
  * Atención (CUS-21, CUS-25, CUS-26; RF-082, RF-094): estado, odontólogo a cargo y firma con su
- * número de COP (RN-75). La nota y los diagnósticos se agregan con TASK-048.
+ * número de COP (RN-75). El detalle incluye la nota, los diagnósticos y las adendas (RF-084, RF-097).
  *
  * @mixin Attention
  */
@@ -39,6 +39,9 @@ class AttentionResource extends ApiResource
                 'cop' => $this->signer_cop,
             ],
             'signed_at' => $this->signed_at,
+            'note' => ClinicalNoteResource::make($this->whenLoaded('note')),
+            'diagnoses' => AttentionDiagnosisResource::collection($this->whenLoaded('diagnoses')),
+            'addenda' => AttentionAddendumResource::collection($this->whenLoaded('addenda')),
         ];
     }
 }

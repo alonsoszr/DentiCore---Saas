@@ -41,6 +41,8 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{representative}' => fn () => (string) Str::uuid(),
         '{consent}' => fn () => (string) Str::uuid(),
         '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        // Diagnóstico inexistente: el rol o el estado de la clínica se rechazan antes de buscarlo.
+        '{diagnosis}' => fn () => (string) Str::uuid(),
     ];
 
     $path = preg_replace_callback('/\{[a-z_]+\}/', fn ($match) => $bindings[$match[0]](), $uri);

@@ -42,6 +42,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $signer
  * @property-read ClinicalNote|null $note
  * @property-read Collection<int, AttentionDiagnosis> $diagnoses
+ * @property-read Collection<int, AttentionAddendum> $addenda
  */
 #[UseFactory(AttentionFactory::class)]
 #[UsePolicy(AttentionPolicy::class)]
@@ -64,7 +65,7 @@ class Attention extends Model
 
     /**
      * Datos sellados con `evidence_hmac` al cerrar (SDD §5.2; DD-46): la atención, la nota, los
-     * diagnósticos, el firmante y la fecha de la firma.
+     * diagnósticos, las adendas, el firmante y la fecha de la firma.
      *
      * @return array<string, mixed>
      */
@@ -78,6 +79,12 @@ class Attention extends Model
                 'code' => $diagnosis->cie10_code,
                 'type' => $diagnosis->type,
                 'origin' => $diagnosis->origin,
+            ])->values()->all(),
+            // Una adenda que completa una atención `cerrada_incompleta` aporta el motivo (RN-77).
+            'addenda' => $this->addenda->sortBy('id')->map(fn (AttentionAddendum $addendum) => [
+                'text' => $addendum->text,
+                'chief_complaint' => $addendum->chief_complaint,
+                'author_cop' => $addendum->author_cop,
             ])->values()->all(),
             'signer' => $this->signer?->uuid,
             'signer_cop' => $this->signer_cop,
@@ -133,5 +140,13 @@ class Attention extends Model
     public function diagnoses(): HasMany
     {
         return $this->hasMany(AttentionDiagnosis::class);
+    }
+
+    /**
+     * @return HasMany<AttentionAddendum, $this>
+     */
+    public function addenda(): HasMany
+    {
+        return $this->hasMany(AttentionAddendum::class);
     }
 }

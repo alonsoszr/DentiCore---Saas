@@ -1,6 +1,36 @@
 // Archivo generado por scripts/gen-api.mjs desde denticore-api/openapi.json. No editar a mano.
 import { z } from 'zod'
 
+export const attentionAddendumResourceSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  chief_complaint: z.union([z.string(), z.null()]),
+  author: z.object({ id: z.string(), name: z.string(), cop: z.string() }),
+  created_at: z.string().datetime({ offset: true }),
+  diagnoses: z
+    .array(
+      z.object({
+        id: z.string(),
+        code: z.string(),
+        description: z.string(),
+        type: z.enum(['presuntivo', 'definitivo']),
+        origin: z.enum(['nota', 'adenda']),
+        created_at: z.string().datetime({ offset: true }),
+      }),
+    )
+    .optional(),
+  attention_status: z.enum(['cerrada', 'cerrada_incompleta']).optional(),
+})
+
+export const attentionDiagnosisResourceSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  description: z.string(),
+  type: z.enum(['presuntivo', 'definitivo']),
+  origin: z.enum(['nota', 'adenda']),
+  created_at: z.string().datetime({ offset: true }),
+})
+
 export const attentionResourceSchema = z.object({
   id: z.string(),
   patient_id: z.string(),
@@ -13,6 +43,57 @@ export const attentionResourceSchema = z.object({
   closed_by_system: z.boolean(),
   signer: z.union([z.object({ id: z.string(), name: z.string(), cop: z.union([z.string(), z.null()]) }), z.null()]),
   signed_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  note: z
+    .union([
+      z.object({
+        id: z.string(),
+        chief_complaint: z.union([z.string(), z.null()]),
+        current_illness: z.union([z.string(), z.null()]),
+        extraoral_exam: z.union([z.string(), z.null()]),
+        intraoral_exam: z.union([z.string(), z.null()]),
+        indications: z.union([z.string(), z.null()]),
+        status: z.enum(['borrador', 'firmada']),
+        signed_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+      }),
+      z.null(),
+    ])
+    .optional(),
+  diagnoses: z
+    .array(
+      z.object({
+        id: z.string(),
+        code: z.string(),
+        description: z.string(),
+        type: z.enum(['presuntivo', 'definitivo']),
+        origin: z.enum(['nota', 'adenda']),
+        created_at: z.string().datetime({ offset: true }),
+      }),
+    )
+    .optional(),
+  addenda: z
+    .array(
+      z.object({
+        id: z.string(),
+        text: z.string(),
+        chief_complaint: z.union([z.string(), z.null()]),
+        author: z.object({ id: z.string(), name: z.string(), cop: z.string() }),
+        created_at: z.string().datetime({ offset: true }),
+        diagnoses: z
+          .array(
+            z.object({
+              id: z.string(),
+              code: z.string(),
+              description: z.string(),
+              type: z.enum(['presuntivo', 'definitivo']),
+              origin: z.enum(['nota', 'adenda']),
+              created_at: z.string().datetime({ offset: true }),
+            }),
+          )
+          .optional(),
+        attention_status: z.enum(['cerrada', 'cerrada_incompleta']).optional(),
+      }),
+    )
+    .optional(),
 })
 
 export const businessRuleExceptionSchema = z.object({
@@ -36,6 +117,17 @@ export const clinicSettingsResourceSchema = z.object({
   self_booking_enabled: z.boolean(),
   ai_enabled: z.boolean(),
   budget_terms: z.union([z.string(), z.null()]),
+})
+
+export const clinicalNoteResourceSchema = z.object({
+  id: z.string(),
+  chief_complaint: z.union([z.string(), z.null()]),
+  current_illness: z.union([z.string(), z.null()]),
+  extraoral_exam: z.union([z.string(), z.null()]),
+  intraoral_exam: z.union([z.string(), z.null()]),
+  indications: z.union([z.string(), z.null()]),
+  status: z.enum(['borrador', 'firmada']),
+  signed_at: z.union([z.string().datetime({ offset: true }), z.null()]),
 })
 
 export const consentResourceSchema = z.object({

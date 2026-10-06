@@ -204,7 +204,10 @@ class AttentionService
     {
         $missing = [];
 
-        if (trim((string) $attention->note?->chief_complaint) === '') {
+        $hasChiefComplaint = trim((string) $attention->note?->chief_complaint) !== ''
+            || $attention->addenda()->whereRaw("trim(coalesce(chief_complaint, '')) <> ''")->exists();
+
+        if (! $hasChiefComplaint) {
             $missing['chief_complaint'] = ['Registre el motivo de consulta.'];
         }
 
@@ -216,31 +219,56 @@ class AttentionService
     }
 
     /**
+     * CUS-81 (RN-77, SDD §5.2 adenda): tras una adenda, una atención `cerrada_incompleta` con
+     * motivo de consulta y al menos un diagnóstico pasa a `cerrada`, firmada por el autor de la
+     * adenda. La nota original no cambia y la atención conserva su fecha de cierre. Se invoca
+     * dentro de la transacción de la adenda.
+     */
+    public function completeWithAddendum(Attention $attention, User $author): bool
+    {
+        $attention = Attention::query()->whereKey($attention->id)->lockForUpdate()->firstOrFail();
+
+        if ($attention->status !== 'cerrada_incompleta' || $this->missingForClosing($attention) !== []) {
+            return false;
+        }
+
+        $this->sign($attention, $author, closedBySystem: $attention->closed_by_system, initialClosedBy: null, signNote: false);
+        $this->audit->record(AuditEvent::AttentionClosed, $attention);
+
+        return true;
+    }
+
+    /**
      * SDD §5.2 pasos 3–5 y 7: firma la nota y la atención, sella la evidencia, cierra el
      * odontograma inicial y registra la última atención del paciente.
      *
-     * @param  'cierre_atencion'|'cierre_automatico'  $initialClosedBy
+     * @param  'cierre_atencion'|'cierre_automatico'|null  $initialClosedBy  Null si ya se cerró.
+     * @param  bool  $signNote  False cuando la atención ya no está abierta: la BD bloquea la nota (RN-78).
      */
-    private function sign(Attention $attention, User $signer, bool $closedBySystem, string $initialClosedBy): void
+    private function sign(Attention $attention, User $signer, bool $closedBySystem, ?string $initialClosedBy, bool $signNote = true): void
     {
         $now = now();
 
-        ClinicalNote::query()->where('attention_id', $attention->id)->update(['status' => 'firmada', 'signed_at' => $now]);
+        if ($signNote) {
+            ClinicalNote::query()->where('attention_id', $attention->id)->update(['status' => 'firmada', 'signed_at' => $now]);
+        }
 
         $attention->forceFill([
             'status' => 'cerrada',
-            'closed_at' => $now,
+            'closed_at' => $attention->closed_at ?? $now,
             'closed_by_system' => $closedBySystem,
             'signed_by' => $signer->id,
             'signer_cop' => $signer->cop_number,
             'signed_at' => $now,
         ]);
         $attention->setRelation('signer', $signer);
-        $attention->load(['note', 'diagnoses', 'patient']);
+        $attention->load(['note', 'diagnoses', 'addenda', 'patient']);
         $attention->evidence_hmac = $this->sealer->seal($attention->evidencePayload());
         $attention->save();
 
-        $this->closeInitialOdontogram($attention, $initialClosedBy);
+        if ($initialClosedBy !== null) {
+            $this->closeInitialOdontogram($attention, $initialClosedBy);
+        }
         Patient::query()->whereKey($attention->patient_id)->update(['last_attention_at' => $now]);
     }
 
