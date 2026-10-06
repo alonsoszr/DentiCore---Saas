@@ -14,7 +14,7 @@ describe('TenantsPage', () => {
         name: 'Clínica Demo',
         slug: 'clinica-demo',
         subscription_plan: 'basic',
-        status: 'active',
+        status: 'activa',
         created_at: '2026-09-21T15:00:00Z',
       },
     ]

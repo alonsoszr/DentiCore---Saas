@@ -7,7 +7,7 @@ import { PageHeader } from '../components/PageHeader'
 import { formatDate } from '../ui/format'
 
 const PLAN_LABELS = { basic: 'Básico', pro: 'Pro', enterprise: 'Enterprise' }
-const STATUS_LABELS = { active: 'Activa', suspended: 'Suspendida', cancelled: 'Cancelada' }
+const STATUS_LABELS = { activa: 'Activa', suspendida: 'Suspendida', cancelada: 'Cancelada', eliminada: 'Eliminada' }
 
 const EMPTY_FORM = {
   name: '',
@@ -208,7 +208,7 @@ export function TenantsPage() {
                     <td className="muted">{tenant.slug}</td>
                     <td>{PLAN_LABELS[tenant.subscription_plan]}</td>
                     <td>
-                      <span className={tenant.status === 'active' ? 'badge' : 'badge badge-muted'}>
+                      <span className={tenant.status === 'activa' ? 'badge' : 'badge badge-muted'}>
                         {STATUS_LABELS[tenant.status]}
                       </span>
                     </td>

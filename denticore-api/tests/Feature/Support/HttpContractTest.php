@@ -143,8 +143,12 @@ it('finds no personal data patterns in logs of a synthetic run', function () {
         ->and($contents)->toContain('"estado":"ok"')
         ->and($contents)->toContain('correlation_id');
 
+    // El correlation_id es un UUID: su primer bloque son 8 caracteres hexadecimales que a veces
+    // salen todos dígitos y parecerían un DNI. Se quitan los UUID antes de buscar.
+    $withoutUuids = preg_replace('/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i', '', $contents);
+
     foreach (['/\b\d{8}\b/', '/\b9\d{8}\b/', '/[\w.+-]+@[\w-]+\.[\w.]+/', '/Siempre Viva/', '/secreto/'] as $pattern) {
-        expect(preg_match($pattern, $contents))->toBe(0, "el log contiene {$pattern}");
+        expect(preg_match($pattern, $withoutUuids))->toBe(0, "el log contiene {$pattern}");
     }
 })->group('RNF-110');
 

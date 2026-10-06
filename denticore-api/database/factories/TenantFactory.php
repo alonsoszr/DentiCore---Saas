@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Platform\Models\Tenant;
-use App\Support\Encryption\TenantEncryption;
+use App\Modules\Platform\Services\TenantService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -28,21 +28,22 @@ class TenantFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => str($name)->slug(),
+            // SDD §2.3: slug de 3 a 50 caracteres que no termina en guion.
+            'slug' => rtrim(str($name)->slug()->limit(50, '')->toString(), '-'),
             'subscription_plan' => fake()->randomElement(['basic', 'pro', 'enterprise']),
-            'status' => 'active',
+            'status' => 'activa',
             'settings' => null,
         ];
     }
 
     /**
-     * Igual que en el alta real (TenantService::create), toda clínica nace con su clave
-     * de cifrado.
+     * Igual que en el alta real (TenantService::create), toda clínica nace con su clave de
+     * cifrado, sus parámetros y sus secuencias de documentos.
      */
     public function configure(): static
     {
         return $this->afterCreating(function (Tenant $tenant): void {
-            app(TenantEncryption::class)->generateKeyFor($tenant);
+            app(TenantService::class)->provision($tenant);
         });
     }
 
