@@ -69,6 +69,9 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/diagnoses', 'cus' => 'CUS-80', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
     ['method' => 'DELETE', 'uri' => 'api/v1/attentions/{attention}/diagnoses/{diagnosis}', 'cus' => 'CUS-80', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/addenda', 'cus' => 'CUS-81', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/finding-catalog', 'cus' => 'CUS-22', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/odontogram-entries', 'cus' => 'CUS-22', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/odontogram-entries/{entry}/corrections', 'cus' => 'CUS-23', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
 
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],

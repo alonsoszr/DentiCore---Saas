@@ -174,6 +174,30 @@ export const loginRequestSchema = z
     'Inicio de sesión (CUS-06; SRS §11.2, Datos). La clínica la resuelve `tenant.slug:login` por el\ncódigo de acceso, con el mismo 401 si no existe (no se valida su existencia aquí para no\nrevelarla). La política de longitud mínima se aplica al definir la contraseña, no al ingresar.',
   )
 
+export const odontogramEntryResourceSchema = z.object({
+  id: z.string(),
+  entry_type: z.enum(['inicial', 'evolucion', 'correccion']),
+  tooth: z.number().int(),
+  tooth_end: z.union([z.number().int(), z.null()]),
+  surfaces: z.array(z.enum(['M', 'D', 'O', 'I', 'V', 'L', 'P'])),
+  finding: z.union([
+    z.object({ code: z.string(), name: z.string(), acronym: z.union([z.string(), z.null()]) }),
+    z.null(),
+  ]),
+  state: z.union([
+    z.object({ code: z.string(), name: z.string(), acronym: z.union([z.string(), z.null()]) }),
+    z.null(),
+  ]),
+  color: z.union([z.literal('azul'), z.literal('rojo'), z.literal(null)]),
+  origin: z.enum(['manual', 'ia', 'procedimiento']),
+  note: z.union([z.string(), z.null()]),
+  corrects_entry_id: z.union([z.string(), z.null()]),
+  correction_kind: z.union([z.literal('anulacion'), z.literal('reemplazo'), z.literal(null)]),
+  correction_reason: z.union([z.string(), z.null()]),
+  author: z.object({ id: z.string(), name: z.string(), cop: z.string() }),
+  recorded_at: z.string().datetime({ offset: true }),
+})
+
 export const patientResourceSchema = z.object({
   id: z.string(),
   document_type: z.union([z.string(), z.null()]),

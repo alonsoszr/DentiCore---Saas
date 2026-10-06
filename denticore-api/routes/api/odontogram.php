@@ -5,6 +5,9 @@ use App\Modules\Odontogram\Http\Controllers\AttentionController;
 use App\Modules\Odontogram\Http\Controllers\AttentionDiagnosisController;
 use App\Modules\Odontogram\Http\Controllers\Cie10Controller;
 use App\Modules\Odontogram\Http\Controllers\ClinicalNoteController;
+use App\Modules\Odontogram\Http\Controllers\FindingCatalogController;
+use App\Modules\Odontogram\Http\Controllers\OdontogramCorrectionController;
+use App\Modules\Odontogram\Http\Controllers\OdontogramEntryController;
 use App\Support\Audit\AuditClinicalRecordRead;
 use Illuminate\Support\Facades\Route;
 
@@ -36,4 +39,12 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     // CUS-81: adendas a una atención cerrada (RF-097).
     Route::post('/attentions/{attention}/addenda', [AttentionAddendumController::class, 'store'])
         ->middleware(['role:dentist', 'cop']);
+
+    // CUS-22, CUS-23: hallazgos y correcciones del odontograma (RF-077, RF-078, RF-087 a RF-091, RF-093).
+    Route::get('/finding-catalog', [FindingCatalogController::class, 'index'])
+        ->middleware('role:clinic_admin,dentist,receptionist');
+    Route::post('/attentions/{attention}/odontogram-entries', [OdontogramEntryController::class, 'store'])
+        ->middleware(['role:dentist', 'cop', 'consent:atencion', 'idempotent']);
+    Route::post('/odontogram-entries/{entry}/corrections', [OdontogramCorrectionController::class, 'store'])
+        ->middleware(['role:dentist', 'cop', 'idempotent']);
 });

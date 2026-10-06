@@ -3,11 +3,13 @@
 namespace App\Modules\Odontogram\Models;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Odontogram\Policies\OdontogramEntryPolicy;
 use App\Modules\Patients\Models\Patient;
 use App\Support\Database\HasUuid;
 use App\Support\Tenancy\BelongsToTenant;
 use Database\Factories\OdontogramEntryFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,8 +52,10 @@ use Illuminate\Support\Carbon;
  * @property-read FindingCatalog|null $finding
  * @property-read FindingState|null $findingState
  * @property-read User $author
+ * @property-read OdontogramEntry|null $correctedEntry
  */
 #[UseFactory(OdontogramEntryFactory::class)]
+#[UsePolicy(OdontogramEntryPolicy::class)]
 class OdontogramEntry extends Model
 {
     /** @use HasFactory<OdontogramEntryFactory> */
@@ -124,5 +128,20 @@ class OdontogramEntry extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * Entrada que corrige (RN-23); se valida en el servicio, sin FK hacia la tabla particionada.
+     *
+     * @return BelongsTo<OdontogramEntry, $this>
+     */
+    public function correctedEntry(): BelongsTo
+    {
+        return $this->belongsTo(OdontogramEntry::class, 'corrects_entry_id');
+    }
+
+    public function auditPatientUuid(): ?string
+    {
+        return $this->patient->uuid;
     }
 }

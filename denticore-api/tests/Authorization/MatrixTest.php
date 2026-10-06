@@ -7,6 +7,7 @@
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Odontogram\Models\Attention;
+use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,7 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{consent}' => fn () => (string) Str::uuid(),
         '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
         // Diagnóstico inexistente: el rol o el estado de la clínica se rechazan antes de buscarlo.
+        '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => fn () => (string) Str::uuid(),
     ];
 
