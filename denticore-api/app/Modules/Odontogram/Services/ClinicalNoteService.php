@@ -40,10 +40,14 @@ class ClinicalNoteService
             }
 
             $note->forceFill(collect(ClinicalNote::SECTIONS)->mapWithKeys(fn (string $section) => [$section => $sections[$section] ?? null])->all());
-            $changed = array_keys($note->getDirty());
+            // Secciones que cambiaron; en una nota nueva, las que llegaron con contenido.
+            $changed = array_values(array_filter(
+                ClinicalNote::SECTIONS,
+                fn (string $section) => $note->exists ? $note->isDirty($section) : $note->getAttribute($section) !== null,
+            ));
             $note->save();
 
-            $this->audit->record(AuditEvent::NoteSaved, $attention, changedFields: array_values(array_intersect($changed, ClinicalNote::SECTIONS)));
+            $this->audit->record(AuditEvent::NoteSaved, $attention, changedFields: $changed);
 
             return $note;
         });
