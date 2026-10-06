@@ -7,9 +7,11 @@ use App\Modules\Odontogram\Http\Controllers\Cie10Controller;
 use App\Modules\Odontogram\Http\Controllers\ClinicalNoteController;
 use App\Modules\Odontogram\Http\Controllers\ClinicalRecordController;
 use App\Modules\Odontogram\Http\Controllers\FindingCatalogController;
+use App\Modules\Odontogram\Http\Controllers\NoTreatDecisionController;
 use App\Modules\Odontogram\Http\Controllers\OdontogramController;
 use App\Modules\Odontogram\Http\Controllers\OdontogramCorrectionController;
 use App\Modules\Odontogram\Http\Controllers\OdontogramEntryController;
+use App\Modules\Odontogram\Http\Controllers\PendingFindingController;
 use App\Modules\Odontogram\Http\Controllers\ToothHistoryController;
 use App\Support\Audit\AuditClinicalRecordRead;
 use Illuminate\Support\Facades\Route;
@@ -60,4 +62,11 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         ->middleware(['role:dentist', 'cop', 'consent:atencion', 'idempotent']);
     Route::post('/odontogram-entries/{entry}/corrections', [OdontogramCorrectionController::class, 'store'])
         ->middleware(['role:dentist', 'cop', 'idempotent']);
+
+    // CUS-34: hallazgos rojos pendientes de decisión y decisión de no tratar (RF-112, RF-113, RN-27).
+    // La lista es una lectura de la historia clínica (SDD §5.14).
+    Route::get('/patients/{patient}/pending-findings', [PendingFindingController::class, 'index'])
+        ->middleware(['role:dentist', AuditClinicalRecordRead::class]);
+    Route::post('/odontogram-entries/{entry}/no-treat', [NoTreatDecisionController::class, 'store'])
+        ->middleware(['role:dentist', 'cop']);
 });

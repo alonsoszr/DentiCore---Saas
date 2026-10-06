@@ -82,6 +82,23 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/procedures', 'cus' => 'CUS-32', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'PATCH', 'uri' => 'api/v1/procedures/{procedure}', 'cus' => 'CUS-32', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'DELETE', 'uri' => 'api/v1/procedures/{procedure}', 'cus' => 'CUS-32', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    // CUS-33: el personal consulta los planes; solo OD los elabora (TreatmentPlanPolicy@{create,update}).
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/treatment-plans', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/treatment-plans', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/treatment-plans/{plan}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/treatment-plans/{plan}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/items', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/plan-items/{item}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'DELETE', 'uri' => 'api/v1/plan-items/{item}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/propose', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/reopen', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    // CUS-34: solo OD (OdontogramEntryPolicy@decideNoTreat).
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/pending-findings', 'cus' => 'CUS-34', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/odontogram-entries/{entry}/no-treat', 'cus' => 'CUS-34', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    // CUS-40: CA y OD (TreatmentPlanPolicy@cancel, PlanItemPolicy@discard).
+    ['method' => 'POST', 'uri' => 'api/v1/plan-items/{item}/discard', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/treatment-plans/{plan}/cancellation-preview', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/cancel', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
 
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],

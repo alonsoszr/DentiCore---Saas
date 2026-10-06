@@ -270,6 +270,52 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->deleteJson("/api/v1/procedures/{$procedureId}"), 'DELETE', '/procedures/{procedure}');
     $check($this->actingWithToken($admin)->deleteJson('/api/v1/procedures/'.fake()->uuid()), 'DELETE', '/procedures/{procedure}');
 
+    // Plan de tratamiento, pendientes de decisión y no tratar (CUS-33, CUS-34, CUS-40). El hallazgo
+    // rojo vigente del adulto es el reemplazo en la pieza 37.
+    $pending = $this->actingWithToken($dentist)->getJson("/api/v1/patients/{$adult->uuid}/pending-findings");
+    $check($pending, 'GET', '/patients/{patient}/pending-findings');
+    $findingId = $pending->json('data.0.id');
+    $planProcedure = Procedure::factory()->create(['tenant_id' => $tenant->id, 'requires_surface' => false])->uuid;
+    $plans = "/api/v1/patients/{$adult->uuid}/treatment-plans";
+    $createdPlan = $this->actingWithToken($dentist)->postJson($plans, ['title' => 'Plan de contrato', 'items' => [
+        ['procedure_id' => $planProcedure, 'tooth' => 37, 'finding_ids' => [$findingId]],
+    ]], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($createdPlan, 'POST', '/patients/{patient}/treatment-plans');
+    $check($this->actingWithToken($dentist)->postJson($plans, ['title' => 'Sin pieza', 'items' => [['procedure_id' => $planProcedure]]], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/treatment-plans');
+    $check($this->actingWithToken($admin)->getJson($plans), 'GET', '/patients/{patient}/treatment-plans');
+    $plan = '/api/v1/treatment-plans/'.$createdPlan->json('data.id');
+    $planItem = '/api/v1/plan-items/'.$createdPlan->json('data.items.0.id');
+    $check($this->actingWithToken($admin)->getJson($plan), 'GET', '/treatment-plans/{plan}');
+    $check($this->actingWithToken($dentist)->patchJson($plan, ['title' => 'Plan de contrato corregido']), 'PATCH', '/treatment-plans/{plan}');
+    $check($this->actingWithToken($dentist)->patchJson($plan, ['title' => str_repeat('a', 151)]), 'PATCH', '/treatment-plans/{plan}');
+    $added = $this->actingWithToken($dentist)->postJson("{$plan}/items", ['items' => [['procedure_id' => $planProcedure, 'tooth' => 16]]]);
+    $check($added, 'POST', '/treatment-plans/{plan}/items');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/items", ['items' => [['procedure_id' => $planProcedure, 'tooth' => 19]]]), 'POST', '/treatment-plans/{plan}/items');
+    $secondItem = '/api/v1/plan-items/'.$added->json('data.items.1.id');
+    $check($this->actingWithToken($dentist)->patchJson($secondItem, ['quantity' => 2, 'session_number' => 2]), 'PATCH', '/plan-items/{item}');
+    $check($this->actingWithToken($dentist)->patchJson($secondItem, ['tooth' => 19]), 'PATCH', '/plan-items/{item}');
+    $check($this->actingWithToken($dentist)->deleteJson($secondItem), 'DELETE', '/plan-items/{item}');
+    $noTreat = "/api/v1/odontogram-entries/{$findingId}/no-treat";
+    $check($this->actingWithToken($dentist)->postJson($noTreat, ['reason' => 'corto']), 'POST', '/odontogram-entries/{entry}/no-treat');
+    $check($this->actingWithToken($dentist)->postJson($noTreat, ['reason' => 'Ya figura en el plan']), 'POST', '/odontogram-entries/{entry}/no-treat');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/propose"), 'POST', '/treatment-plans/{plan}/propose');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/propose"), 'POST', '/treatment-plans/{plan}/propose');
+    $check($this->actingWithToken($dentist)->patchJson($plan, ['title' => 'Plan propuesto']), 'PATCH', '/treatment-plans/{plan}');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/reopen"), 'POST', '/treatment-plans/{plan}/reopen');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/reopen"), 'POST', '/treatment-plans/{plan}/reopen');
+    $check($this->actingWithToken($admin)->postJson("{$planItem}/discard", []), 'POST', '/plan-items/{item}/discard');
+    $check($this->actingWithToken($admin)->postJson("{$planItem}/discard", ['reason' => 'El paciente desistió']), 'POST', '/plan-items/{item}/discard');
+    $check($this->actingWithToken($admin)->postJson("{$planItem}/discard", ['reason' => 'Otra vez']), 'POST', '/plan-items/{item}/discard');
+    $check($this->actingWithToken($dentist)->postJson($noTreat, ['reason' => 'El paciente no desea tratarlo']), 'POST', '/odontogram-entries/{entry}/no-treat');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/propose"), 'POST', '/treatment-plans/{plan}/propose');
+    $check($this->actingWithToken($dentist)->patchJson($planItem, ['quantity' => 3]), 'PATCH', '/plan-items/{item}');
+    $check($this->actingWithToken($admin)->getJson("{$plan}/cancellation-preview"), 'GET', '/treatment-plans/{plan}/cancellation-preview');
+    $check($this->actingWithToken($admin)->postJson("{$plan}/cancel", []), 'POST', '/treatment-plans/{plan}/cancel');
+    $check($this->actingWithToken($admin)->postJson("{$plan}/cancel", ['reason' => 'Plan de prueba del contrato']), 'POST', '/treatment-plans/{plan}/cancel');
+    $check($this->actingWithToken($admin)->postJson("{$plan}/cancel", ['reason' => 'Segunda cancelación']), 'POST', '/treatment-plans/{plan}/cancel');
+    $check($this->actingWithToken($admin)->getJson("{$plan}/cancellation-preview"), 'GET', '/treatment-plans/{plan}/cancellation-preview');
+    $check($this->actingWithToken($dentist)->deleteJson($planItem), 'DELETE', '/plan-items/{item}');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');
