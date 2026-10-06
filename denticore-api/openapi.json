@@ -634,6 +634,308 @@
                 }
             }
         },
+        "/patients/{patient}/representatives": {
+            "get": {
+                "operationId": "legalRepresentative.index",
+                "tags": [
+                    "LegalRepresentative"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `LegalRepresentativeResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LegalRepresentativeResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "legalRepresentative.store",
+                "tags": [
+                    "LegalRepresentative"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "document_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "dni",
+                                            "ce",
+                                            "pasaporte",
+                                            "cpp"
+                                        ]
+                                    },
+                                    "document_number": {
+                                        "type": "string"
+                                    },
+                                    "first_name": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 100
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 100
+                                    },
+                                    "relationship": {
+                                        "type": "string",
+                                        "enum": [
+                                            "madre",
+                                            "padre",
+                                            "tutor",
+                                            "curador",
+                                            "otro"
+                                        ]
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "pattern": "^(9\\d{8}|\\+[1-9]\\d{7,14})$"
+                                    },
+                                    "email": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "email",
+                                        "maxLength": 180
+                                    },
+                                    "valid_from": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                },
+                                "required": [
+                                    "document_type",
+                                    "document_number",
+                                    "first_name",
+                                    "last_name",
+                                    "relationship",
+                                    "phone",
+                                    "valid_from"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`LegalRepresentativeResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LegalRepresentativeResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/patients/{patient}/representatives/{representative}/end": {
+            "post": {
+                "operationId": "legalRepresentative.end",
+                "summary": "RF-061: termina una representaci\u00f3n vigente con su motivo",
+                "tags": [
+                    "LegalRepresentative"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "representative",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "enum": [
+                                            "revocada",
+                                            "otro"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "reason"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`LegalRepresentativeResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LegalRepresentativeResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/password/forgot": {
             "post": {
                 "operationId": "passwordReset.requestLink",
@@ -3034,6 +3336,71 @@
                     "budget_terms"
                 ],
                 "title": "ClinicSettingsResource"
+            },
+            "LegalRepresentativeResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "document_type": {
+                        "type": "string"
+                    },
+                    "document_number": {
+                        "type": "string"
+                    },
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "last_name": {
+                        "type": "string"
+                    },
+                    "relationship": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "valid_from": {
+                        "type": "string"
+                    },
+                    "valid_until": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ended_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "is_current": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "document_type",
+                    "document_number",
+                    "first_name",
+                    "last_name",
+                    "relationship",
+                    "phone",
+                    "email",
+                    "valid_from",
+                    "valid_until",
+                    "ended_reason",
+                    "is_current"
+                ],
+                "title": "LegalRepresentativeResource"
             },
             "LoginRequest": {
                 "type": "object",

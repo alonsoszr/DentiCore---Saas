@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Support/Audit/Commands',
         __DIR__.'/../app/Support/Http/Commands',
         __DIR__.'/../app/Support/Evidence/Commands',
+        __DIR__.'/../app/Modules/Patients/Console',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Alias de SDD §4.2.

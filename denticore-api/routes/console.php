@@ -21,3 +21,7 @@ Schedule::command('integrity:verify')->dailyAt('04:00')->onOneServer()->withoutO
 
 // Particiones anuales con dos años de anticipación (supuesto S-10, DI-17).
 Schedule::command('partitions:ensure')->daily()->onOneServer()->withoutOverlapping();
+
+// Representaciones de pacientes que cumplen 18 años (SDD §1.9, RF-061): a las 00:05 de cada
+// clínica. Corre cada hora en el minuto 5 para cubrir cualquier zona horaria; es idempotente.
+Schedule::command('representations:end-at-majority')->hourlyAt(5)->onOneServer()->withoutOverlapping();

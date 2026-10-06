@@ -17,6 +17,21 @@ export const clinicSettingsResourceSchema = z.object({
   budget_terms: z.union([z.string(), z.null()]),
 })
 
+export const legalRepresentativeResourceSchema = z.object({
+  id: z.string(),
+  document_type: z.string(),
+  document_number: z.string(),
+  first_name: z.string(),
+  last_name: z.string(),
+  relationship: z.string(),
+  phone: z.string(),
+  email: z.union([z.string(), z.null()]),
+  valid_from: z.string(),
+  valid_until: z.union([z.string(), z.null()]),
+  ended_reason: z.union([z.string(), z.null()]),
+  is_current: z.boolean(),
+})
+
 export const loginRequestSchema = z
   .object({
     tenant_slug: z.union([z.string().max(50), z.null()]).optional(),

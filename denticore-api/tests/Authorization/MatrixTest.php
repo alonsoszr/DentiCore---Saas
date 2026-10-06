@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 /**
  * @return list<array{method: string, uri: string, cus: string, denied: list<string>}>
@@ -35,6 +36,8 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{tenant}' => fn () => $tenant->uuid,
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'dentist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
+        // Representación inexistente: basta con un uuid; el rol se rechaza antes de buscarla.
+        '{representative}' => fn () => (string) Str::uuid(),
     ];
 
     $path = preg_replace_callback('/\{[a-z_]+\}/', fn ($match) => $bindings[$match[0]](), $uri);
