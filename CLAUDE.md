@@ -6,6 +6,7 @@ SaaS multi-clínica para clínicas odontológicas del Perú. Proyecto del curso 
 
 - `denticore-api/`: Laravel 13 (PHP 8.3), API REST `/api/v1`. Sus reglas están en `denticore-api/CLAUDE.md`, generado por Laravel Boost: no lo edites a mano.
 - `denticore-spa/`: React 18 + Vite + Tailwind CSS v4. Sus reglas están en `denticore-spa/CLAUDE.md`.
+- `denticore-ml/`: motor de riesgo (Python 3.12 + FastAPI), contrato SDD §4.6.
 - `infra/` y `docker-compose.yml`: entorno local.
 - `docs/`: fuentes de verdad del proyecto (no es código).
 
