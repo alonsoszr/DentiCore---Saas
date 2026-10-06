@@ -36,3 +36,13 @@ export function homePathFor(user) {
 export function slugFromPathname(pathname) {
   return pathname.match(/^\/c\/([^/]+)/)?.[1] ?? null
 }
+
+/** Verificación del segundo factor (A3): /c/:slug/login/2fa o /login/2fa (PEND-02). */
+export function twoFactorVerifyPath(slug) {
+  return `${loginPathFor(slug)}/2fa`
+}
+
+/** Configuración del segundo factor (A4; PEND-07): dentro del área del usuario. */
+export function twoFactorSetupPath(slug) {
+  return slug ? appPath(slug, '/seguridad/2fa') : adminPath('/seguridad/2fa')
+}

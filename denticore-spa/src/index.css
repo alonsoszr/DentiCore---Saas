@@ -686,4 +686,65 @@
   .details dd {
     margin: 4px 0 0;
   }
+
+  /* ---------- Acceso: código de verificación y requisitos de contraseña ---------- */
+
+  .otp {
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .otp-digit {
+    @apply text-headline-md;
+    width: 48px;
+    height: 56px;
+    text-align: center;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-container-lowest);
+  }
+
+  .otp-digit[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+
+  .requirement {
+    @apply text-body-md;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-on-surface-variant);
+  }
+
+  .requirement-ok {
+    color: var(--color-tertiary);
+  }
+
+  .requirement-failed {
+    color: var(--color-error);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    @apply text-mono-md;
+  }
+
+  .session-timeout {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    max-width: 420px;
+    margin: 0;
+    z-index: 50;
+  }
+
+  .recovery-codes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
 }

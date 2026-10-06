@@ -16,15 +16,22 @@ use RuntimeException;
  */
 class DatabaseSeeder extends Seeder
 {
+    /** Secreto TOTP sintético del Súper Administrador de demostración (base32). */
+    public const SUPER_ADMIN_TOTP_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+
     public function run(TenantService $tenants): void
     {
         if (! app()->environment('local')) {
             throw new RuntimeException('Los datos de demostración solo se cargan en entorno local.');
         }
 
+        // 2FA confirmado con un secreto TOTP sintético y público (solo entorno local): las
+        // pruebas E2E calculan el código para entrar a /admin (SDD §1.7, CUS-07).
         User::factory()->superAdmin()->create([
             'name' => 'Admin Plataforma',
             'email' => 'admin@denticore.test',
+            'two_factor_secret' => self::SUPER_ADMIN_TOTP_SECRET,
+            'two_factor_confirmed_at' => now(),
         ]);
 
         $clinic = $tenants->create([

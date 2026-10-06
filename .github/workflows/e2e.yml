@@ -48,6 +48,9 @@ jobs:
           php artisan migrate --database=pgsql_migrator --force
           php artisan db:seed --force
           php artisan serve --port=8000 > ../api.log 2>&1 &
+          # Correos de invitación (outbox → cola → Mailpit), como el worker de producción.
+          php artisan outbox:dispatch > ../outbox.log 2>&1 &
+          php artisan queue:work redis --queue=critical,notifications,documents,heavy,default > ../worker.log 2>&1 &
 
       - uses: actions/setup-node@v4
         with:
@@ -76,3 +79,5 @@ jobs:
             denticore-spa/playwright-report
             api.log
             spa.log
+            outbox.log
+            worker.log

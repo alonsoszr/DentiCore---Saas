@@ -20,15 +20,14 @@ export function AuthProvider({ children }) {
 
   const meQuery = useQuery({
     queryKey: ME_QUERY_KEY,
-    queryFn: async () => {
-      const { data } = await apiClient.get('/auth/me')
-      return data.data
-    },
+    queryFn: fetchMe,
     enabled: Boolean(getToken()),
     retry: false,
   })
 
   const [twoFactor, setTwoFactor] = useState(null)
+  // A3 muestra el correo del login: la API no devuelve el usuario antes del 2FA.
+  const [pendingEmail, setPendingEmail] = useState(null)
 
   useEffect(() => {
     pathnameRef.current = location.pathname
@@ -52,11 +51,15 @@ export function AuthProvider({ children }) {
       })
       return data
     },
-    onSuccess: (data) => {
+    onSuccess: async (data, { email }) => {
       setToken(data.token)
       setTwoFactor(twoFactorStep(data))
+      setPendingEmail(data.requires_2fa ? email : null)
       if (data.user) {
         queryClient.setQueryData(ME_QUERY_KEY, data.user)
+      } else if (data.requires_2fa_setup) {
+        // Con `2fa:setup` la API permite GET /auth/me (A4 muestra la tarjeta del usuario).
+        await queryClient.fetchQuery({ queryKey: ME_QUERY_KEY, queryFn: fetchMe })
       }
     },
   })
@@ -66,19 +69,35 @@ export function AuthProvider({ children }) {
     onSettled: () => {
       clearToken()
       setTwoFactor(null)
+      setPendingEmail(null)
       queryClient.clear()
     },
   })
+
+  /** Respuesta de 2fa/verify o 2fa/confirm: token `full` y usuario (SDD §1.8; PEND-04). */
+  const completeSession = (data) => {
+    setToken(data.token)
+    setTwoFactor(null)
+    setPendingEmail(null)
+    queryClient.setQueryData(ME_QUERY_KEY, data.user)
+  }
 
   const value = {
     user: meQuery.isError ? null : (meQuery.data ?? null),
     isLoading: meQuery.isLoading,
     twoFactor,
+    pendingEmail,
+    completeSession,
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+async function fetchMe() {
+  const { data } = await apiClient.get('/auth/me')
+  return data.data
 }
 
 function twoFactorStep(loginResponse) {
