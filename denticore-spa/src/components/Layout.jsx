@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { loginPathFor } from '../auth/paths'
 import { ROLE_LABELS } from '../auth/roles'
 import { useAuth } from '../auth/useAuth'
+import { SessionTimeout } from '../ui/SessionTimeout'
 
 /**
  * Estructura común de las áreas autenticadas. Cada área (admin, app, portal) define
@@ -51,6 +52,7 @@ export function Layout({ items }) {
       <main className="main">
         <Outlet />
       </main>
+      <SessionTimeout />
     </div>
   )
 }

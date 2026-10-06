@@ -41,6 +41,29 @@ describe('LoginPage', () => {
     expect(await screen.findByTestId('location')).toHaveTextContent('/c/clinica-demo/app/pacientes')
   })
 
+  it.each([
+    ['verification (A3)', { requires_2fa: true, user: null }, '/c/clinica-demo/login/2fa'],
+    ['setup (A4)', { requires_2fa_setup: true, user: null }, '/c/clinica-demo/app/seguridad/2fa'],
+  ])('continues with the second factor %s', async (_, result, path) => {
+    const login = vi.fn(async () => result)
+    renderPage(<LoginPage />, { route: '/c/clinica-demo/login', path: '/c/:slug/login', auth: { login } })
+
+    await userEvent.type(screen.getByLabelText('Correo electrónico'), 'admin@clinica-demo.test')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'secreta')
+    await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }))
+
+    expect(await screen.findByTestId('location')).toHaveTextContent(path)
+  })
+
+  it('shows the notice that arrives from activation or an expired session', () => {
+    renderPage(<LoginPage />, {
+      route: { pathname: '/c/clinica-demo/login', state: { notice: 'Tu cuenta está activa. Inicia sesión.' } },
+      path: '/c/:slug/login',
+    })
+
+    expect(screen.getByText('Tu cuenta está activa. Inicia sesión.')).toBeInTheDocument()
+  })
+
   it('shows the validation error next to the field', async () => {
     const error = { response: { status: 422, data: { errors: { email: ['Las credenciales son incorrectas.'] } } } }
     const login = vi.fn(async () => {

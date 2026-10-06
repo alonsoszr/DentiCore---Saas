@@ -20,6 +20,15 @@ export const apiClient = axios.create({
 })
 
 let unauthorizedHandler = null
+let lastActivity = Date.now()
+
+/**
+ * Momento de la última respuesta de la API: el servidor mide la inactividad por el último uso
+ * del token (RF-036), y SessionTimeout avisa antes de que venza (RNF-065).
+ */
+export function lastApiActivity() {
+  return lastActivity
+}
 
 /** La sesión registra aquí qué hacer ante un 401 (volver al login correspondiente). */
 export function onUnauthorized(handler) {
@@ -43,9 +52,13 @@ apiClient.interceptors.request.use((config) => {
 })
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    lastActivity = Date.now()
+    return response
+  },
   (error) => {
     const { config, response } = error
+    if (response) lastActivity = Date.now()
 
     // Un 401 del propio login son credenciales inválidas, no una sesión vencida.
     if (response?.status === 401 && !config?.url?.endsWith('/auth/login')) {

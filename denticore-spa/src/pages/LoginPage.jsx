@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { z } from 'zod'
 import { fieldErrors, generalError } from '../api/errors'
-import { homePathFor, loginPathFor, PLATFORM_LOGIN_PATH } from '../auth/paths'
+import { retryAfterSeconds } from '../api/retryAfter'
+import { homePathFor, loginPathFor, PLATFORM_LOGIN_PATH, twoFactorSetupPath, twoFactorVerifyPath } from '../auth/paths'
 import { useAuth } from '../auth/useAuth'
 import { usePublicClinic } from '../auth/usePublicClinic'
 import { Alert } from '../components/Alert'
@@ -22,8 +23,6 @@ const loginSchema = z.object({
     .pipe(z.email('Ingresa un correo electrónico válido.')),
   password: z.string().min(1, 'Ingresa tu contraseña.').max(128, 'La contraseña no puede superar 128 caracteres.'),
 })
-
-const DEFAULT_RETRY_SECONDS = 60
 
 /**
  * Inicio de sesión (CUS-06; fichas auth-login A1 y auth-login-platform A2). En
@@ -92,9 +91,15 @@ export function LoginPage() {
     setSubmitting(true)
     setError(null)
     try {
-      const { user: loggedUser } = await login({ tenantSlug: slug, ...parsed.data })
-      const from = location.state?.from?.pathname
-      navigate(from ?? homePathFor(loggedUser), { replace: true })
+      const result = await login({ tenantSlug: slug, ...parsed.data })
+      const from = location.state?.from
+      if (result.requires_2fa) {
+        navigate(twoFactorVerifyPath(slug), { replace: true, state: { from } })
+      } else if (result.requires_2fa_setup) {
+        navigate(twoFactorSetupPath(slug), { replace: true })
+      } else {
+        navigate(from?.pathname ?? homePathFor(result.user), { replace: true })
+      }
     } catch (err) {
       setError(err)
       if (err?.response?.status === 401) {
@@ -121,6 +126,11 @@ export function LoginPage() {
       <h1 className="text-headline-lg-mobile sm:text-headline-lg">Inicia sesión</h1>
       <p className="mt-1.5 mb-6 text-body-md text-on-surface-variant">Accede con tu correo y contraseña.</p>
 
+      {location.state?.notice && !error && (
+        <Alert tone="info" className="mb-5">
+          {location.state.notice}
+        </Alert>
+      )}
       <StatusAlert error={error} status={status} lockedMinutes={lockedMinutes} />
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -267,15 +277,4 @@ function ClinicCodeForm() {
       </button>
     </form>
   )
-}
-
-/** Segundos de espera de un 429: Retry-After en segundos o como fecha HTTP. */
-function retryAfterSeconds(response) {
-  const headers = response?.headers ?? {}
-  const value = typeof headers.get === 'function' ? headers.get('retry-after') : headers['retry-after']
-  const seconds = Number(value)
-  if (Number.isFinite(seconds) && seconds > 0) return seconds
-  const date = Date.parse(value)
-  if (!Number.isNaN(date)) return Math.max(1, Math.ceil((date - Date.now()) / 1000))
-  return DEFAULT_RETRY_SECONDS
 }
