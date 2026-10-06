@@ -39,7 +39,7 @@ class PatientControllerTest extends TestCase
         $dentistA = User::factory()->for($tenantA)->create(['role' => 'dentist']);
         $patientB = Patient::factory()->for($tenantB)->create();
 
-        $this->actingAs($dentistA, 'sanctum')
+        $this->actingWithToken($dentistA)
             ->getJson("/api/v1/patients/{$patientB->uuid}")
             ->assertNotFound();
     }
@@ -50,7 +50,7 @@ class PatientControllerTest extends TestCase
         $receptionist = User::factory()->for($tenant)->create(['role' => 'receptionist']);
         $patient = Patient::factory()->for($tenant)->create(['document_id' => '11223344', 'phone' => '911222333']);
 
-        $this->actingAs($receptionist, 'sanctum')
+        $this->actingWithToken($receptionist)
             ->getJson("/api/v1/patients/{$patient->uuid}")
             ->assertOk()
             ->assertJsonPath('data.id', $patient->uuid)
@@ -67,7 +67,7 @@ class PatientControllerTest extends TestCase
         Patient::factory()->for($tenantA)->count(16)->create();
         Patient::factory()->for($tenantB)->count(3)->create();
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingWithToken($admin)
             ->getJson('/api/v1/patients')
             ->assertOk()
             ->assertJsonCount(15, 'data')
@@ -80,7 +80,7 @@ class PatientControllerTest extends TestCase
         $otherTenant = Tenant::factory()->create();
         $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
 
-        $response = $this->actingAs($dentist, 'sanctum')
+        $response = $this->actingWithToken($dentist)
             ->postJson('/api/v1/patients', $this->payload(['tenant_id' => $otherTenant->id]));
 
         $response->assertCreated()
@@ -98,14 +98,14 @@ class PatientControllerTest extends TestCase
         $receptionistA = User::factory()->for($tenantA)->create(['role' => 'receptionist']);
         $receptionistB = User::factory()->for($tenantB)->create(['role' => 'receptionist']);
 
-        $this->actingAs($receptionistA, 'sanctum')->postJson('/api/v1/patients', $this->payload())->assertCreated();
+        $this->actingWithToken($receptionistA)->postJson('/api/v1/patients', $this->payload())->assertCreated();
 
-        $this->actingAs($receptionistA, 'sanctum')
+        $this->actingWithToken($receptionistA)
             ->postJson('/api/v1/patients', $this->payload(['document_id' => ' 45678912 ']))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('document_id');
 
-        $this->actingAs($receptionistB, 'sanctum')->postJson('/api/v1/patients', $this->payload())->assertCreated();
+        $this->actingWithToken($receptionistB)->postJson('/api/v1/patients', $this->payload())->assertCreated();
     }
 
     public function test_patient_role_and_super_admin_cannot_list_or_register_patients(): void
@@ -115,8 +115,8 @@ class PatientControllerTest extends TestCase
         $superAdmin = User::factory()->superAdmin()->create();
 
         foreach ([$patientUser, $superAdmin] as $user) {
-            $this->actingAs($user, 'sanctum')->getJson('/api/v1/patients')->assertForbidden();
-            $this->actingAs($user, 'sanctum')->postJson('/api/v1/patients', $this->payload())->assertForbidden();
+            $this->actingWithToken($user)->getJson('/api/v1/patients')->assertForbidden();
+            $this->actingWithToken($user)->postJson('/api/v1/patients', $this->payload())->assertForbidden();
         }
     }
 
@@ -131,11 +131,11 @@ class PatientControllerTest extends TestCase
         });
         $otherRecord = Patient::factory()->for($tenant)->create();
 
-        $this->actingAs($patientUser, 'sanctum')
+        $this->actingWithToken($patientUser)
             ->getJson("/api/v1/patients/{$ownRecord->uuid}")
             ->assertOk();
 
-        $this->actingAs($patientUser, 'sanctum')
+        $this->actingWithToken($patientUser)
             ->getJson("/api/v1/patients/{$otherRecord->uuid}")
             ->assertForbidden();
     }
@@ -146,13 +146,13 @@ class PatientControllerTest extends TestCase
         $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin']);
         $portalUser = User::factory()->for($tenant)->create(['role' => 'patient']);
 
-        $this->actingAs($admin, 'sanctum')
+        $this->actingWithToken($admin)
             ->postJson('/api/v1/patients', $this->payload(['user_uuid' => $portalUser->uuid]))
             ->assertCreated()
             ->assertJsonPath('data.user_uuid', $portalUser->uuid);
 
         // La misma cuenta no puede vincularse a una segunda ficha.
-        $this->actingAs($admin, 'sanctum')
+        $this->actingWithToken($admin)
             ->postJson('/api/v1/patients', $this->payload(['document_id' => '99887766', 'user_uuid' => $portalUser->uuid]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('user_uuid');
@@ -167,7 +167,7 @@ class PatientControllerTest extends TestCase
         $foreignPatientUser = User::factory()->for($otherTenant)->create(['role' => 'patient']);
 
         foreach ([$dentist, $foreignPatientUser] as $candidate) {
-            $this->actingAs($admin, 'sanctum')
+            $this->actingWithToken($admin)
                 ->postJson('/api/v1/patients', $this->payload(['user_uuid' => $candidate->uuid]))
                 ->assertUnprocessable()
                 ->assertJsonValidationErrors('user_uuid');
@@ -190,7 +190,7 @@ class PatientControllerTest extends TestCase
             'password' => 'password',
         ])->assertOk()->assertJsonPath('user.patient_uuid', $record->uuid);
 
-        $this->actingAs($patientUser, 'sanctum')
+        $this->actingWithToken($patientUser)
             ->getJson('/api/v1/auth/me')
             ->assertOk()
             ->assertJsonPath('data.patient_uuid', $record->uuid);
@@ -202,12 +202,12 @@ class PatientControllerTest extends TestCase
         $unlinkedPatientUser = User::factory()->for($tenant)->create(['role' => 'patient']);
         $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
 
-        $this->actingAs($unlinkedPatientUser, 'sanctum')
+        $this->actingWithToken($unlinkedPatientUser)
             ->getJson('/api/v1/auth/me')
             ->assertOk()
             ->assertJsonPath('data.patient_uuid', null);
 
-        $this->actingAs($dentist, 'sanctum')
+        $this->actingWithToken($dentist)
             ->getJson('/api/v1/auth/me')
             ->assertOk()
             ->assertJsonMissingPath('data.patient_uuid');
@@ -218,7 +218,7 @@ class PatientControllerTest extends TestCase
         $tenant = Tenant::factory()->create();
         $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
 
-        $response = $this->actingAs($dentist, 'sanctum')->postJson('/api/v1/patients', $this->payload([
+        $response = $this->actingWithToken($dentist)->postJson('/api/v1/patients', $this->payload([
             'medical_history' => ['alergias' => [' Penicilina ', ''], 'observaciones' => '  Hipertenso  '],
         ]));
 
@@ -235,7 +235,7 @@ class PatientControllerTest extends TestCase
         $tenant = Tenant::factory()->create();
         $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
 
-        $this->actingAs($dentist, 'sanctum')->postJson('/api/v1/patients', $this->payload([
+        $this->actingWithToken($dentist)->postJson('/api/v1/patients', $this->payload([
             'medical_history' => ['alergias' => [], 'enfermedades' => [''], 'medicamentos' => [], 'observaciones' => ''],
         ]))->assertCreated()->assertJsonPath('data.medical_history', null);
     }
@@ -245,7 +245,7 @@ class PatientControllerTest extends TestCase
         $tenant = Tenant::factory()->create();
         $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
 
-        $this->actingAs($dentist, 'sanctum')
+        $this->actingWithToken($dentist)
             ->postJson('/api/v1/patients', $this->payload(['medical_history' => ['cirugias' => ['Apendicectomía']]]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('medical_history');

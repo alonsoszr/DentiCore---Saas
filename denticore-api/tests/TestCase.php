@@ -28,4 +28,18 @@ abstract class TestCase extends BaseTestCase
 
         return $user;
     }
+
+    /**
+     * Autentica a un usuario existente con un token de las habilidades indicadas (por defecto
+     * `full`). Las rutas AUTH exigen habilidad (SDD §4.3.2), así que `actingAs($user, 'sanctum')`
+     * sin token no basta.
+     *
+     * @param  list<string>  $abilities
+     */
+    protected function actingWithToken(User $user, array $abilities = ['full']): static
+    {
+        Sanctum::actingAs($user, $abilities);
+
+        return $this;
+    }
 }

@@ -5,30 +5,27 @@ namespace App\Modules\Identity\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Inicio de sesión (CUS-06; SRS §11.2, Datos). La clínica la resuelve `tenant.slug:login` por el
+ * código de acceso, con el mismo 401 si no existe (no se valida su existencia aquí para no
+ * revelarla). La política de longitud mínima se aplica al definir la contraseña, no al ingresar.
+ */
 class LoginRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * tenant_slug es opcional: su ausencia indica un intento de login de super_admin
-     * (usuario de plataforma sin clínica asociada).
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'tenant_slug' => ['nullable', 'string', 'exists:tenants,slug'],
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
+            'tenant_slug' => ['nullable', 'string', 'max:50'],
+            'email' => ['required', 'email', 'max:180'],
+            'password' => ['required', 'string', 'max:128'],
         ];
     }
 }

@@ -42,60 +42,63 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->postJson('/api/v1/auth/login', ['tenant_slug' => 'clinica-contrato', 'email' => 'admin@contrato.test', 'password' => 'password']), 'POST', '/auth/login');
     $check($this->postJson('/api/v1/auth/login', []), 'POST', '/auth/login');
     $check($this->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
-    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
-    $check($this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
+    $check($this->actingWithToken($superAdmin)->getJson('/api/v1/auth/me'), 'GET', '/auth/me');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/auth/keepalive'), 'POST', '/auth/keepalive');
+    $check($this->getJson('/api/v1/public/clinics/'.$tenant->slug), 'GET', '/public/clinics/{slug}');
+    $check($this->getJson('/api/v1/public/clinics/no-existe'), 'GET', '/public/clinics/{slug}');
 
     // Plataforma
-    $check($this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/platform/plans'), 'GET', '/platform/plans');
-    $check($this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/platform/tenants'), 'GET', '/platform/tenants');
-    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/platform/tenants'), 'GET', '/platform/tenants');
-    $created = $this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/platform/tenants', [
+    $check($this->actingWithToken($superAdmin)->getJson('/api/v1/platform/plans'), 'GET', '/platform/plans');
+    $check($this->actingWithToken($superAdmin)->getJson('/api/v1/platform/tenants'), 'GET', '/platform/tenants');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/platform/tenants'), 'GET', '/platform/tenants');
+    $created = $this->actingWithToken($superAdmin)->postJson('/api/v1/platform/tenants', [
         'name' => 'Clínica Nueva', 'legal_name' => 'Clínica Nueva S.A.C.', 'ruc' => '20600000013',
         'slug' => 'clinica-nueva', 'address' => 'Jr. Junín 456, Lima', 'subscription_plan' => 'basic',
         'admin' => ['name' => 'Ana', 'email' => 'ana@nueva.test'],
     ], ['Idempotency-Key' => (string) Str::uuid()]);
     $check($created, 'POST', '/platform/tenants');
-    $check($this->actingAs($superAdmin, 'sanctum')->postJson('/api/v1/platform/tenants', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/platform/tenants');
+    $check($this->actingWithToken($superAdmin)->postJson('/api/v1/platform/tenants', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/platform/tenants');
     $newTenant = $created->json('data.id');
-    $check($this->actingAs($superAdmin, 'sanctum')->getJson("/api/v1/platform/tenants/{$newTenant}"), 'GET', '/platform/tenants/{tenant}');
-    $check($this->actingAs($superAdmin, 'sanctum')->patchJson("/api/v1/platform/tenants/{$newTenant}", ['name' => 'Clínica Renovada']), 'PATCH', '/platform/tenants/{tenant}');
-    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/admin-invitation"), 'POST', '/platform/tenants/{tenant}/admin-invitation');
-    $check($this->actingAs($superAdmin, 'sanctum')->putJson("/api/v1/platform/tenants/{$newTenant}/plan", ['subscription_plan' => 'pro']), 'PUT', '/platform/tenants/{tenant}/plan');
-    $check($this->actingAs($superAdmin, 'sanctum')->putJson("/api/v1/platform/tenants/{$newTenant}/plan", []), 'PUT', '/platform/tenants/{tenant}/plan');
-    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/suspend", ['reason' => 'Falta de pago']), 'POST', '/platform/tenants/{tenant}/suspend');
-    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/suspend", ['reason' => 'Otra vez']), 'POST', '/platform/tenants/{tenant}/suspend');
-    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/reactivate", ['reason' => 'Pago regularizado']), 'POST', '/platform/tenants/{tenant}/reactivate');
+    $check($this->actingWithToken($superAdmin)->getJson("/api/v1/platform/tenants/{$newTenant}"), 'GET', '/platform/tenants/{tenant}');
+    $check($this->actingWithToken($superAdmin)->patchJson("/api/v1/platform/tenants/{$newTenant}", ['name' => 'Clínica Renovada']), 'PATCH', '/platform/tenants/{tenant}');
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/tenants/{$newTenant}/admin-invitation"), 'POST', '/platform/tenants/{tenant}/admin-invitation');
+    $check($this->actingWithToken($superAdmin)->putJson("/api/v1/platform/tenants/{$newTenant}/plan", ['subscription_plan' => 'pro']), 'PUT', '/platform/tenants/{tenant}/plan');
+    $check($this->actingWithToken($superAdmin)->putJson("/api/v1/platform/tenants/{$newTenant}/plan", []), 'PUT', '/platform/tenants/{tenant}/plan');
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/tenants/{$newTenant}/suspend", ['reason' => 'Falta de pago']), 'POST', '/platform/tenants/{tenant}/suspend');
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/tenants/{$newTenant}/suspend", ['reason' => 'Otra vez']), 'POST', '/platform/tenants/{tenant}/suspend');
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/tenants/{$newTenant}/reactivate", ['reason' => 'Pago regularizado']), 'POST', '/platform/tenants/{tenant}/reactivate');
 
     // Usuarios
-    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/users'), 'GET', '/users');
-    $created = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/users', [
+    $check($this->actingWithToken($admin)->getJson('/api/v1/users'), 'GET', '/users');
+    $created = $this->actingWithToken($admin)->postJson('/api/v1/users', [
         'name' => 'Luis', 'email' => 'luis@contrato.test', 'password' => 'password123', 'role' => 'dentist', 'cop_number' => '12345',
     ]);
     $check($created, 'POST', '/users');
-    $check($this->actingAs($admin, 'sanctum')->postJson('/api/v1/users', []), 'POST', '/users');
-    $check($this->actingAs($admin, 'sanctum')->patchJson('/api/v1/users/'.$created->json('data.id'), ['name' => 'Luis R.']), 'PATCH', '/users/{user}');
-    $check($this->actingAs($admin, 'sanctum')->patchJson('/api/v1/users/'.fake()->uuid(), ['name' => 'X']), 'PATCH', '/users/{user}');
-    $check($this->actingAs($admin, 'sanctum')->patchJson('/api/v1/users/'.$created->json('data.id'), ['email' => 'no-es-correo']), 'PATCH', '/users/{user}');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/users', []), 'POST', '/users');
+    $check($this->actingWithToken($admin)->patchJson('/api/v1/users/'.$created->json('data.id'), ['name' => 'Luis R.']), 'PATCH', '/users/{user}');
+    $check($this->actingWithToken($admin)->patchJson('/api/v1/users/'.fake()->uuid(), ['name' => 'X']), 'PATCH', '/users/{user}');
+    $check($this->actingWithToken($admin)->patchJson('/api/v1/users/'.$created->json('data.id'), ['email' => 'no-es-correo']), 'PATCH', '/users/{user}');
 
     // Pacientes
-    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/patients'), 'GET', '/patients');
-    $check($this->actingAs($portal, 'sanctum')->getJson('/api/v1/patients'), 'GET', '/patients');
-    $check($this->actingAs($admin, 'sanctum')->postJson('/api/v1/patients', [
+    $check($this->actingWithToken($admin)->getJson('/api/v1/patients'), 'GET', '/patients');
+    $check($this->actingWithToken($portal)->getJson('/api/v1/patients'), 'GET', '/patients');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/patients', [
         'document_id' => '70000001', 'first_name' => 'Ana', 'last_name' => 'Quispe', 'birth_date' => '1990-01-01',
         'medical_history' => ['alergias' => ['Látex']], 'user_uuid' => $portal->uuid,
     ]), 'POST', '/patients');
-    $check($this->actingAs($admin, 'sanctum')->postJson('/api/v1/patients', []), 'POST', '/patients');
-    $check($this->actingAs($admin, 'sanctum')->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
-    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/patients/'.fake()->uuid()), 'GET', '/patients/{patient}');
-    $check($this->actingAs($portal, 'sanctum')->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/patients', []), 'POST', '/patients');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/patients/'.fake()->uuid()), 'GET', '/patients/{patient}');
+    $check($this->actingWithToken($portal)->getJson("/api/v1/patients/{$patient->uuid}"), 'GET', '/patients/{patient}');
 
     // Parámetros de la clínica
     Storage::fake('s3');
-    $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/clinic/settings'), 'GET', '/clinic/settings');
-    $check($this->actingAs($admin, 'sanctum')->patchJson('/api/v1/clinic/settings', ['budget_validity_days' => 45]), 'PATCH', '/clinic/settings');
-    $check($this->actingAs($admin, 'sanctum')->patchJson('/api/v1/clinic/settings', ['budget_validity_days' => 0]), 'PATCH', '/clinic/settings');
-    $check($this->actingAs($admin, 'sanctum')->post('/api/v1/clinic/logo', ['logo' => UploadedFile::fake()->image('logo.png')], ['Accept' => 'application/json']), 'POST', '/clinic/logo');
-    $check($this->actingAs($admin, 'sanctum')->postJson('/api/v1/clinic/logo', []), 'POST', '/clinic/logo');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/clinic/settings'), 'GET', '/clinic/settings');
+    $check($this->actingWithToken($admin)->patchJson('/api/v1/clinic/settings', ['budget_validity_days' => 45]), 'PATCH', '/clinic/settings');
+    $check($this->actingWithToken($admin)->patchJson('/api/v1/clinic/settings', ['budget_validity_days' => 0]), 'PATCH', '/clinic/settings');
+    $check($this->actingWithToken($admin)->post('/api/v1/clinic/logo', ['logo' => UploadedFile::fake()->image('logo.png')], ['Accept' => 'application/json']), 'POST', '/clinic/logo');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/clinic/logo', []), 'POST', '/clinic/logo');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

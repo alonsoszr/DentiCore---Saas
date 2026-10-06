@@ -41,6 +41,8 @@ jobs:
         working-directory: denticore-api
         run: |
           cp .env.example .env
+          # Todas las sesiones de Playwright salen de la misma IP: se eleva throttle:login (RF-035).
+          echo "LOGIN_ATTEMPTS_PER_MINUTE=1000" >> .env
           php artisan key:generate
           php artisan migrate --database=pgsql_migrator --force
           php artisan db:seed --force

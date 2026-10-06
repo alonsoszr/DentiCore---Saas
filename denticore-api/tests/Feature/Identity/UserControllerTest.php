@@ -32,7 +32,7 @@ class UserControllerTest extends TestCase
         $colleague = User::factory()->for($this->tenant)->create(['role' => 'dentist']);
         User::factory()->for(Tenant::factory())->create(['role' => 'dentist']);
 
-        $response = $this->actingAs($this->clinicAdmin, 'sanctum')->getJson('/api/v1/users');
+        $response = $this->actingWithToken($this->clinicAdmin)->getJson('/api/v1/users');
 
         $response->assertOk()->assertJsonCount(2, 'data');
         $this->assertEqualsCanonicalizing(
@@ -45,7 +45,7 @@ class UserControllerTest extends TestCase
     {
         $otherTenant = Tenant::factory()->create();
 
-        $response = $this->actingAs($this->clinicAdmin, 'sanctum')->postJson('/api/v1/users', [
+        $response = $this->actingWithToken($this->clinicAdmin)->postJson('/api/v1/users', [
             'tenant_id' => $otherTenant->id,
             'name' => 'Dra. Pérez',
             'email' => 'perez@clinica.test',
@@ -63,7 +63,7 @@ class UserControllerTest extends TestCase
 
     public function test_clinic_admin_cannot_create_super_admin(): void
     {
-        $response = $this->actingAs($this->clinicAdmin, 'sanctum')->postJson('/api/v1/users', [
+        $response = $this->actingWithToken($this->clinicAdmin)->postJson('/api/v1/users', [
             'name' => 'Intruso',
             'email' => 'intruso@clinica.test',
             'password' => 'password-segura',
@@ -78,14 +78,14 @@ class UserControllerTest extends TestCase
     {
         User::factory()->for(Tenant::factory())->create(['email' => 'compartido@test.test']);
 
-        $this->actingAs($this->clinicAdmin, 'sanctum')->postJson('/api/v1/users', [
+        $this->actingWithToken($this->clinicAdmin)->postJson('/api/v1/users', [
             'name' => 'Primera',
             'email' => 'compartido@test.test',
             'password' => 'password-segura',
             'role' => 'receptionist',
         ])->assertCreated();
 
-        $this->actingAs($this->clinicAdmin, 'sanctum')->postJson('/api/v1/users', [
+        $this->actingWithToken($this->clinicAdmin)->postJson('/api/v1/users', [
             'name' => 'Duplicada',
             'email' => 'compartido@test.test',
             'password' => 'password-segura',
@@ -97,7 +97,7 @@ class UserControllerTest extends TestCase
     {
         $user = User::factory()->for($this->tenant)->create(['role' => 'receptionist']);
 
-        $response = $this->actingAs($this->clinicAdmin, 'sanctum')
+        $response = $this->actingWithToken($this->clinicAdmin)
             ->patchJson("/api/v1/users/{$user->uuid}", ['role' => 'dentist', 'cop_number' => '54321']);
 
         $response->assertOk()->assertJsonPath('data.role', 'dentist');
@@ -108,7 +108,7 @@ class UserControllerTest extends TestCase
     {
         $foreignUser = User::factory()->for(Tenant::factory())->create(['role' => 'dentist']);
 
-        $response = $this->actingAs($this->clinicAdmin, 'sanctum')
+        $response = $this->actingWithToken($this->clinicAdmin)
             ->patchJson("/api/v1/users/{$foreignUser->uuid}", ['name' => 'Modificado']);
 
         $response->assertNotFound();
@@ -120,7 +120,7 @@ class UserControllerTest extends TestCase
         $user = User::factory()->for($this->tenant)->create(['role' => 'dentist']);
         $user->createToken('api');
 
-        $this->actingAs($this->clinicAdmin, 'sanctum')
+        $this->actingWithToken($this->clinicAdmin)
             ->patchJson("/api/v1/users/{$user->uuid}", ['is_active' => false])
             ->assertOk();
 
@@ -135,7 +135,7 @@ class UserControllerTest extends TestCase
         $dentist = User::factory()->for($this->tenant)->create(['role' => 'dentist']);
         $superAdmin = User::factory()->superAdmin()->create();
 
-        $this->actingAs($dentist, 'sanctum')->getJson('/api/v1/users')->assertForbidden();
-        $this->actingAs($superAdmin, 'sanctum')->getJson('/api/v1/users')->assertForbidden();
+        $this->actingWithToken($dentist)->getJson('/api/v1/users')->assertForbidden();
+        $this->actingWithToken($superAdmin)->getJson('/api/v1/users')->assertForbidden();
     }
 }

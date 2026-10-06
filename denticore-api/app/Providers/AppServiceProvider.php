@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Modules\Identity\Services\InactivityPolicy;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Encryption\BlindIndex;
 use App\Support\Encryption\KeyRing;
@@ -17,6 +18,8 @@ use Illuminate\Database\Schema\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,6 +53,23 @@ class AppServiceProvider extends ServiceProvider
 
         // throttle:api: 60 solicitudes por minuto por usuario (SDD §1.7, §4.2; DD-19).
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+
+        // throttle:login: 5 intentos por minuto por IP (SDD §4.2; RF-035). throttle:public: 60 por
+        // minuto por IP en las rutas públicas (grupo PUB).
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(config('auth.login_attempts_per_minute'))->by('login:'.$request->ip()));
+        RateLimiter::for('public', fn (Request $request) => Limit::perMinute(60)->by('public:'.$request->ip()));
+
+        // Inactividad (SDD §1.7; RF-036): se evalúa antes de que Sanctum actualice last_used_at;
+        // un token vencido por inactividad se borra y la solicitud recibe 401.
+        Sanctum::authenticateAccessTokensUsing(function (PersonalAccessToken $token, bool $isValid): bool {
+            if ($isValid && InactivityPolicy::expired($token)) {
+                $token->delete();
+
+                return false;
+            }
+
+            return $isValid;
+        });
 
         // throttle:tenant: solicitudes por minuto por clínica según su plan (SDD §4.2; RNF-042).
         // Laravel ordena los limitadores antes que `tenant`, así que la clínica sale del usuario.
