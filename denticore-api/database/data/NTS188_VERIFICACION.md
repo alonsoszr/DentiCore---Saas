@@ -79,7 +79,9 @@ Puntos que TASK-051 debe cumplir; se revisan contra el componente SVG.
 | C6 | Las raíces siguen el anexo: una en incisivos y caninos; en premolares y molares, el número que dibuja el anexo. | ☐ |
 | C7 | El encabezado «ODONTOGRAMA» y la fecha; abajo, los bloques «Especificaciones» y «Observaciones» (§5.14, §5.15). | ☐ |
 | C8 | Solo se usan los colores azul `#1D4ED8` y rojo `#DC2626`, siempre con sigla o símbolo (§5.13, RNF-061, RNF-151). | ☐ |
-| C9 | Cuando una pieza tiene varios hallazgos, todos van en su recuadro (§5.16). | ☐ |
+| C9 | Cuando una pieza tiene varios hallazgos, todos van en su recuadro (§5.16). El componente muestra hasta 4 siglas; el resto va en especificaciones (§5.14). | ☐ |
+| C10 | Orientación de las superficies, que el anexo no rotula: en las piezas superiores, la vestibular arriba (hacia las raíces) y la palatina abajo; en las inferiores, la lingual arriba y la vestibular abajo. La mesial mira a la línea media y en el centro va la oclusal o la incisal. | ☐ |
+| C11 | Los símbolos de tramo (§6.1.1, 6.1.2, 6.1.29 a 6.1.31) a nivel de los ápices; la fusión y la transposición sobre los números; el diastema entre las coronas. | ☐ |
 
 ## D. Firma
 
