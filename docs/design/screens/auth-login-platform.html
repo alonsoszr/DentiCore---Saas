@@ -1,0 +1,439 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>DentiCore · Administración Central · Iniciar sesión</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            primary: {
+              DEFAULT: '#0F1A34',
+              hover: '#1B2A4E',
+              pressed: '#0A1122',
+              container: '#E5EEFF',
+            },
+            secondary: {
+              DEFAULT: '#0369A1',
+              container: '#E0F2FE',
+            },
+            outline: {
+              DEFAULT: '#7C8AA0',
+              variant: '#E2E8F0',
+            },
+            canvas: '#F8FAFC',
+            surface: '#FFFFFF',
+            surfaceDim: '#F1F5F9',
+            error: {
+              DEFAULT: '#BA1A1A',
+              container: '#FEF2F2',
+              border: '#FCA5A5',
+            },
+            warning: {
+              DEFAULT: '#B45309',
+              container: '#FFFBEB',
+              border: '#FDE68A',
+            },
+            info: {
+              DEFAULT: '#0369A1',
+              container: '#F0F9FF',
+              border: '#BAE6FD',
+            }
+          },
+          boxShadow: {
+            'level-1': '0 1px 3px rgba(15, 26, 52, 0.05), 0 10px 24px -4px rgba(15, 26, 52, 0.03)',
+            'level-2': '0 12px 32px -6px rgba(15, 26, 52, 0.08), 0 4px 12px -2px rgba(15, 26, 52, 0.04)',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .focus-ring:focus-visible {
+      outline: 2px solid #0369A1;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+    }
+    input:focus {
+      outline: 2px solid #0369A1;
+      outline-offset: 0px;
+      border-color: #0369A1;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+    }
+    input.input-error:focus {
+      outline: 2px solid #EF4444;
+      outline-offset: 0px;
+      border-color: #EF4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+    }
+    .tnum {
+      font-variant-numeric: tabular-nums;
+    }
+    .bg-grid-pattern {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+  </style>
+</head>
+<body class="bg-canvas text-[#0F1A34] font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-[#E5EEFF] selection:text-[#0F1A34]">
+<!-- Top bar showing clinic route context & interactive state switcher for the design review -->
+<header class="w-full bg-white border-b border-[#E2E8F0] px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs z-20">
+<div class="flex items-center gap-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]">RUTA ACTIVA</span><span class="font-mono text-[#475569] bg-[#F8FAFC] px-2 py-0.5 rounded border border-[#E2E8F0]"><strong class="text-[#0F1A34]">/login</strong></span><span class="hidden md:inline text-[#7C8AA0]">·</span><span class="hidden md:inline text-[#475569]">Administración central de la plataforma</span></div>
+<!-- State Switcher toolbar for rapid evaluation of all required variants -->
+<div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
+<span class="text-[#7C8AA0] font-medium mr-1 hidden lg:inline">Variantes:</span>
+<button class="px-2.5 py-1 rounded text-xs font-semibold bg-[#0F1A34] text-white transition-colors focus-ring" data-variant="default" id="btn-var-default" onclick="setVariant('default')">
+        Normal
+      </button>
+<button class="px-2.5 py-1 rounded text-xs font-medium text-[#475569] hover:bg-[#F1F5F9] transition-colors focus-ring" data-variant="error" id="btn-var-error" onclick="setVariant('error')">
+        1. Error credenciales
+      </button>
+<button class="px-2.5 py-1 rounded text-xs font-medium text-[#475569] hover:bg-[#F1F5F9] transition-colors focus-ring" data-variant="rate-limit" id="btn-var-rate-limit" onclick="setVariant('rate-limit')">
+        2. Demasiados intentos
+      </button>
+<button class="px-2.5 py-1 rounded text-xs font-medium text-[#475569] hover:bg-[#F1F5F9] transition-colors focus-ring" data-variant="loading" id="btn-var-loading" onclick="setVariant('loading')">
+        3. Enviando
+      </button>
+</div>
+</header>
+<!-- Main Container: Desktop 55/45 split, 1440x900 canvas target, collapses seamlessly at <=1024px and <=768px -->
+<main class="flex-1 w-full grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-85px)]">
+<!-- LEFT COLUMN (55% on desktop = 7 cols of 12 or 55vw) -->
+<section class="lg:col-span-7 flex flex-col justify-between p-6 sm:p-10 lg:p-16 xl:p-20 bg-white">
+<!-- Centered Form Container (Max 420px) -->
+<div class="w-full max-w-[420px] mx-auto my-auto py-2">
+<!-- Clinic Badge Header -->
+<div class="mb-7 pb-6 border-b border-[#E2E8F0]">
+<div class="flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-[#0F1A34] text-white flex items-center justify-center shadow-sm shrink-0">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="m7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>
+</div>
+<div>
+<h2 class="text-sm sm:text-base font-bold text-[#0F1A34] tracking-tight leading-snug">DentiCore · Administración de la plataforma</h2>
+</div>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#E5EEFF] text-[#0F1A34] shrink-0">
+<svg class="w-3.5 h-3.5 text-[#0F1A34]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="m7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>
+      Acceso restringido
+    </span>
+</div>
+</div>
+<!-- Title & Subtitle -->
+<div class="mb-6">
+<h1 class="text-2xl sm:text-[28px] font-bold text-[#0F1A34] tracking-tight leading-tight">
+    Inicia sesión
+  </h1>
+<p class="text-sm text-[#475569] mt-1.5 leading-relaxed">Accede con tu correo y contraseña.</p>
+</div>
+<!-- DYNAMIC ALERTS SECTION -->
+<!-- Variant 1: Credenciales inválidas -->
+<div class="hidden mb-5 p-3.5 rounded-lg bg-[#FEF2F2] border border-[#FCA5A5] flex items-start gap-3 text-sm text-[#93000A]" id="alert-error">
+<svg class="w-5 h-5 text-[#BA1A1A] shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<line x1="12" x2="12" y1="8" y2="12"></line>
+<line x1="12" x2="12.01" y1="16" y2="16"></line>
+</svg>
+<div class="flex-1">
+<span class="font-bold text-[#BA1A1A] block">Credenciales inválidas</span>
+<p class="text-xs text-[#93000A] mt-0.5 leading-normal">
+      El correo o la contraseña ingresados no coinciden con nuestros registros.
+    </p>
+</div>
+</div>
+<!-- Variant 2: Demasiados intentos fallidos / Bloqueo temporal -->
+<div class="hidden mb-5 p-3.5 rounded-lg bg-[#FFFBEB] border border-[#FCD34D] flex items-start gap-3 text-sm text-[#92400E]" id="alert-rate-limit">
+<svg class="w-5 h-5 text-[#B45309] shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>
+<div class="flex-1">
+<span class="font-bold text-[#B45309] block">Demasiados intentos fallidos</span>
+<p class="text-xs text-[#92400E] mt-0.5 leading-normal">
+      Por seguridad, la cuenta ha sido bloqueada temporalmente durante 15 minutos.
+    </p>
+</div>
+</div>
+<!-- Login Form -->
+<form class="space-y-4" id="login-form" novalidate="" onsubmit="handleSubmit(event)">
+<!-- Field: Correo electrónico -->
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<label class="block text-sm font-medium text-[#0F1A34]" for="email">
+        Correo electrónico
+      </label>
+</div>
+<div class="relative">
+<input autocomplete="username" class="w-full h-12 px-3.5 bg-white border border-[#7C8AA0] rounded-lg text-[#0F1A34] text-sm placeholder-[#64748B] transition duration-150 disabled:bg-[#F1F5F9] disabled:text-[#64748B] disabled:border-[#E2E8F0] disabled:cursor-not-allowed disabled:opacity-60" id="email" name="email" placeholder="nombre@correo.com" required="" type="email" value="">
+<div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#7C8AA0]">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+<rect height="16" rx="2" width="20" x="2" y="4"></rect>
+<path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Field: Contraseña -->
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<label class="block text-sm font-medium text-[#0F1A34]" for="password">
+        Contraseña
+      </label>
+</div>
+<div class="relative">
+<input autocomplete="current-password" class="w-full h-12 pl-3.5 pr-12 bg-white border border-[#7C8AA0] rounded-lg text-[#0F1A34] text-sm placeholder-[#64748B] transition duration-150 disabled:bg-[#F1F5F9] disabled:text-[#64748B] disabled:border-[#E2E8F0] disabled:cursor-not-allowed disabled:opacity-60" id="password" name="password" placeholder="••••••••••••" required="" type="password" value="">
+<!-- Show / Hide Password Toggle Button -->
+<button aria-label="Mostrar contraseña" class="absolute inset-y-0 right-0 px-3.5 flex items-center text-[#475569] hover:text-[#0F1A34] focus-ring rounded-r-lg transition-colors" id="toggle-password-btn" onclick="togglePasswordVisibility()" type="button">
+<!-- Eye icon (shown when hidden) -->
+<svg class="w-4 h-4" fill="none" id="eye-icon" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+<circle cx="12" cy="12" r="3"></circle>
+</svg>
+<!-- Eye off icon (hidden by default) -->
+<svg class="w-4 h-4 hidden" fill="none" id="eye-off-icon" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+<path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+<path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+<line x1="2" x2="22" y1="2" y2="22"></line>
+</svg>
+</button>
+</div>
+<!-- Tertiary / Ghost Link: ¿Olvidaste tu contraseña? Right-aligned per spec -->
+<div class="flex justify-end mt-2">
+<a class="text-xs font-semibold text-[#0369A1] hover:text-[#075985] hover:underline focus-ring rounded p-0.5" href="#recuperar">
+        ¿Olvidaste tu contraseña?
+      </a>
+</div>
+</div>
+<!-- Primary Submit Button -->
+<div class="pt-2">
+<button class="w-full h-12 px-6 rounded-lg bg-[#0F1A34] text-white text-sm font-semibold hover:bg-[#1B2A4E] active:bg-[#0A1122] transition-colors duration-150 flex items-center justify-center gap-2 shadow-level-1 focus-ring disabled:bg-[#94A3B8] disabled:cursor-not-allowed" id="submit-btn" type="submit">
+<!-- Spinner Icon (hidden by default, shown in loading state) -->
+<svg class="hidden animate-spin w-4 h-4 text-white" fill="none" id="btn-spinner" viewBox="0 0 24 24">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+</svg>
+<span id="btn-text">Ingresar</span>
+</button>
+</div>
+</form>
+</div>
+<!-- Footer Help Notice -->
+<div class="w-full max-w-[420px] mx-auto pt-6 border-t border-[#E2E8F0] text-center">
+<p class="text-xs text-[#475569] leading-relaxed">¿Problemas para ingresar? <a class="text-[#0369A1] font-medium hover:underline focus-ring rounded" href="#soporte">Contacta al equipo de DentiCore</a>.</p>
+<p class="text-[11px] mt-1.5 text-[#475569]">Acceso exclusivo para administradores de la plataforma.</p>
+</div>
+</section>
+<!-- RIGHT COLUMN: BRAND PANEL -->
+<aside class="hidden lg:flex lg:col-span-5 bg-[#0F1A34] text-white flex-col justify-between p-10 xl:p-14 relative overflow-hidden bg-grid-pattern border-l border-[#1B2A4E]">
+<div class="absolute -right-16 -top-16 w-80 h-80 opacity-5 pointer-events-none">
+<svg fill="currentColor" viewBox="0 0 200 200">
+<circle cx="100" cy="100" fill="none" r="90" stroke="white" stroke-width="4"></circle>
+<path d="M100 20 C60 20 40 50 40 90 C40 130 70 170 100 180 C130 170 160 130 160 90 C160 50 140 20 100 20 Z"></path>
+</svg>
+</div>
+<div class="relative z-10">
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-[#1B2A4E] border border-[#3C4662] flex items-center justify-center text-white">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 2C7 2 4 5 4 10c0 4 2.5 9 5 12 1.2-1.5 2-4 3-4s1.8 2.5 3 4c2.5-3 5-8 5-12 0-5-3-8-8-8z"></path>
+</svg>
+</div>
+<div>
+<h2 class="text-lg font-bold text-white tracking-tight">DentiCore</h2>
+</div>
+</div>
+<h3 class="text-2xl xl:text-3xl font-bold text-white tracking-tight leading-snug pt-3">Administración de la plataforma</h3>
+<p class="text-sm text-[#BBC6E8] leading-relaxed max-w-md">Gestión de clínicas, planes y seguridad de DentiCore.</p>
+</div>
+</div>
+<div class="relative z-10 my-10 space-y-5">
+<div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70 backdrop-blur-none">
+<div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#0EA5E9]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24">
+<rect height="18" rx="2" width="16" x="4" y="3"></rect>
+<path d="M9 9h1"></path>
+<path d="M14 9h1"></path>
+<path d="M9 13h1"></path>
+<path d="M14 13h1"></path>
+<path d="M9 17h1"></path>
+<path d="M14 17h1"></path>
+</svg>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white tracking-tight">Gestión de clínicas</h4>
+<p class="text-xs text-[#BBC6E8] mt-0.5 leading-normal">Alta, suspensión y reactivación de clínicas y cambio de plan.</p>
+</div>
+</div>
+<div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70 backdrop-blur-none">
+<div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#0EA5E9]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24">
+<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+<path d="m9 12 2 2 4-4"></path>
+</svg>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white tracking-tight">Seguridad y auditoría</h4>
+<p class="text-xs text-[#BBC6E8] mt-0.5 leading-normal">Registro de accesos y eventos críticos de la plataforma.</p>
+</div>
+</div>
+<div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70 backdrop-blur-none">
+<div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#0EA5E9]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24">
+<rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect>
+<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+<circle cx="12" cy="16" r="1"></circle>
+</svg>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-white tracking-tight">Verificación en dos pasos obligatoria</h4>
+<p class="text-xs text-[#BBC6E8] mt-0.5 leading-normal">Este acceso requiere un código de 6 dígitos de tu aplicación de autenticación.</p>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Interactive JavaScript logic for states and form functionality -->
+<script>
+  // Global setVariant function
+  window.setVariant = function(variant) {
+    const alertError = document.getElementById('alert-error');
+    const alertRateLimit = document.getElementById('alert-rate-limit');
+    const submitBtn = document.getElementById('submit-btn');
+    const btnSpinner = document.getElementById('btn-spinner');
+    const btnText = document.getElementById('btn-text');
+    const emailInput = document.getElementById('email');
+    const passInput = document.getElementById('password');
+
+    // 1. Update visual classes of top variant buttons
+    const variantKeys = ['default', 'error', 'rate-limit', 'loading'];
+    variantKeys.forEach(function(key) {
+      const btn = document.getElementById('btn-var-' + key);
+      if (btn) {
+        if (key === variant) {
+          btn.className = "px-2.5 py-1 rounded text-xs font-semibold bg-[#0F1A34] text-white transition-colors focus-ring";
+        } else {
+          btn.className = "px-2.5 py-1 rounded text-xs font-medium text-[#475569] hover:bg-[#F1F5F9] transition-colors focus-ring";
+        }
+      }
+    });
+
+    // Reset base input styles
+    function resetInputStyles() {
+      [emailInput, passInput].forEach(function(el) {
+        if (!el) return;
+        el.classList.remove('border-[#EF4444]', 'input-error');
+        el.classList.add('border-[#7C8AA0]');
+        el.disabled = false;
+      });
+    }
+
+    resetInputStyles();
+
+    // Reset alert visibility
+    if (alertError) alertError.classList.add('hidden');
+    if (alertRateLimit) alertRateLimit.classList.add('hidden');
+
+    // Reset submit button state
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('bg-[#94A3B8]');
+      submitBtn.classList.add('bg-[#0F1A34]', 'hover:bg-[#1B2A4E]', 'active:bg-[#0A1122]');
+    }
+    if (btnSpinner) btnSpinner.classList.add('hidden');
+    if (btnText) btnText.textContent = "Ingresar";
+
+    // Apply specific variant states
+    if (variant === 'default') {
+      // Normal state: clean fields, enabled button, no alerts
+    } else if (variant === 'error') {
+      // 1. Error credenciales
+      if (alertError) alertError.classList.remove('hidden');
+      [emailInput, passInput].forEach(function(el) {
+        if (!el) return;
+        el.classList.remove('border-[#7C8AA0]');
+        el.classList.add('border-[#EF4444]', 'input-error');
+      });
+    } else if (variant === 'rate-limit') {
+      // 2. Demasiados intentos
+      if (alertRateLimit) alertRateLimit.classList.remove('hidden');
+      if (emailInput) emailInput.disabled = true;
+      if (passInput) passInput.disabled = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.remove('bg-[#0F1A34]', 'hover:bg-[#1B2A4E]', 'active:bg-[#0A1122]');
+        submitBtn.classList.add('bg-[#94A3B8]');
+      }
+      if (btnText) btnText.textContent = "Bloqueado (14:59)";
+    } else if (variant === 'loading') {
+      // 3. Enviando
+      if (emailInput) emailInput.disabled = true;
+      if (passInput) passInput.disabled = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+      }
+      if (btnSpinner) btnSpinner.classList.remove('hidden');
+      if (btnText) btnText.textContent = "Verificando credenciales...";
+    }
+  };
+
+  // Toggle password visibility
+  window.togglePasswordVisibility = function() {
+    const passField = document.getElementById('password');
+    const eyeIcon = document.getElementById('eye-icon');
+    const eyeOffIcon = document.getElementById('eye-off-icon');
+    const toggleBtn = document.getElementById('toggle-password-btn');
+
+    if (!passField) return;
+
+    if (passField.type === 'password') {
+      passField.type = 'text';
+      if (eyeIcon) eyeIcon.classList.add('hidden');
+      if (eyeOffIcon) eyeOffIcon.classList.remove('hidden');
+      if (toggleBtn) toggleBtn.setAttribute('aria-label', 'Ocultar contraseña');
+    } else {
+      passField.type = 'password';
+      if (eyeIcon) eyeIcon.classList.remove('hidden');
+      if (eyeOffIcon) eyeOffIcon.classList.add('hidden');
+      if (toggleBtn) toggleBtn.setAttribute('aria-label', 'Mostrar contraseña');
+    }
+  };
+
+  // Form submit handler
+  window.handleSubmit = function(e) {
+    if (e) e.preventDefault();
+    setVariant('loading');
+    setTimeout(function() {
+      setVariant('default');
+    }, 1500);
+  };
+
+  // Attach event listeners on DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', function() {
+    const variantButtons = document.querySelectorAll('[data-variant]');
+    variantButtons.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const v = this.getAttribute('data-variant');
+        if (v) setVariant(v);
+      });
+    });
+  });
+</script>
+</body></html>
