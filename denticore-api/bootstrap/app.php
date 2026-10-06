@@ -3,6 +3,7 @@
 use App\Support\Http\CorrelationId;
 use App\Support\Http\EnforceTokenFreshness;
 use App\Support\Http\EnsureRole;
+use App\Support\Http\EnsureTwoFactorPassed;
 use App\Support\Http\HandleIdempotencyKey;
 use App\Support\Http\ProblemDetails;
 use App\Support\Http\SecurityHeaders;
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.exportable' => AllowCancelledExport::class,
             'plan.feature' => EnsurePlanFeature::class,
             'token.fresh' => EnforceTokenFreshness::class,
+            '2fa' => EnsureTwoFactorPassed::class,
             'ability' => CheckForAnyAbility::class,
             'abilities' => CheckAbilities::class,
         ]);

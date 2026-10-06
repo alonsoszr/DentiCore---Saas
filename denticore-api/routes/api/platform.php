@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:sanctum', 'token.fresh', 'throttle:api', 'role:super_admin'])->prefix('platform')->group(function () {
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'role:super_admin'])->prefix('platform')->group(function () {
     Route::get('/plans', [SubscriptionPlanController::class, 'index']);
 
     Route::get('/tenants', [TenantController::class, 'index']);
@@ -33,7 +33,7 @@ Route::middleware(['auth:sanctum', 'token.fresh', 'throttle:api', 'role:super_ad
 /*
 | Parámetros de la clínica (CUS-04), grupo STAFF: solo clinic_admin.
 */
-Route::middleware(['auth:sanctum', 'token.fresh', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:clinic_admin'])
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:clinic_admin'])
     ->prefix('clinic')
     ->group(function () {
         Route::get('/settings', [ClinicSettingsController::class, 'show']);
