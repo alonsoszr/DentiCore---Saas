@@ -3,6 +3,7 @@ import { RequireRole } from '../auth/RequireRole'
 import { STAFF_ROLES } from '../auth/roles'
 import { useClinic } from '../auth/useClinic'
 import { Layout } from '../components/Layout'
+import { ClinicSettingsPage } from '../pages/ClinicSettingsPage'
 import { ForbiddenPage, NotFoundPage } from '../pages/SimplePages'
 import { UsersPage } from '../pages/UsersPage'
 import { PatientCreatePage } from '../pages/patients/PatientCreatePage'
@@ -17,6 +18,7 @@ export default function StaffArea() {
   const navItems = [
     { to: appPath('/pacientes'), label: 'Pacientes', roles: STAFF_ROLES },
     { to: appPath('/usuarios'), label: 'Usuarios', roles: ['clinic_admin'] },
+    { to: appPath('/configuracion'), label: 'Configuración', roles: ['clinic_admin'] },
   ]
 
   return (
@@ -29,6 +31,14 @@ export default function StaffArea() {
           element={
             <RequireRole allow={['clinic_admin']} forbiddenPath={forbiddenPath}>
               <UsersPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="configuracion"
+          element={
+            <RequireRole allow={['clinic_admin']} forbiddenPath={forbiddenPath}>
+              <ClinicSettingsPage />
             </RequireRole>
           }
         />
