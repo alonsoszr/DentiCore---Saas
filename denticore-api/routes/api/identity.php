@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Identity\Http\Controllers\AuthController;
+use App\Modules\Identity\Http\Controllers\InvitationController;
+use App\Modules\Identity\Http\Controllers\PasswordResetController;
 use App\Modules\Identity\Http\Controllers\PublicClinicController;
 use App\Modules\Identity\Http\Controllers\TwoFactorController;
 use App\Modules\Identity\Http\Controllers\UserController;
@@ -11,6 +13,12 @@ use Illuminate\Support\Facades\Route;
 // PUB (SDD §4.2).
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['throttle:login', 'tenant.slug:login']);
 Route::get('/public/clinics/{slug}', [PublicClinicController::class, 'show'])->middleware(['throttle:public', 'tenant.slug']);
+
+// Recuperación de contraseña (CUS-09) y activación por invitación (CUS-01, CUS-11).
+Route::post('/auth/password/forgot', [PasswordResetController::class, 'requestLink'])->middleware(['throttle:login', 'tenant.slug']);
+Route::post('/auth/password/reset', [PasswordResetController::class, 'reset'])->middleware(['throttle:public', 'tenant.token:restablecimiento', 'throttle:codes']);
+Route::get('/auth/invitations/{token}', [InvitationController::class, 'show'])->middleware(['throttle:public', 'tenant.token:invitacion']);
+Route::post('/auth/invitations/{token}/accept', [InvitationController::class, 'accept'])->middleware(['throttle:public', 'tenant.token:invitacion', 'throttle:codes']);
 
 // AUTH: rutas de la propia cuenta, sin contexto de clínica (SDD §4.2).
 Route::middleware(['auth:sanctum', 'token.fresh', 'throttle:api'])->group(function () {
