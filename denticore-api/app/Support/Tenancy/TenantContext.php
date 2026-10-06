@@ -5,6 +5,7 @@ namespace App\Support\Tenancy;
 use App\Modules\Platform\Models\Tenant;
 use Closure;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Clínica activa de la solicitud, del *job* o del lote programado (SDD §1.6.2, §1.6.3).
@@ -66,13 +67,32 @@ final class TenantContext
     public static function run(Tenant|int $tenant, Closure $callback): mixed
     {
         $previous = self::tenant();
+
+        // Ya es la clínica del contexto: nada que fijar ni restaurar. Evita consultas de más y que
+        // la restauración corra dentro de una transacción ya abortada y oculte su error.
+        if ($previous !== null && $previous->id === ($tenant instanceof Tenant ? $tenant->id : $tenant)) {
+            return $callback();
+        }
+
         self::set($tenant instanceof Tenant ? $tenant : Tenant::query()->findOrFail($tenant));
+        $restore = fn () => $previous ? self::set($previous) : self::clear();
 
         try {
-            return $callback();
-        } finally {
-            $previous ? self::set($previous) : self::clear();
+            $result = $callback();
+        } catch (Throwable $exception) {
+            // Si la consulta abortó la transacción, restaurar la variable de sesión también falla
+            // (25P02) y ocultaría el error real; la reversión de la transacción la deshace igual.
+            try {
+                $restore();
+            } catch (Throwable) {
+            }
+
+            throw $exception;
         }
+
+        $restore();
+
+        return $result;
     }
 
     private static function applyDatabaseSetting(string $tenantId): void
