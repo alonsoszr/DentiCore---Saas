@@ -168,9 +168,12 @@ it('lists the active NTS 188 catalog with its states', function () {
     FindingCatalog::factory()->create(['code' => 'PRUEBA_RETIRADO', 'is_active' => false]);
     $this->actingAsRole('receptionist', Tenant::factory()->create());
 
-    $response = $this->getJson('/api/v1/finding-catalog')->assertOk();
+    $findings = collect($this->getJson('/api/v1/finding-catalog')->assertOk()->json('data'))->keyBy('code');
 
-    expect(collect($response->json('data'))->pluck('code')->all())->toBe(['PRUEBA_CARIES'])
-        ->and($response->json('data.0.states.*.code'))->toEqualCanonicalizing(['ACTIVA', 'DETENIDA'])
-        ->and($response->json('data.0.level'))->toBe('superficie');
+    // Los 38 hallazgos de la NTS 188 (TASK-043b) y el sintético; nunca el retirado (RF-078).
+    expect($findings)->toHaveCount(39)
+        ->and($findings->has('PRUEBA_RETIRADO'))->toBeFalse()
+        ->and(collect($findings['PRUEBA_CARIES']['states'])->pluck('code')->all())->toEqualCanonicalizing(['ACTIVA', 'DETENIDA'])
+        ->and($findings['CARIES']['level'])->toBe('superficie')
+        ->and(collect($findings['CARIES']['states'])->pluck('acronym')->all())->toBe(['MB', 'CE', 'CD', 'CDP']);
 })->group('RF-077', 'RF-078', 'CUS-22');
