@@ -29,6 +29,7 @@ class PatientFactory extends TenantScopedFactory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'birth_date' => fake()->date(max: '-1 year'),
+            'sex' => fake()->randomElement(['femenino', 'masculino']),
             'phone' => fake()->numerify('9########'),
             'email' => fake()->safeEmail(),
             'medical_history' => null,
