@@ -2,6 +2,7 @@
 
 namespace App\Support\Tenancy;
 
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -11,18 +12,20 @@ use Illuminate\Support\Facades\DB;
  * `denticore_app` no ve filas.
  *
  * Se usa en las migraciones como `Schema::enableTenantRls('tabla')` (macro registrada en
- * AppServiceProvider).
+ * AppServiceProvider). AuditPartitions la aplica también a cada partición nueva de una tabla
+ * particionada con RLS, porque PostgreSQL no la hereda a las particiones.
  */
 final class RowLevelSecurity
 {
-    public static function enable(string $table): void
+    public static function enable(string $table, ?Connection $connection = null): void
     {
-        $quoted = DB::getQueryGrammar()->wrapTable($table);
+        $connection ??= DB::connection();
+        $quoted = $connection->getQueryGrammar()->wrapTable($table);
 
-        DB::statement("ALTER TABLE {$quoted} ENABLE ROW LEVEL SECURITY");
-        DB::statement("ALTER TABLE {$quoted} FORCE ROW LEVEL SECURITY");
-        DB::statement("DROP POLICY IF EXISTS tenant_isolation ON {$quoted}");
-        DB::statement(<<<SQL
+        $connection->statement("ALTER TABLE {$quoted} ENABLE ROW LEVEL SECURITY");
+        $connection->statement("ALTER TABLE {$quoted} FORCE ROW LEVEL SECURITY");
+        $connection->statement("DROP POLICY IF EXISTS tenant_isolation ON {$quoted}");
+        $connection->statement(<<<SQL
             CREATE POLICY tenant_isolation ON {$quoted}
               USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::bigint)
               WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::bigint)

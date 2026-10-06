@@ -2,12 +2,14 @@
 
 namespace App\Support\Audit;
 
-use Illuminate\Database\ConnectionInterface;
+use App\Support\Tenancy\RowLevelSecurity;
+use Illuminate\Database\Connection;
 
 /**
  * Particiones anuales de las tablas particionadas por fecha (SDD DI-17, supuesto S-10 del
  * plan): se crean para el año en curso y los dos siguientes, y un comando programado las
- * extiende. La crea el rol propietario del esquema (conexión `pgsql_migrator`).
+ * extiende. La crea el rol propietario del esquema (conexión `pgsql_migrator`). Si la tabla
+ * padre tiene RLS, cada partición nueva la recibe también (`odontogram_entries`).
  */
 final class AuditPartitions
 {
@@ -16,9 +18,10 @@ final class AuditPartitions
     /**
      * @return list<string> Particiones creadas.
      */
-    public static function ensure(ConnectionInterface $connection, string $table, int $fromYear): array
+    public static function ensure(Connection $connection, string $table, int $fromYear): array
     {
         $created = [];
+        $rowLevelSecurity = (bool) $connection->selectOne('select relrowsecurity as enabled from pg_class where oid = to_regclass(?)', [$table])?->enabled;
 
         foreach (range($fromYear, $fromYear + self::YEARS_AHEAD) as $year) {
             $partition = "{$table}_y{$year}";
@@ -36,6 +39,11 @@ final class AuditPartitions
                 $year,
                 $year + 1,
             ));
+
+            if ($rowLevelSecurity) {
+                RowLevelSecurity::enable($partition, $connection);
+            }
+
             $created[] = $partition;
         }
 

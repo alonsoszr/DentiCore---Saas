@@ -17,7 +17,7 @@ class EnsurePartitionsCommand extends Command
      *
      * @var list<string>
      */
-    private const TABLES = ['audit_logs'];
+    private const TABLES = ['audit_logs', 'odontogram_entries'];
 
     protected $signature = 'partitions:ensure {--connection=pgsql_migrator}';
 
