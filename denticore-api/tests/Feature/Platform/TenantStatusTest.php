@@ -9,8 +9,13 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
+use App\Modules\Patients\Services\InformedConsentService;
+use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Treatment\Models\PlanItem;
+use App\Modules\Treatment\Models\Procedure;
+use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Route;
@@ -50,12 +55,47 @@ it('forbids writes in a suspended clinic and allows reads', function () {
 it('applies the read-only rule to every registered staff route', function () {
     $tenant = Tenant::factory()->create(['status' => 'suspendida']);
     $this->actingAsRole('clinic_admin', $tenant);
+
+    // Piezas reales para las rutas de consentimiento informado (CUS-82/83): el parámetro inicial
+    // de ruta debe existir; si no, el binding respondió 404 antes de llegar a la regla RN-07.
+    $informedConsent = TenantContext::run($tenant, function () use ($tenant): array {
+        $dentist = User::factory()->for($tenant)->create([
+            'role' => 'dentist', 'status' => 'activo', 'cop_number' => '54321',
+        ]);
+        $patient = Patient::factory()->for($tenant)->create([
+            'document_number' => '45678912', 'birth_date' => '1990-05-10',
+        ]);
+        $procedure = Procedure::factory()->create(['tenant_id' => $tenant->id, 'requires_informed_consent' => true]);
+        $plan = TreatmentPlan::factory()->create([
+            'tenant_id' => $tenant->id, 'patient_id' => $patient->id, 'created_by' => $dentist->id,
+        ]);
+        $item = PlanItem::factory()->create([
+            'tenant_id' => $tenant->id, 'treatment_plan_id' => $plan->id, 'procedure_id' => $procedure->id, 'tooth' => 16,
+        ]);
+
+        $template = app(InformedConsentTemplateService::class)->create([
+            'title' => 'Consentimiento de prueba',
+            'body' => 'El paciente {{paciente}} autoriza el procedimiento {{procedimiento}} sobre la pieza {{pieza}}. '
+                .'Riesgos: {{riesgos}}. Alternativas: {{alternativas}}. Informó: {{odontologo}}.',
+            'procedures' => [$procedure->uuid],
+        ], $dentist);
+
+        $consent = app(InformedConsentService::class)->sign($item, [
+            'channel' => 'dispositivo', 'confirmation_document_number' => '45678912',
+        ], $dentist, '127.0.0.1');
+
+        return ['template' => $template->uuid, 'item' => $item->uuid, 'consent' => $consent->uuid];
+    });
+
     $attention = null;
     $bindings = [
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'receptionist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
         '{representative}' => fn () => (string) Str::uuid(),
         '{consent}' => fn () => (string) Str::uuid(),
+        '{template}' => fn () => $informedConsent['template'],
+        '{item}' => fn () => $informedConsent['item'],
+        '{informedConsent}' => fn () => $informedConsent['consent'],
         '{attention}' => function () use ($tenant, &$attention) {
             $attention = Attention::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -75,7 +115,7 @@ it('applies the read-only rule to every registered staff route', function () {
     expect($routes)->not->toBeEmpty();
 
     foreach ($routes as [$method, $uri]) {
-        $path = '/'.preg_replace_callback('/\{[a-z_]+\}/', fn ($match) => $bindings[$match[0]](), $uri);
+        $path = '/'.preg_replace_callback('/\{[a-z_]+\}/i', fn ($match) => $bindings[$match[0]](), $uri);
         $response = $this->json($method, $path, [], ['Idempotency-Key' => (string) Str::uuid()]);
 
         if (in_array($method, ['GET', 'OPTIONS'], true)) {
