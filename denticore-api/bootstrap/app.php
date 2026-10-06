@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Patients\Http\Middleware\EnsurePatientConsent;
 use App\Support\Http\CorrelationId;
 use App\Support\Http\EnforceTokenFreshness;
 use App\Support\Http\EnsureRole;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.readonly_ok' => AllowInReadOnlyTenant::class,
             'tenant.exportable' => AllowCancelledExport::class,
             'plan.feature' => EnsurePlanFeature::class,
+            'consent' => EnsurePatientConsent::class,
             'token.fresh' => EnforceTokenFreshness::class,
             '2fa' => EnsureTwoFactorPassed::class,
             'ability' => CheckForAnyAbility::class,

@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Patients\Http\Controllers\ConsentController;
 use App\Modules\Patients\Http\Controllers\LegalRepresentativeController;
 use App\Modules\Patients\Http\Controllers\PatientController;
 use App\Support\Audit\AuditClinicalRecordRead;
@@ -20,6 +21,14 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         ->middleware(['can:view,patient', AuditClinicalRecordRead::class]);
     Route::patch('/patients/{patient}', [PatientController::class, 'update'])
         ->middleware(['role:clinic_admin,receptionist', 'can:updateIdentity,patient']);
+
+    // CUS-17: consentimiento de datos (RF-065 a RF-067).
+    Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
+        Route::get('/patients/{patient}/consents/preview', [ConsentController::class, 'preview']);
+        Route::post('/patients/{patient}/consents', [ConsentController::class, 'store'])->middleware('idempotent');
+        Route::get('/patients/{patient}/consents', [ConsentController::class, 'index']);
+        Route::get('/consents/{consent}/certificate', [ConsentController::class, 'certificate']);
+    });
 
     // CUS-16: representantes legales (RF-059 a RF-061).
     Route::get('/patients/{patient}/representatives', [LegalRepresentativeController::class, 'index'])

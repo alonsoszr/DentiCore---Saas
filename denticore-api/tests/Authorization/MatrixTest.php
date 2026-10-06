@@ -38,6 +38,7 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
         // Representación inexistente: basta con un uuid; el rol se rechaza antes de buscarla.
         '{representative}' => fn () => (string) Str::uuid(),
+        '{consent}' => fn () => (string) Str::uuid(),
     ];
 
     $path = preg_replace_callback('/\{[a-z_]+\}/', fn ($match) => $bindings[$match[0]](), $uri);

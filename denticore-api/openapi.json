@@ -405,6 +405,459 @@
                 }
             }
         },
+        "/patients/{patient}/consents/preview": {
+            "get": {
+                "operationId": "consent.preview",
+                "summary": "CUS-17 pasos 2\u20133: texto de la versi\u00f3n vigente completado (DD-28), qui\u00e9n lo otorga y las\nfinalidades que la cl\u00ednica puede ofrecer; las opcionales se presentan sin marcar (CA-17.1)",
+                "tags": [
+                    "Consent"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "template_version": {
+                                                    "type": "integer"
+                                                },
+                                                "text": {
+                                                    "type": "string"
+                                                },
+                                                "text_sha256": {
+                                                    "type": "string"
+                                                },
+                                                "granted_by": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "titular",
+                                                        "representante"
+                                                    ]
+                                                },
+                                                "representative": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "first_name": {
+                                                            "type": "string"
+                                                        },
+                                                        "last_name": {
+                                                            "type": "string"
+                                                        },
+                                                        "relationship": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "madre",
+                                                                "padre",
+                                                                "tutor",
+                                                                "curador",
+                                                                "otro"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "first_name",
+                                                        "last_name",
+                                                        "relationship"
+                                                    ]
+                                                },
+                                                "available_purposes": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "purpose_care",
+                                                            "purpose_notifications",
+                                                            "purpose_ai",
+                                                            "purpose_risk",
+                                                            "purpose_surveys"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "template_version",
+                                                "text",
+                                                "text_sha256",
+                                                "granted_by",
+                                                "representative",
+                                                "available_purposes"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Paciente menor sin representante legal vigente (RN-12)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/patients/{patient}/consents": {
+            "post": {
+                "operationId": "consent.store",
+                "summary": "CUS-17 pasos 4\u20138: la finalidad (a) es obligatoria (RN-10); (c) y (d) solo si la cl\u00ednica las\nofrece (CA-17.5). Presencial: confirmaci\u00f3n con el documento del titular o del representante\n(FE-2). Papel: formulario firmado escaneado (FA-2)",
+                "tags": [
+                    "Consent"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "channel": {
+                                        "type": "string",
+                                        "enum": [
+                                            "presencial",
+                                            "papel"
+                                        ]
+                                    },
+                                    "purpose_care": {
+                                        "enum": [
+                                            "yes",
+                                            "on",
+                                            "1",
+                                            1,
+                                            "true",
+                                            true
+                                        ]
+                                    },
+                                    "purpose_notifications": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "purpose_ai": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "purpose_risk": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "purpose_surveys": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "confirmation_document_number": {
+                                        "type": "string",
+                                        "maxLength": 12
+                                    },
+                                    "scanned_file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 10240 kilobytes."
+                                    }
+                                },
+                                "required": [
+                                    "channel",
+                                    "purpose_care",
+                                    "confirmation_document_number",
+                                    "scanned_file"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ConsentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ConsentResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BusinessRuleException"
+                                        },
+                                        {
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "consent.index",
+                "summary": "RF-065, RF-067: consentimientos del paciente, del m\u00e1s reciente al m\u00e1s antiguo",
+                "tags": [
+                    "Consent"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ConsentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ConsentResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/consents/{consent}/certificate": {
+            "get": {
+                "operationId": "consent.certificate",
+                "summary": "RF-066: estado de la constancia PDF y, cuando est\u00e1 lista, su URL firmada de 10 minutos",
+                "tags": [
+                    "Consent"
+                ],
+                "parameters": [
+                    {
+                        "name": "consent",
+                        "in": "path",
+                        "required": true,
+                        "description": "The consent UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "enum": [
+                                                        "pendiente",
+                                                        "generando",
+                                                        "listo",
+                                                        "fallido",
+                                                        null
+                                                    ]
+                                                },
+                                                "url": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "url"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/files/{tenant}/{file}": {
             "get": {
                 "operationId": "files.download",
@@ -3609,6 +4062,104 @@
                 ],
                 "title": "ClinicSettingsResource"
             },
+            "ConsentResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "template_version": {
+                        "type": "integer"
+                    },
+                    "purpose_care": {
+                        "type": "boolean"
+                    },
+                    "purpose_notifications": {
+                        "type": "boolean"
+                    },
+                    "purpose_ai": {
+                        "type": "boolean"
+                    },
+                    "purpose_risk": {
+                        "type": "boolean"
+                    },
+                    "purpose_surveys": {
+                        "type": "boolean"
+                    },
+                    "granted_by": {
+                        "type": "string",
+                        "enum": [
+                            "titular",
+                            "representante"
+                        ]
+                    },
+                    "representative_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "channel": {
+                        "type": "string",
+                        "enum": [
+                            "presencial",
+                            "portal",
+                            "papel"
+                        ]
+                    },
+                    "text_sha256": {
+                        "type": "string"
+                    },
+                    "granted_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "vigente",
+                            "revocado",
+                            "sustituido"
+                        ]
+                    },
+                    "superseded_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "revoked_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "outdated": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "template_version",
+                    "purpose_care",
+                    "purpose_notifications",
+                    "purpose_ai",
+                    "purpose_risk",
+                    "purpose_surveys",
+                    "granted_by",
+                    "representative_id",
+                    "channel",
+                    "text_sha256",
+                    "granted_at",
+                    "status",
+                    "superseded_at",
+                    "revoked_at",
+                    "outdated"
+                ],
+                "title": "ConsentResource"
+            },
             "LegalRepresentativeResource": {
                 "type": "object",
                 "properties": {
@@ -3768,8 +4319,10 @@
                         "type": "string"
                     },
                     "has_current_consent": {
-                        "type": "boolean",
-                        "description": "El consentimiento vigente se calcula con TASK-036 (CUS-17)."
+                        "type": "boolean"
+                    },
+                    "consent_outdated": {
+                        "type": "boolean"
                     },
                     "medical_history": {
                         "type": [
@@ -3839,6 +4392,7 @@
                     "address",
                     "archive_status",
                     "has_current_consent",
+                    "consent_outdated",
                     "medical_history",
                     "created_at"
                 ],

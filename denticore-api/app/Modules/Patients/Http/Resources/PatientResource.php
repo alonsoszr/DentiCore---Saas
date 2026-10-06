@@ -3,6 +3,7 @@
 namespace App\Modules\Patients\Http\Resources;
 
 use App\Modules\Patients\Models\Patient;
+use App\Modules\Patients\Services\ConsentGate;
 use App\Support\Http\ApiResource;
 use Illuminate\Http\Request;
 
@@ -34,8 +35,12 @@ class PatientResource extends ApiResource
             'email' => $this->email,
             'address' => $this->address,
             'archive_status' => $this->archive_status,
-            // El consentimiento vigente se calcula con TASK-036 (CUS-17).
-            'has_current_consent' => false,
+            // RN-10, RN-15 (SDD §5.10): consentimiento vigente que habilita al paciente y si usa
+            // una versión anterior de la plantilla.
+            /** @var bool */
+            'has_current_consent' => app(ConsentGate::class)->hasCurrent($this->resource),
+            /** @var bool */
+            'consent_outdated' => app(ConsentGate::class)->outdated($this->resource),
             /** @var array{alergias: list<string>, enfermedades: list<string>, medicamentos: list<string>, observaciones: string|null}|null */
             'medical_history' => $this->medical_history,
             'user_uuid' => $this->whenLoaded('user', fn () => $this->user?->uuid),

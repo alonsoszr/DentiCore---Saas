@@ -74,7 +74,7 @@ class PatientController extends Controller
 
     public function show(Patient $patient): PatientResource
     {
-        return PatientResource::make($patient->load('user'));
+        return PatientResource::make($patient->load(['user', 'currentConsent']));
     }
 
     /**

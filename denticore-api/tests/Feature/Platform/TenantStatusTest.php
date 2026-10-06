@@ -51,6 +51,7 @@ it('applies the read-only rule to every registered staff route', function () {
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'receptionist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
         '{representative}' => fn () => (string) Str::uuid(),
+        '{consent}' => fn () => (string) Str::uuid(),
     ];
 
     $routes = staffRoutes();

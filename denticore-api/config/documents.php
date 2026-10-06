@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Patients\Documents\ConsentCertificateRenderer;
+
 return [
 
     /*
@@ -12,6 +14,9 @@ return [
     |
     */
 
-    'renderers' => [],
+    'renderers' => [
+        // M03: constancia del consentimiento de datos (RF-066).
+        'constancia_consentimiento' => ConsentCertificateRenderer::class,
+    ],
 
 ];
