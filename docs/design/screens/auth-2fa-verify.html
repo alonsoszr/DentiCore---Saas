@@ -1,0 +1,373 @@
+<!DOCTYPE html><html class="h-full" lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_blank" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.bg-grid-pattern{background-image:radial-gradient(rgba(255,255,255,0.08) 1px,transparent 1px);background-size:24px 24px;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"outline":"#76777e","tertiary-fixed-dim":"#80d5cb","on-tertiary-container":"#389189","primary":"#000000","primary-container":"#101b35","tertiary":"#000000","surface-container-lowest":"#ffffff","on-tertiary":"#ffffff","inverse-surface":"#233144","secondary":"#006399","on-secondary-fixed":"#001d32","surface-tint":"#535e7b","on-tertiary-fixed":"#00201d","on-background":"#0e1c2e","error-container":"#ffdad6","on-tertiary-fixed-variant":"#00504a","outline-variant":"#c6c6ce","inverse-on-surface":"#eaf1ff","surface":"#f8f9ff","tertiary-container":"#00201d","secondary-fixed-dim":"#94ccff","secondary-container":"#7bc2ff","on-secondary-fixed-variant":"#004b74","on-primary-container":"#7983a3","surface-container":"#e6eeff","on-error":"#ffffff","secondary-fixed":"#cde5ff","on-surface":"#0e1c2e","tertiary-fixed":"#9cf2e8","primary-fixed":"#dae2ff","on-primary-fixed-variant":"#3c4662","surface-container-highest":"#d5e3fc","surface-bright":"#f8f9ff","on-primary-fixed":"#101b35","surface-variant":"#d5e3fc","inverse-primary":"#bbc6e8","on-error-container":"#93000a","primary-fixed-dim":"#bbc6e8","surface-container-low":"#eff4ff","surface-dim":"#cddbf3","background":"#f8f9ff","surface-container-high":"#dce9ff","on-surface-variant":"#45464d","on-primary":"#ffffff","on-secondary":"#ffffff","on-secondary-container":"#004f7b","error":"#ba1a1a"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-xs":"0.25rem","space-sm":"0.5rem","margin":"1rem","space-xl":"1.5rem","gutter":"0.75rem","space-lg":"1rem","space-md":"0.75rem"},"fontFamily":{"label-md":["Plus Jakarta Sans"],"code-sm":["JetBrains Mono"],"body-lg":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"code-md":["JetBrains Mono"],"title-md":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"]},"fontSize":{"label-md":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"code-sm":["11px",{"lineHeight":"14px","fontWeight":"500"}],"body-lg":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-lg":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-lg":["13px",{"lineHeight":"18px","fontWeight":"600"}],"headline-md":["18px",{"lineHeight":"24px","fontWeight":"600"}],"code-md":["12px",{"lineHeight":"16px","fontWeight":"500"}],"title-md":["15px",{"lineHeight":"20px","fontWeight":"600"}],"display-lg":["28px",{"lineHeight":"34px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}]}}}};</script></head><body class="min-h-screen bg-surface font-body-md text-on-surface antialiased flex flex-col"><header class="w-full bg-surface-container-lowest border-b border-surface-container-high py-space-sm px-space-lg flex items-center justify-between z-20 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs font-headline-md text-headline-md font-bold tracking-tight text-primary-container"><span class="material-symbols-outlined text-secondary text-[24px]">dentistry</span><span class="">DentiCore</span></div><span class="text-outline-variant font-code-sm text-code-sm">|</span><div class="flex items-center gap-space-xs font-code-sm text-code-sm text-on-surface-variant bg-surface-container px-space-sm py-space-xs rounded"><span class="material-symbols-outlined text-[14px] text-secondary">verified_user</span><span class="">AUTH-FLOW // NTS-188-MINSA</span></div></div><div class="flex items-center gap-space-lg"><div class="hidden md:flex items-center gap-2"><span class="text-[10px] font-bold tracking-wider uppercase text-on-surface-variant font-code-sm">RUTA ACTIVA:</span><span class="text-xs font-code-sm text-on-surface font-medium bg-surface-container px-2 py-0.5 rounded" id="route-indicator">/verify-2fa · Verificación en dos pasos</span></div><nav class="flex items-center bg-surface-container p-space-xs rounded-lg gap-space-xs" id="variants-bar"><button class="variant-btn px-space-md py-space-xs rounded transition-all font-label-md text-label-md bg-on-surface text-surface font-semibold shadow-sm" data-variant="normal" type="button">Normal</button><button class="variant-btn px-space-md py-space-xs rounded transition-all font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/50" data-variant="error" type="button">1. Código incorrecto</button><button class="variant-btn px-space-md py-space-xs rounded transition-all font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/50" data-variant="lockout" type="button">2. Bloqueo 15 min</button><button class="variant-btn px-space-md py-space-xs rounded transition-all font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/50" data-variant="recovery" type="button">3. Código de recuperación</button><button class="variant-btn px-space-md py-space-xs rounded transition-all font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/50" data-variant="admin" type="button">4. Plataforma (Admin)</button></nav><div class="flex items-center gap-space-xs text-on-surface-variant font-code-sm text-code-sm border-l border-surface-container-high pl-space-md"><span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim inline-block animate-pulse"></span><span class="">MINSA ID: ACTIVO</span></div></div></header><main class="flex-1 flex flex-col lg:flex-row w-full min-h-[calc(100vh-53px)]"><div class="w-full lg:w-[55%] bg-surface-container-lowest flex flex-col justify-center items-center px-space-lg py-space-xl"><div class="w-full max-w-[440px]"><div class="flex flex-col w-full">
+<!-- Main Security Header & Clinical Context -->
+<div class="flex flex-col gap-space-md">
+<!-- Step Badge & Clinic Pill -->
+<div class="flex items-center justify-between flex-wrap gap-space-xs">
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md text-on-surface">Paso 2 de 2 • Verificación de identidad</span>
+</div>
+<!-- Clinic Badge (Sonrisa Andina) -->
+<div class="flex items-center gap-space-xs bg-surface-container-low px-space-sm py-1 rounded-full" id="badge-clinic">
+<div class="w-4 h-4 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-[11px]">local_hospital</span>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant font-medium">Sonrisa Andina</span>
+</div>
+<!-- Restricted Access Badge (Admin) -->
+<div class="hidden items-center gap-space-xs bg-slate-800 text-slate-100 px-space-sm py-1 rounded-full border border-slate-700" id="badge-restricted">
+<span class="material-symbols-outlined text-[13px] text-amber-400">lock</span>
+<span class="font-code-sm text-code-sm font-semibold tracking-wide">Acceso restringido</span>
+</div>
+</div>
+<!-- Title & Description -->
+<div class="space-y-space-xs">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold" id="auth-title">Verificación en dos pasos</h1>
+<p class="font-body-md text-body-md text-on-surface-variant" id="auth-desc">Ingresa el código temporal de 6 dígitos emitido por tu aplicación autenticadora (Google Auth, Microsoft Auth o 1Password).</p>
+</div>
+<!-- User Account Identity Strip -->
+<div class="bg-surface-container-low px-space-md py-2.5 rounded-lg flex items-center gap-2.5 border border-surface-container">
+<div class="w-7 h-7 rounded-full bg-surface-container-high text-secondary flex items-center justify-center flex-shrink-0" id="user-avatar-icon">
+<span class="material-symbols-outlined text-[16px]">account_circle</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface truncate" id="user-card-text">
+    Ingresaste como <span class="font-semibold text-on-surface font-code-md">d.al•••@sonrisaandina.pe</span>
+</p>
+</div>
+<!-- Alerts Container -->
+<div class="bg-red-50 border border-red-200 text-red-800 p-space-md rounded-lg flex items-start gap-space-sm shadow-sm transition-all duration-200 hidden" id="alert-error">
+<span class="material-symbols-outlined text-[20px] text-red-600 flex-shrink-0 mt-0.5">warning</span>
+<div class="space-y-0.5">
+<p class="font-label-lg text-label-lg font-bold text-red-800">Código incorrecto. Te quedan 4 intentos.</p>
+<p class="font-body-sm text-body-sm text-red-700">Revisa que la hora de tu teléfono sea correcta o espera el siguiente código.</p>
+</div>
+</div>
+<div class="bg-red-50 border border-red-300 text-red-900 p-space-md rounded-lg flex items-start gap-space-sm shadow-sm transition-all duration-200 hidden" id="alert-lockout">
+<span class="material-symbols-outlined text-[22px] text-red-600 flex-shrink-0 mt-0.5">lock_clock</span>
+<div class="space-y-0.5 flex-1">
+<p class="font-label-lg text-label-lg font-bold text-red-900">Demasiados intentos. Espera 15 minutos o contacta al administrador de tu clínica.</p>
+<div class="mt-1 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 font-code-md text-code-md font-bold bg-white/80 border border-red-200 px-2 py-0.5 rounded text-red-800" id="countdown-badge">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+<span class="" id="countdown-timer">14:59</span> min
+</span>
+<span class="font-body-sm text-body-sm text-red-700">Bloqueo de seguridad preventivo</span>
+</div>
+</div>
+</div>
+<form class="space-y-space-lg" id="form-2fa" onsubmit="event.preventDefault(); handleVerification();">
+<!-- TOTP Mode: 6 Individual Digits -->
+<div class="space-y-space-sm" id="container-totp">
+<div class="flex items-center justify-between">
+<label class="font-label-lg text-label-lg text-on-surface">Código de 6 dígitos</label>
+</div>
+<!-- 6 Numeric Blocks: Tabular & Symmetrical split 3 + 3 -->
+<div class="flex items-center justify-between gap-space-xs" id="totp-inputs-group">
+<div class="flex gap-space-xs">
+<input autocomplete="one-time-code" autofocus="" class="totp-input w-[52px] h-[60px] text-center font-code-md text-[24px] font-semibold text-on-surface border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 transition-all border-surface-container-high bg-surface-container-lowest" data-index="0" inputmode="numeric" maxlength="1" pattern="[0-9]*" type="text">
+<input class="totp-input w-[52px] h-[60px] text-center font-code-md text-[24px] font-semibold text-on-surface border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 transition-all border-surface-container-high bg-surface-container-lowest" data-index="1" inputmode="numeric" maxlength="1" pattern="[0-9]*" type="text">
+<input class="totp-input w-[52px] h-[60px] text-center font-code-md text-[24px] font-semibold text-on-surface border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 transition-all border-surface-container-high bg-surface-container-lowest" data-index="2" inputmode="numeric" maxlength="1" pattern="[0-9]*" type="text">
+</div>
+<div class="text-outline font-headline-md font-light select-none px-0.5">–</div>
+<div class="flex gap-space-xs">
+<input class="totp-input w-[52px] h-[60px] text-center font-code-md text-[24px] font-semibold text-on-surface border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 transition-all border-surface-container-high bg-surface-container-lowest" data-index="3" inputmode="numeric" maxlength="1" pattern="[0-9]*" type="text">
+<input class="totp-input w-[52px] h-[60px] text-center font-code-md text-[24px] font-semibold text-on-surface border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 transition-all border-surface-container-high bg-surface-container-lowest" data-index="4" inputmode="numeric" maxlength="1" pattern="[0-9]*" type="text">
+<input class="totp-input w-[52px] h-[60px] text-center font-code-md text-[24px] font-semibold text-on-surface border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 transition-all border-surface-container-high bg-surface-container-lowest" data-index="5" inputmode="numeric" maxlength="1" pattern="[0-9]*" type="text">
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">content_paste</span>
+<span class="">Puedes pegar directamente los 6 números del portapapeles.</span>
+</p>
+</div>
+<!-- Recovery Code Mode (Hidden by Default) -->
+<div class="space-y-space-xs hidden" id="container-recovery">
+<label class="font-label-lg text-label-lg text-on-surface" for="recovery-code">Código de recuperación</label>
+<div class="relative">
+<input class="w-full h-[48px] bg-surface-container-lowest border border-surface-container-high px-space-md uppercase font-code-md text-code-md text-on-surface rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 tracking-widest placeholder:text-outline-variant transition-all" id="recovery-code" maxlength="9" placeholder="ABCD-1234" type="text">
+<span class="material-symbols-outlined absolute right-3 top-3 text-[20px] text-on-surface-variant">key</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+  Ingresa uno de los códigos de recuperación que guardaste al configurar la verificación. Cada código se usa una sola vez.
+</p>
+</div>
+<!-- Action Buttons -->
+<div class="space-y-space-sm pt-space-xs">
+<button class="w-full h-[48px] bg-[#0F1A34] hover:bg-inverse-surface text-on-primary font-label-lg text-label-lg font-semibold rounded-lg shadow-md transition-all flex items-center justify-center gap-space-xs disabled:opacity-50 disabled:cursor-not-allowed" id="btn-submit" type="submit">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="" id="submit-text">Verificar e ingresar</span>
+</button>
+<div class="text-center pt-space-xs">
+<button class="font-label-lg text-label-lg text-secondary hover:underline transition-all" id="toggle-recovery" type="button">¿No tienes acceso a tu app? Usar código de recuperación</button>
+</div>
+</div>
+</form>
+<!-- Footer Security Return Link -->
+<div class="pt-space-md flex items-center justify-start font-body-sm text-body-sm">
+<a class="inline-flex items-center gap-1 text-secondary hover:underline font-label-md text-label-md" href="/login">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+        Volver al inicio de sesión
+      </a>
+</div>
+</div>
+</div></div></div><!-- RIGHT COLUMN: BRAND PANEL --><aside class="hidden lg:flex lg:w-[45%] bg-[#0F1A34] text-white flex-col justify-between p-10 xl:p-14 relative overflow-hidden bg-grid-pattern border-l border-[#1B2A4E]"><div class="absolute -right-16 -top-16 w-80 h-80 opacity-5 pointer-events-none"><svg fill="currentColor" viewBox="0 0 200 200"><circle cx="100" cy="100" fill="none" r="90" stroke="white" stroke-width="4"></circle><path d="M100 20 C60 20 40 50 40 90 C40 130 70 170 100 180 C130 170 160 130 160 90 C160 50 140 20 100 20 Z"></path></svg></div><!-- Panel Content Clinic (Normal, Error, Lockout, Recovery) --><div class="relative z-10 space-y-4" id="right-panel-clinic-header"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-[#1B2A4E] border border-[#3C4662] flex items-center justify-center text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M12 2C7 2 4 5 4 10c0 4 2.5 9 5 12 1.2-1.5 2-4 3-4s1.8 2.5 3 4c2.5-3 5-8 5-12 0-5-3-8-8-8z"></path></svg></div><div><h2 class="text-lg font-bold text-white tracking-tight">Clínica Dental Sonrisa Andina</h2></div></div><h3 class="text-2xl xl:text-3xl font-bold text-white tracking-tight leading-snug pt-3">Historia clínica, odontograma y agenda en un solo lugar</h3><p class="text-sm text-[#CBD5E1] leading-relaxed max-w-md">Gestión odontológica digital para clínicas del Perú.</p></div><!-- Panel Content Platform Admin (Admin Mode) --><div class="relative z-10 space-y-4 hidden" id="right-panel-admin-header"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-[#1B2A4E] border border-[#3C4662] flex items-center justify-center text-[#7BC2FF]"><span class="material-symbols-outlined text-[24px]">dentistry</span></div><div><h2 class="text-lg font-bold text-white tracking-tight">DentiCore</h2><span class="text-xs text-[#94CCFF] font-medium">Administración de la plataforma</span></div></div><h3 class="text-2xl xl:text-3xl font-bold text-white tracking-tight leading-snug pt-3">Panel de Control de la Plataforma</h3><p class="text-sm text-[#CBD5E1] leading-relaxed max-w-md">Gestión de clínicas, planes y seguridad de DentiCore.</p></div><!-- Bottom Cards: Clinic --><div class="relative z-10 space-y-5 mt-auto" id="right-panel-clinic-cards"><div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70"><div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#0EA5E9]"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24"><path d="M12 2C7 2 4 5 4 10c0 4 2.5 9 5 12 1.2-1.5 2-4 3-4s1.8 2.5 3 4c2.5-3 5-8 5-12 0-5-3-8-8-8z"></path><line x1="12" x2="12" y1="7" y2="13"></line><line x1="9" x2="15" y1="10" y2="10"></line></svg></div><div><h4 class="text-sm font-semibold text-white tracking-tight">Odontograma según NTS N° 188</h4><p class="text-xs text-[#CBD5E1] mt-0.5 leading-normal">Registro en azul y rojo con las siglas oficiales y numeración FDI.</p></div></div><div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70"><div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#0EA5E9]"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24"><rect height="11" rx="2" ry="2" width="18" x="3" y="11"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path><circle cx="12" cy="16" r="1"></circle></svg></div><div><h4 class="text-sm font-semibold text-white tracking-tight">Datos aislados por clínica</h4><p class="text-xs text-[#CBD5E1] mt-0.5 leading-normal">Cada clínica accede solo a su información, con cifrado de datos sensibles y registro de auditoría.</p></div></div><div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70"><div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#0EA5E9]"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg></div><div><h4 class="text-sm font-semibold text-white tracking-tight">Verificación en dos pasos</h4><p class="text-xs text-[#CBD5E1] mt-0.5 leading-normal">Protección adicional con código de 6 dígitos para las cuentas que lo requieren.</p></div></div></div><!-- Bottom Cards: Platform Admin --><div class="relative z-10 space-y-5 mt-auto hidden" id="right-panel-admin-cards"><div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70"><div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#7BC2FF]"><span class="material-symbols-outlined text-[20px]">domain</span></div><div><h4 class="text-sm font-semibold text-white tracking-tight">Gestión de clínicas</h4><p class="text-xs text-[#CBD5E1] mt-0.5 leading-normal">Alta, suspensión y reactivación de clínicas y cambio de plan.</p></div></div><div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70"><div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#7BC2FF]"><span class="material-symbols-outlined text-[20px]">policy</span></div><div><h4 class="text-sm font-semibold text-white tracking-tight">Seguridad y auditoría</h4><p class="text-xs text-[#CBD5E1] mt-0.5 leading-normal">Registro de accesos y eventos críticos de la plataforma.</p></div></div><div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-[#1B2A4E]/60 border border-[#3C4662]/70"><div class="w-9 h-9 rounded-lg bg-[#0F1A34] border border-[#3C4662] flex items-center justify-center shrink-0 text-[#7BC2FF]"><span class="material-symbols-outlined text-[20px]">security</span></div><div><h4 class="text-sm font-semibold text-white tracking-tight">Verificación en dos pasos obligatoria</h4><p class="text-xs text-[#CBD5E1] mt-0.5 leading-normal">Este acceso requiere un código de 6 dígitos de tu aplicación de autenticación.</p></div></div></div></aside></main><script>
+    (function initTwoFactorFlow() {
+      const inputs = Array.from(document.querySelectorAll('.totp-input'));
+      const form = document.getElementById('form-2fa');
+      const submitBtn = document.getElementById('btn-submit');
+      const submitText = document.getElementById('submit-text');
+      const toggleRecoveryBtn = document.getElementById('toggle-recovery');
+      const containerTotp = document.getElementById('container-totp');
+      const containerRecovery = document.getElementById('container-recovery');
+      const alertError = document.getElementById('alert-error');
+      const alertLockout = document.getElementById('alert-lockout');
+      const authTitle = document.getElementById('auth-title');
+      const descText = document.getElementById('auth-desc');
+      const recoveryInput = document.getElementById('recovery-code');
+      const variantButtons = document.querySelectorAll('.variant-btn');
+
+      // Dynamic Context Elements
+      const badgeClinic = document.getElementById('badge-clinic');
+      const badgeRestricted = document.getElementById('badge-restricted');
+      const userCardText = document.getElementById('user-card-text');
+      const routeIndicator = document.getElementById('route-indicator');
+      const clinicHeader = document.getElementById('right-panel-clinic-header');
+      const adminHeader = document.getElementById('right-panel-admin-header');
+      const clinicCards = document.getElementById('right-panel-clinic-cards');
+      const adminCards = document.getElementById('right-panel-admin-cards');
+
+      let currentVariant = 'normal';
+      let isRecoveryMode = false;
+      let isLocked = false;
+
+      function updateVariantNavUI(variantName) {
+        currentVariant = variantName;
+        variantButtons.forEach(btn => {
+          if (btn.getAttribute('data-variant') === variantName) {
+            btn.className = 'variant-btn px-space-md py-space-xs rounded transition-all font-label-md text-label-md bg-on-surface text-surface font-semibold shadow-sm';
+          } else {
+            btn.className = 'variant-btn px-space-md py-space-xs rounded transition-all font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/50';
+          }
+        });
+      }
+
+      function resetTotpInputStyles() {
+        inputs.forEach(input => {
+          input.disabled = false;
+          input.classList.remove('border-red-500', 'bg-red-50', 'text-red-700', 'opacity-50', 'cursor-not-allowed');
+          input.classList.add('border-surface-container-high', 'bg-surface-container-lowest', 'text-on-surface');
+        });
+      }
+
+      function setContext(isAdmin) {
+        if (isAdmin) {
+          badgeClinic.classList.add('hidden');
+          badgeRestricted.classList.remove('hidden');
+          badgeRestricted.classList.add('flex');
+          userCardText.innerHTML = 'Ingresaste como <span class="font-semibold text-on-surface font-code-md">admin@denticore.pe</span>';
+          routeIndicator.textContent = '/login · Verificación plataforma';
+          clinicHeader.classList.add('hidden');
+          adminHeader.classList.remove('hidden');
+          clinicCards.classList.add('hidden');
+          adminCards.classList.remove('hidden');
+        } else {
+          badgeClinic.classList.remove('hidden');
+          badgeRestricted.classList.add('hidden');
+          badgeRestricted.classList.remove('flex');
+          userCardText.innerHTML = 'Ingresaste como <span class="font-semibold text-on-surface font-code-md">d.al•••@sonrisaandina.pe</span>';
+          routeIndicator.textContent = '/verify-2fa · Verificación en dos pasos';
+          clinicHeader.classList.remove('hidden');
+          adminHeader.classList.add('hidden');
+          clinicCards.classList.remove('hidden');
+          adminCards.classList.add('hidden');
+        }
+      }
+
+      window.setVariant = function(variant) {
+        // Clear all alert states and general resets
+        alertError.classList.add('hidden');
+        alertLockout.classList.add('hidden');
+        resetTotpInputStyles();
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        recoveryInput.disabled = false;
+        recoveryInput.classList.remove('border-red-500', 'bg-red-50', 'opacity-50', 'cursor-not-allowed');
+        isLocked = false;
+
+        updateVariantNavUI(variant);
+
+        if (variant === 'admin') {
+          setContext(true);
+          isRecoveryMode = false;
+          authTitle.textContent = 'Verificación en dos pasos';
+          containerRecovery.classList.add('hidden');
+          containerTotp.classList.remove('hidden');
+          descText.textContent = 'Ingresa el código temporal de 6 dígitos emitido por tu aplicación autenticadora (Google Auth, Microsoft Auth o 1Password).';
+          submitText.textContent = 'Verificar e ingresar';
+          toggleRecoveryBtn.textContent = '¿No tienes acceso a tu app? Usar código de recuperación';
+          inputs.forEach(i => i.value = '');
+          setTimeout(() => inputs[0].focus(), 50);
+          return;
+        }
+
+        // Clinic variants
+        setContext(false);
+
+        if (variant === 'normal') {
+          isRecoveryMode = false;
+          authTitle.textContent = 'Verificación en dos pasos';
+          containerRecovery.classList.add('hidden');
+          containerTotp.classList.remove('hidden');
+          descText.textContent = 'Ingresa el código temporal de 6 dígitos emitido por tu aplicación autenticadora (Google Auth, Microsoft Auth o 1Password).';
+          submitText.textContent = 'Verificar e ingresar';
+          toggleRecoveryBtn.textContent = '¿No tienes acceso a tu app? Usar código de recuperación';
+          inputs.forEach(i => i.value = '');
+          setTimeout(() => inputs[0].focus(), 50);
+        } else if (variant === 'error') {
+          isRecoveryMode = false;
+          authTitle.textContent = 'Verificación en dos pasos';
+          containerRecovery.classList.add('hidden');
+          containerTotp.classList.remove('hidden');
+          alertError.classList.remove('hidden');
+          descText.textContent = 'Ingresa el código temporal de 6 dígitos emitido por tu aplicación autenticadora (Google Auth, Microsoft Auth o 1Password).';
+          submitText.textContent = 'Verificar e ingresar';
+          toggleRecoveryBtn.textContent = '¿No tienes acceso a tu app? Usar código de recuperación';
+          
+          // Fill dummy erroneous code and highlight red borders
+          const sampleErrDigits = ['8', '4', '2', '9', '0', '1'];
+          inputs.forEach((input, idx) => {
+            input.value = sampleErrDigits[idx] || '';
+            input.classList.remove('border-surface-container-high', 'bg-surface-container-lowest');
+            input.classList.add('border-red-500', 'bg-red-50', 'text-red-700');
+          });
+          inputs[5].focus();
+        } else if (variant === 'lockout') {
+          isRecoveryMode = false;
+          authTitle.textContent = 'Verificación en dos pasos';
+          containerRecovery.classList.add('hidden');
+          containerTotp.classList.remove('hidden');
+          isLocked = true;
+          alertLockout.classList.remove('hidden');
+          descText.textContent = 'Ingresa el código temporal de 6 dígitos emitido por tu aplicación autenticadora (Google Auth, Microsoft Auth o 1Password).';
+          submitText.textContent = 'Verificar e ingresar';
+          toggleRecoveryBtn.textContent = '¿No tienes acceso a tu app? Usar código de recuperación';
+
+          // Disable inputs
+          inputs.forEach(input => {
+            input.disabled = true;
+            input.value = '';
+            input.classList.add('opacity-50', 'cursor-not-allowed');
+          });
+          submitBtn.disabled = true;
+          submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        } else if (variant === 'recovery') {
+          isRecoveryMode = true;
+          authTitle.textContent = 'Código de recuperación';
+          containerTotp.classList.add('hidden');
+          containerRecovery.classList.remove('hidden');
+          descText.textContent = 'Ingresa uno de los códigos de recuperación que guardaste al configurar la verificación. Cada código se usa una sola vez.';
+          submitText.textContent = 'Verificar código de recuperación';
+          toggleRecoveryBtn.textContent = 'Volver a ingresar código de 6 dígitos';
+          recoveryInput.value = '';
+          setTimeout(() => recoveryInput.focus(), 50);
+        }
+      };
+
+      // Variant Buttons Click Listeners
+      variantButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const variant = btn.getAttribute('data-variant');
+          window.setVariant(variant);
+        });
+      });
+
+      // Page toggle between TOTP and Recovery
+      toggleRecoveryBtn.addEventListener('click', () => {
+        if (isRecoveryMode) {
+          window.setVariant(currentVariant === 'admin' ? 'admin' : 'normal');
+        } else {
+          window.setVariant('recovery');
+        }
+      });
+
+      // TOTP individual inputs logic
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          const val = e.target.value.replace(/[^0-9]/g, '');
+          e.target.value = val ? val[0] : '';
+          
+          if (input.classList.contains('border-red-500')) {
+            input.classList.remove('border-red-500', 'bg-red-50', 'text-red-700');
+            input.classList.add('border-surface-container-high', 'bg-surface-container-lowest', 'text-on-surface');
+          }
+
+          if (val && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+            inputs[index + 1].select();
+          }
+          checkCompletion();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            inputs[index - 1].focus();
+            inputs[index - 1].select();
+          }
+        });
+
+        // Clipboard paste handler
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pastedData = (e.clipboardData || window.clipboardData).getData('text').trim();
+          const cleanNumbers = pastedData.replace(/[^0-9]/g, '').slice(0, 6);
+          
+          if (cleanNumbers.length > 0) {
+            cleanNumbers.split('').forEach((char, i) => {
+              if (inputs[i]) {
+                inputs[i].value = char;
+                inputs[i].classList.remove('border-red-500', 'bg-red-50', 'text-red-700');
+                inputs[i].classList.add('border-surface-container-high', 'bg-surface-container-lowest', 'text-on-surface');
+              }
+            });
+            const nextFocus = Math.min(cleanNumbers.length, inputs.length - 1);
+            inputs[nextFocus].focus();
+            checkCompletion();
+          }
+        });
+      });
+
+      function checkCompletion() {
+        if (isRecoveryMode || isLocked) return;
+        const code = inputs.map(i => i.value).join('');
+        if (code.length === 6) {
+          submitBtn.classList.add('ring-2', 'ring-secondary', 'ring-offset-1');
+        } else {
+          submitBtn.classList.remove('ring-2', 'ring-secondary', 'ring-offset-1');
+        }
+      }
+
+      // Formatting for recovery code (XXXX-XXXX)
+      recoveryInput.addEventListener('input', (e) => {
+        let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (val.length > 4) {
+          val = val.slice(0, 4) + '-' + val.slice(4, 8);
+        }
+        e.target.value = val;
+      });
+
+      window.handleVerification = function() {
+        if (isLocked) return;
+        submitBtn.disabled = true;
+        const previousText = submitText.textContent;
+        submitText.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span> Validando...';
+        
+        setTimeout(() => {
+          submitBtn.disabled = false;
+          submitText.textContent = previousText;
+          if (!isRecoveryMode && currentVariant !== 'admin') {
+            window.setVariant('error');
+          }
+        }, 900);
+      };
+    })();
+  </script></body></html>

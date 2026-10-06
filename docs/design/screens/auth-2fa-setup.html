@@ -1,0 +1,569 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_blank" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"navy-primary":"#0F1A34","navy-hover":"#1E2E55","error-container":"#FEE2E2","on-error-container":"#991B1B","error":"#DC2626","outline":"#7C8AA0","text-secondary":"#475569","surface-container-lowest":"#ffffff","secondary":"#006399","surface":"#f8f9ff","surface-container":"#e6eeff","surface-container-low":"#eff4ff","surface-container-highest":"#d5e3fc","surface-container-high":"#dce9ff","background":"#f8f9ff","on-surface":"#0e1c2e"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"fontFamily":{"headline":["Plus Jakarta Sans"],"body":["Plus Jakarta Sans"],"code":["JetBrains Mono"]}}}}</script></head><body class="bg-background font-body text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-navy-primary selection:text-white relative"><header class="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-2 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-navy-primary flex items-center justify-center text-white shadow-sm">
+<span class="material-symbols-outlined text-[20px]">dentistry</span>
+</div>
+<span class="font-headline font-bold text-lg sm:text-xl tracking-tight text-on-surface">DentiCore</span>
+</div>
+<div class="flex items-center gap-4">
+<!-- Switcher de pruebas / prototipo discreto -->
+<div class="hidden sm:flex items-center gap-1 bg-surface-container-low border border-slate-200/80 px-1.5 py-1 rounded-lg text-[11px] font-code text-text-secondary">
+<span class="text-slate-400 px-1">Vista:</span>
+<button class="px-2 py-0.5 rounded font-medium transition-colors bg-white text-navy-primary shadow-xs" id="demo-tab-1" onclick="goToStep(1)" type="button">Paso 1</button>
+<button class="px-2 py-0.5 rounded font-medium transition-colors hover:text-navy-primary text-text-secondary" id="demo-tab-2" onclick="goToStep(2, false)" type="button">Paso 2</button>
+<button class="px-2 py-0.5 rounded font-medium transition-colors hover:text-navy-primary text-text-secondary" id="demo-tab-2-err" onclick="goToStep(2, true)" type="button">Paso 2 (Error)</button>
+<button class="px-2 py-0.5 rounded font-medium transition-colors hover:text-navy-primary text-text-secondary" id="demo-tab-3" onclick="goToStep(3)" type="button">Paso 3</button>
+</div>
+<a class="flex items-center gap-1 text-[13px] font-semibold text-text-secondary hover:text-navy-primary transition-colors py-1.5 px-2 rounded-lg" href="#logout">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span>Cerrar sesión</span>
+</a>
+</div>
+</header><main class="w-full flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-8"><div class="w-full max-w-[560px] flex flex-col gap-4">
+<!-- Tarjeta del Usuario Limpia y Concisa -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-4 shadow-sm flex items-center gap-3.5 border border-slate-100">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[22px]">admin_panel_settings</span>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-semibold text-sm text-on-surface truncate">admin@sonrisaandina.pe</span>
+<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#E0F2FE] text-[#0369A1]">Administrador de Clínica</span>
+</div>
+<p class="text-xs text-text-secondary font-medium mt-0.5 truncate">Clínica Dental Sonrisa Andina</p>
+</div>
+</div>
+<!-- Primary Interactive Container -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-6 sm:p-8 shadow-sm flex flex-col relative border border-slate-100">
+<!-- Stepper Graphic Header (No clicable - solo indicador visual de progreso) -->
+<div class="w-full mb-6 pb-4 pointer-events-none select-none">
+<div class="flex items-center justify-between relative max-w-sm mx-auto">
+<div class="absolute left-6 right-6 top-4 -translate-y-1/2 h-0.5 bg-slate-200 -z-0"></div>
+<div class="absolute left-6 top-4 -translate-y-1/2 h-0.5 bg-navy-primary transition-all duration-300 -z-0" id="stepper-progress" style="width: 0%;"></div>
+<!-- Node 1 -->
+<div class="relative z-10 flex flex-col items-center gap-1.5 text-center">
+<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold font-code transition-all duration-200 bg-navy-primary text-white shadow-sm ring-4 ring-white" id="node-1">
+            1
+          </div>
+<span class="text-xs font-semibold text-on-surface" id="node-label-1">1. Escanea</span>
+</div>
+<!-- Node 2 -->
+<div class="relative z-10 flex flex-col items-center gap-1.5 text-center">
+<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold font-code transition-all duration-200 bg-surface-container-high text-text-secondary ring-4 ring-white" id="node-2">
+            2
+          </div>
+<span class="text-xs font-semibold text-text-secondary" id="node-label-2">2. Confirma</span>
+</div>
+<!-- Node 3 -->
+<div class="relative z-10 flex flex-col items-center gap-1.5 text-center">
+<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold font-code transition-all duration-200 bg-surface-container-high text-text-secondary ring-4 ring-white" id="node-3">
+            3
+          </div>
+<span class="text-xs font-semibold text-text-secondary" id="node-label-3">3. Códigos</span>
+</div>
+</div>
+</div>
+<!-- PASO 1: ESCANEA EL CÓDIGO -->
+<div class="flex flex-col gap-5" id="step-panel-1">
+<div class="flex flex-col gap-1">
+<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-on-surface">Configuración del segundo factor</h1>
+<p class="text-xs sm:text-sm text-text-secondary">Protege el historial odontológico y el acceso con doble factor obligatorio.</p>
+</div>
+<!-- Informative Notice (Limpio y sin referencias a MINSA) -->
+<div class="flex items-start gap-3 p-3.5 rounded-xl bg-surface-container-low border border-slate-200/70">
+<span class="material-symbols-outlined text-[#0284C7] text-[20px] shrink-0 mt-0.5">verified_user</span>
+<p class="text-xs sm:text-[13px] leading-relaxed text-text-secondary">
+          Tu rol requiere verificación en dos pasos para proteger los datos de los pacientes. No podrás continuar hasta completarla.
+        </p>
+</div>
+<!-- High Fidelity Dental 2FA QR Code -->
+<div class="flex flex-col items-center justify-center p-4 bg-surface rounded-xl border border-slate-100">
+<div class="w-48 h-48 sm:w-52 sm:h-52 bg-white p-3 rounded-lg shadow-xs flex items-center justify-center">
+<svg aria-label="Código QR DentiCore 2FA" class="w-full h-full text-navy-primary" fill="currentColor" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<!-- Corner Finder 1 (Top-Left) -->
+<rect fill="currentColor" height="50" rx="6" width="50" x="10" y="10"></rect>
+<rect fill="#ffffff" height="34" rx="3" width="34" x="18" y="18"></rect>
+<rect fill="currentColor" height="18" rx="2" width="18" x="26" y="26"></rect>
+<!-- Corner Finder 2 (Top-Right) -->
+<rect fill="currentColor" height="50" rx="6" width="50" x="140" y="10"></rect>
+<rect fill="#ffffff" height="34" rx="3" width="34" x="148" y="18"></rect>
+<rect fill="currentColor" height="18" rx="2" width="18" x="156" y="26"></rect>
+<!-- Corner Finder 3 (Bottom-Left) -->
+<rect fill="currentColor" height="50" rx="6" width="50" x="10" y="140"></rect>
+<rect fill="#ffffff" height="34" rx="3" width="34" x="18" y="148"></rect>
+<rect fill="currentColor" height="18" rx="2" width="18" x="26" y="156"></rect>
+<!-- Timing and Alignment Bars -->
+<rect height="8" rx="1" width="8" x="68" y="20"></rect>
+<rect height="8" rx="1" width="8" x="84" y="20"></rect>
+<rect height="8" rx="1" width="8" x="100" y="20"></rect>
+<rect height="8" rx="1" width="8" x="116" y="20"></rect>
+<rect height="8" rx="1" width="8" x="20" y="68"></rect>
+<rect height="8" rx="1" width="8" x="20" y="84"></rect>
+<rect height="8" rx="1" width="8" x="20" y="100"></rect>
+<rect height="8" rx="1" width="8" x="20" y="116"></rect>
+<!-- Dense Data Matrix Elements -->
+<rect height="12" rx="2" width="12" x="68" y="44"></rect>
+<rect height="8" rx="1" width="8" x="92" y="44"></rect>
+<rect height="8" rx="1" width="16" x="112" y="44"></rect>
+<rect height="16" rx="1" width="8" x="68" y="68"></rect>
+<rect height="8" rx="1" width="16" x="84" y="68"></rect>
+<rect height="8" rx="1" width="8" x="108" y="68"></rect>
+<rect height="16" rx="2" width="16" x="124" y="68"></rect>
+<rect height="8" rx="1" width="8" x="148" y="68"></rect>
+<rect height="8" rx="1" width="16" x="164" y="68"></rect>
+<rect height="16" rx="1" width="8" x="180" y="68"></rect>
+<!-- Center Dental Emblem Lockup -->
+<rect fill="#ffffff" height="52" rx="8" width="52" x="74" y="74"></rect>
+<rect fill="#0F1A34" height="44" rx="6" width="44" x="78" y="78"></rect>
+<path d="M100 86c-4.4 0-8 3.4-8 8.8 0 4.2 1.6 7.4 2.8 11.2.6 1.8 1.4 4.8 2.2 7.6.6 2.2 1.8 3.4 3 3.4s2.4-1.2 3-3.4c.8-2.8 1.6-5.8 2.2-7.6 1.2-3.8 2.8-7 2.8-11.2 0-5.4-3.6-8.8-8-8.8zm-1.8 5.6c.6 0 1.2.6 1.2 1.4 0 .8-.6 1.4-1.2 1.4s-1.2-.6-1.2-1.4c0-.8.6-1.4 1.2-1.4zm3.6 0c.6 0 1.2.6 1.2 1.4 0 .8-.6 1.4-1.2 1.4s-1.2-.6-1.2-1.4c0-.8.6-1.4 1.2-1.4z" fill="#ffffff"></path>
+<!-- Bottom Data Matrix Elements -->
+<rect height="8" rx="1" width="16" x="68" y="132"></rect>
+<rect height="16" rx="1" width="8" x="92" y="132"></rect>
+<rect height="8" rx="1" width="16" x="108" y="132"></rect>
+<rect height="8" rx="1" width="8" x="132" y="132"></rect>
+<rect height="16" rx="2" width="16" x="148" y="132"></rect>
+<rect height="8" rx="1" width="16" x="172" y="132"></rect>
+<rect height="16" rx="1" width="8" x="68" y="156"></rect>
+<rect height="8" rx="1" width="16" x="84" y="156"></rect>
+<rect height="8" rx="1" width="8" x="108" y="156"></rect>
+<rect height="16" rx="2" width="16" x="124" y="156"></rect>
+<rect height="8" rx="1" width="16" x="156" y="156"></rect>
+<rect height="16" rx="1" width="8" x="180" y="156"></rect>
+<rect height="8" rx="1" width="16" x="68" y="180"></rect>
+<rect height="8" rx="1" width="8" x="92" y="180"></rect>
+<rect height="8" rx="1" width="16" x="108" y="180"></rect>
+<rect height="8" rx="1" width="8" x="132" y="180"></rect>
+<rect height="8" rx="1" width="24" x="148" y="180"></rect>
+</svg>
+</div>
+<p class="text-xs text-text-secondary mt-2.5 text-center">Usa Google Authenticator, Microsoft Authenticator u otra app compatible.</p>
+</div>
+<!-- Manual Setup Key Card -->
+<div class="flex flex-col gap-1.5">
+<label class="text-xs font-semibold text-text-secondary flex items-center justify-between">
+<span>¿No puedes escanear el código? Clave de configuración manual:</span>
+<span class="font-code text-[11px] text-secondary">Base32</span>
+</label>
+<div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-surface-container border border-slate-200/60">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[#7C8AA0] text-[18px] shrink-0">key</span>
+<span class="font-code text-xs sm:text-sm text-on-surface font-semibold tracking-wider select-all truncate" id="manual-key-val">JBSW Y3DP EHPK 3PXP</span>
+</div>
+<button class="h-8 px-3 rounded-lg bg-surface-container-lowest text-on-surface text-xs font-semibold flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-colors active:scale-95 shrink-0 border border-slate-200" onclick="copyManualKey()" type="button">
+<span class="material-symbols-outlined text-[16px]" id="manual-key-icon">content_copy</span>
+<span id="manual-key-btn-text">Copiar</span>
+</button>
+</div>
+</div>
+<!-- Step 1 Navigation Action -->
+<div class="pt-1">
+<button class="w-full h-11 rounded-lg bg-navy-primary hover:bg-navy-hover text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.99] cursor-pointer" onclick="goToStep(2)" type="button">
+<span>Continuar a confirmación</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- PASO 2: CONFIRMA -->
+<div class="hidden flex flex-col gap-5" id="step-panel-2">
+<div class="flex flex-col gap-1">
+<h2 class="text-xl sm:text-2xl font-bold tracking-tight text-on-surface">Confirma la configuración</h2>
+<p class="text-xs sm:text-sm text-text-secondary">Ingresa el código temporal de 6 dígitos que muestra tu aplicación autenticadora para verificar la vinculación.</p>
+</div>
+<!-- Error Banner para Paso 2 -->
+<div class="hidden w-full flex items-start gap-2.5 p-3 rounded-xl bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B]" id="otp-error-banner">
+<span class="material-symbols-outlined text-[#DC2626] text-[20px] shrink-0 mt-0.5">warning</span>
+<span class="text-xs sm:text-[13px] font-medium leading-snug">
+        Código incorrecto. Revisa que la hora de tu teléfono sea correcta e inténtalo de nuevo.
+      </span>
+</div>
+<!-- 6-Digit Individual Input Matrix con bordes estrictos en #7C8AA0 -->
+<div class="flex flex-col items-center gap-3 py-2">
+<div class="flex items-center justify-center gap-2 sm:gap-2.5 w-full" id="otp-container">
+<input autocomplete="one-time-code" class="otp-input w-11 h-14 sm:w-13 sm:h-15 text-center font-code text-xl sm:text-2xl font-bold rounded-xl bg-surface-container-low text-on-surface border-2 border-[#7C8AA0] focus:border-navy-primary focus:bg-white focus:outline-none transition-all" data-index="0" inputmode="numeric" maxlength="1" type="text">
+<input class="otp-input w-11 h-14 sm:w-13 sm:h-15 text-center font-code text-xl sm:text-2xl font-bold rounded-xl bg-surface-container-low text-on-surface border-2 border-[#7C8AA0] focus:border-navy-primary focus:bg-white focus:outline-none transition-all" data-index="1" inputmode="numeric" maxlength="1" type="text">
+<input class="otp-input w-11 h-14 sm:w-13 sm:h-15 text-center font-code text-xl sm:text-2xl font-bold rounded-xl bg-surface-container-low text-on-surface border-2 border-[#7C8AA0] focus:border-navy-primary focus:bg-white focus:outline-none transition-all" data-index="2" inputmode="numeric" maxlength="1" type="text">
+<div class="w-1.5 h-0.5 bg-slate-300"></div>
+<input class="otp-input w-11 h-14 sm:w-13 sm:h-15 text-center font-code text-xl sm:text-2xl font-bold rounded-xl bg-surface-container-low text-on-surface border-2 border-[#7C8AA0] focus:border-navy-primary focus:bg-white focus:outline-none transition-all" data-index="3" inputmode="numeric" maxlength="1" type="text">
+<input class="otp-input w-11 h-14 sm:w-13 sm:h-15 text-center font-code text-xl sm:text-2xl font-bold rounded-xl bg-surface-container-low text-on-surface border-2 border-[#7C8AA0] focus:border-navy-primary focus:bg-white focus:outline-none transition-all" data-index="4" inputmode="numeric" maxlength="1" type="text">
+<input class="otp-input w-11 h-14 sm:w-13 sm:h-15 text-center font-code text-xl sm:text-2xl font-bold rounded-xl bg-surface-container-low text-on-surface border-2 border-[#7C8AA0] focus:border-navy-primary focus:bg-white focus:outline-none transition-all" data-index="5" inputmode="numeric" maxlength="1" type="text">
+</div>
+<p class="text-xs text-text-secondary text-center mt-1">
+        ¿Problemas de sincronización? Verifica que la hora de tu dispositivo móvil esté en modo automático.
+      </p>
+</div>
+<!-- Action Footer -->
+<div class="flex items-center gap-3 pt-2">
+<button class="w-1/3 h-11 rounded-lg bg-surface-container text-on-surface font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors cursor-pointer" onclick="goToStep(1)" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+<span>Atrás</span>
+</button>
+<button class="w-2/3 h-11 rounded-lg bg-navy-primary hover:bg-navy-hover text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.99] cursor-pointer" onclick="validateAndConfirmOtp()" type="button">
+<span>Confirmar</span>
+<span class="material-symbols-outlined text-[18px]">check</span>
+</button>
+</div>
+</div>
+<!-- PASO 3: CÓDIGOS DE RECUPERACIÓN -->
+<div class="hidden flex flex-col gap-5" id="step-panel-3">
+<div class="flex flex-col gap-1">
+<h2 class="text-xl sm:text-2xl font-bold tracking-tight text-on-surface">Guarda tus códigos de recuperación</h2>
+<p class="text-xs sm:text-sm text-text-secondary">Si pierdes acceso a tu aplicación autenticadora, estos códigos te permitirán iniciar sesión.</p>
+</div>
+<!-- Warning Box Ámbar (#FFFBEB con borde #FDE68A y texto #B45309) -->
+<div class="flex items-start gap-3 p-3.5 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-[#B45309]">
+<span class="material-symbols-outlined text-[#B45309] text-[20px] shrink-0 mt-0.5">warning</span>
+<div class="flex flex-col gap-0.5">
+<span class="font-semibold text-xs sm:text-sm text-[#92400E]">Guárdalos antes de continuar</span>
+<p class="text-xs text-[#B45309]">Cada código se usa una sola vez. No volverás a verlos.</p>
+</div>
+</div>
+<!-- 10 Recovery Codes Grid (2 Columnas x 5 Filas) en Monoespaciado -->
+<div class="p-4 rounded-xl bg-surface-container flex flex-col gap-3 border border-slate-200/60">
+<div class="grid grid-cols-2 gap-2" id="codes-matrix">
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">01</span>
+<span>9A4B-2F8C</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">02</span>
+<span>7K1D-9M3X</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">03</span>
+<span>3E8N-5P2L</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">04</span>
+<span>6T4V-8Y1Z</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">05</span>
+<span>2W9C-4Q7K</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">06</span>
+<span>5R8M-1B6D</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">07</span>
+<span>8X2P-7T4H</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">08</span>
+<span>4L9V-3K8N</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">09</span>
+<span>1Z7D-6W2M</span>
+</div>
+<div class="flex items-center gap-2 py-2 px-3 rounded-lg bg-white font-code text-xs sm:text-sm text-on-surface font-semibold shadow-xs border border-slate-200/50">
+<span class="text-slate-400 font-code text-[11px] w-4">10</span>
+<span>9E3B-5T8R</span>
+</div>
+</div>
+<!-- Botones Descargar y Copiar -->
+<div class="flex items-center justify-end gap-2 pt-1">
+<button class="h-8 px-3 rounded-lg bg-white text-on-surface text-xs font-semibold flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-colors active:scale-95 border border-slate-200" onclick="downloadCodesFile()" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Descargar</span>
+</button>
+<button class="h-8 px-3 rounded-lg bg-white text-on-surface text-xs font-semibold flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-colors active:scale-95 border border-slate-200" onclick="copyAllCodes()" type="button">
+<span class="material-symbols-outlined text-[16px]" id="copy-codes-icon">content_copy</span>
+<span id="copy-codes-text">Copiar</span>
+</button>
+</div>
+</div>
+<!-- Casilla obligatoria -->
+<label class="flex items-start gap-3 p-3.5 rounded-xl bg-surface-container-low border border-slate-200/70 cursor-pointer select-none">
+<input class="w-4 h-4 rounded mt-0.5 text-navy-primary focus:ring-navy-primary cursor-pointer border-slate-300" id="confirm-saved-checkbox" onchange="toggleFinishButton()" type="checkbox">
+<span class="text-xs sm:text-[13px] font-semibold text-on-surface leading-tight">
+          Guardé mis códigos de recuperación
+          <span class="block text-xs text-text-secondary font-normal mt-0.5">Reconozco que no podré recuperarlos después de abandonar este paso.</span>
+</span>
+</label>
+<!-- Step 3 Navigation Action: Botón Finalizar de ancho completo (w-full), sin botón Atrás -->
+<div class="pt-1">
+<button class="w-full h-11 rounded-lg bg-slate-200 text-slate-400 font-semibold text-sm flex items-center justify-center gap-2 cursor-not-allowed transition-all shadow-none" disabled="" id="finish-btn" onclick="submitFinalRegistration()" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Finalizar</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Micro Toast Notification Element -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transform translate-y-16 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2 px-4 py-2.5 rounded-full bg-navy-primary text-white shadow-xl" id="action-toast">
+<span class="material-symbols-outlined text-[#9cf2e8] text-[18px]">check_circle</span>
+<span class="text-xs font-medium text-white" id="toast-message">¡Copiado al portapapeles!</span>
+</div>
+<!-- Success Modal Overlay -->
+<div class="hidden fixed inset-0 z-50 bg-[#0F1A34]/50 backdrop-blur-xs flex items-center justify-center p-4" id="success-modal">
+<div class="w-full max-w-sm bg-white rounded-xl p-6 sm:p-8 flex flex-col items-center text-center gap-4 shadow-2xl border border-slate-100">
+<div class="w-14 h-14 rounded-full bg-[#E0F2FE] text-[#0369A1] flex items-center justify-center">
+<span class="material-symbols-outlined text-[32px]">verified</span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-lg font-bold text-on-surface">Segundo factor activado con éxito</h3>
+<p class="text-xs sm:text-sm text-text-secondary">Tu cuenta ahora cuenta con doble factor de autenticación configurado. Redirigiendo a tu clínica en DentiCore...</p>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden mt-2">
+<div class="bg-navy-primary h-full w-full animate-pulse"></div>
+</div>
+</div>
+</div>
+</div>
+</main><script>
+  let currentStep = 1;
+  const rawCodes = [
+    '9A4B-2F8C', '7K1D-9M3X', '3E8N-5P2L', '6T4V-8Y1Z', '2W9C-4Q7K',
+    '5R8M-1B6D', '8X2P-7T4H', '4L9V-3K8N', '1Z7D-6W2M', '9E3B-5T8R'
+  ];
+
+  function showToast(message) {
+    const toast = document.getElementById('action-toast');
+    const msgEl = document.getElementById('toast-message');
+    if (!toast || !msgEl) return;
+    msgEl.innerText = message;
+    toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 2800);
+  }
+
+  function updateDemoTabs(step, isError = false) {
+    const tabs = [
+      { id: 'demo-tab-1', active: step === 1 },
+      { id: 'demo-tab-2', active: step === 2 && !isError },
+      { id: 'demo-tab-2-err', active: step === 2 && isError },
+      { id: 'demo-tab-3', active: step === 3 }
+    ];
+    tabs.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (el) {
+        if (t.active) {
+          el.className = "px-2 py-0.5 rounded font-medium transition-colors bg-white text-navy-primary shadow-xs";
+        } else {
+          el.className = "px-2 py-0.5 rounded font-medium transition-colors hover:text-navy-primary text-text-secondary";
+        }
+      }
+    });
+  }
+
+  function setStep2Error(show) {
+    const errorBanner = document.getElementById('otp-error-banner');
+    const inputs = document.querySelectorAll('.otp-input');
+    if (show) {
+      if (errorBanner) errorBanner.classList.remove('hidden');
+      inputs.forEach(i => {
+        i.classList.remove('border-[#7C8AA0]', 'bg-surface-container-low');
+        i.classList.add('border-[#DC2626]', 'bg-[#FEF2F2]', 'text-[#991B1B]');
+      });
+    } else {
+      if (errorBanner) errorBanner.classList.add('hidden');
+      inputs.forEach(i => {
+        i.classList.add('border-[#7C8AA0]', 'bg-surface-container-low');
+        i.classList.remove('border-[#DC2626]', 'bg-[#FEF2F2]', 'text-[#991B1B]');
+      });
+    }
+  }
+
+  function goToStep(stepNumber, isErrorVariant = false) {
+    currentStep = stepNumber;
+
+    // Alternar paneles
+    for (let i = 1; i <= 3; i++) {
+      const panel = document.getElementById('step-panel-' + i);
+      if (panel) {
+        if (i === stepNumber) {
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      }
+    }
+
+    // Manejar estado de error en paso 2 si fue invocado directamente
+    if (stepNumber === 2) {
+      setStep2Error(isErrorVariant);
+    } else {
+      setStep2Error(false);
+    }
+
+    updateDemoTabs(stepNumber, isErrorVariant);
+
+    // Actualizar indicador visual de progreso
+    const progressLine = document.getElementById('stepper-progress');
+    if (progressLine) {
+      if (stepNumber === 1) progressLine.style.width = '0%';
+      if (stepNumber === 2) progressLine.style.width = '50%';
+      if (stepNumber === 3) progressLine.style.width = '100%';
+    }
+
+    for (let i = 1; i <= 3; i++) {
+      const node = document.getElementById('node-' + i);
+      const label = document.getElementById('node-label-' + i);
+
+      if (i < stepNumber) {
+        node.className = "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold font-code transition-all duration-200 bg-[#006399] text-white shadow-sm ring-4 ring-white";
+        node.innerHTML = '<span class="material-symbols-outlined text-[16px]">done</span>';
+        label.className = "text-xs font-semibold text-[#006399]";
+      } else if (i === stepNumber) {
+        node.className = "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold font-code transition-all duration-200 bg-navy-primary text-white shadow-sm ring-4 ring-white";
+        node.innerText = i;
+        label.className = "text-xs font-semibold text-on-surface";
+      } else {
+        node.className = "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold font-code transition-all duration-200 bg-surface-container-high text-text-secondary ring-4 ring-white";
+        node.innerText = i;
+        label.className = "text-xs font-semibold text-text-secondary";
+      }
+    }
+
+    if (stepNumber === 2) {
+      setTimeout(() => {
+        const firstOtp = document.querySelector('.otp-input[data-index="0"]');
+        if (firstOtp) firstOtp.focus();
+      }, 50);
+    }
+  }
+
+  function copyManualKey() {
+    const key = document.getElementById('manual-key-val').innerText;
+    navigator.clipboard.writeText(key).then(() => {
+      const icon = document.getElementById('manual-key-icon');
+      const text = document.getElementById('manual-key-btn-text');
+      if (icon && text) {
+        icon.innerText = 'check';
+        text.innerText = '¡Copiado!';
+        setTimeout(() => {
+          icon.innerText = 'content_copy';
+          text.innerText = 'Copiar';
+        }, 2000);
+      }
+      showToast('Clave manual copiada al portapapeles');
+    }).catch(() => {
+      showToast('Clave: ' + key);
+    });
+  }
+
+  function copyAllCodes() {
+    const fullText = "DENTICORE - CÓDIGOS DE RECUPERACIÓN 2FA\n" +
+      "Usuario: admin@sonrisaandina.pe\n\n" +
+      rawCodes.map((c, idx) => (idx + 1).toString().padStart(2, '0') + '. ' + c).join('\n') +
+      "\n\nCada código se usa una sola vez. No volverás a verlos.";
+
+    navigator.clipboard.writeText(fullText).then(() => {
+      const icon = document.getElementById('copy-codes-icon');
+      const text = document.getElementById('copy-codes-text');
+      if (icon && text) {
+        icon.innerText = 'check';
+        text.innerText = '¡Copiados!';
+        setTimeout(() => {
+          icon.innerText = 'content_copy';
+          text.innerText = 'Copiar';
+        }, 2000);
+      }
+      showToast('10 códigos de recuperación copiados');
+    }).catch(() => {
+      showToast('Códigos copiados');
+    });
+  }
+
+  function downloadCodesFile() {
+    const content = "SISTEMA ODONTOLÓGICO DENTICORE\n" +
+      "CÓDIGOS DE RECUPERACIÓN (2FA)\n" +
+      "=================================\n" +
+      "Usuario: admin@sonrisaandina.pe\n" +
+      "Clínica: Clínica Dental Sonrisa Andina\n\n" +
+      rawCodes.map((code, index) => "[" + (index + 1).toString().padStart(2, '0') + "] " + code).join("\n") +
+      "\n\nCada código se usa una sola vez. No volverás a verlos.";
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'denticore-codigos-recuperacion.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showToast('Archivo de códigos descargado');
+  }
+
+  function toggleFinishButton() {
+    const checkbox = document.getElementById('confirm-saved-checkbox');
+    const finishBtn = document.getElementById('finish-btn');
+    if (!checkbox || !finishBtn) return;
+
+    if (checkbox.checked) {
+      finishBtn.disabled = false;
+      finishBtn.className = "w-full h-11 rounded-lg bg-navy-primary hover:bg-navy-hover text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.99] cursor-pointer";
+    } else {
+      finishBtn.disabled = true;
+      finishBtn.className = "w-full h-11 rounded-lg bg-slate-200 text-slate-400 font-semibold text-sm flex items-center justify-center gap-2 cursor-not-allowed transition-all shadow-none";
+    }
+  }
+
+  function submitFinalRegistration() {
+    const checkbox = document.getElementById('confirm-saved-checkbox');
+    if (!checkbox || !checkbox.checked) return;
+
+    const modal = document.getElementById('success-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function validateAndConfirmOtp() {
+    const inputs = document.querySelectorAll('.otp-input');
+    let otpVal = '';
+    inputs.forEach(inp => otpVal += inp.value.trim());
+
+    if (otpVal.length < 6) {
+      setStep2Error(true);
+      updateDemoTabs(2, true);
+      return;
+    }
+
+    setStep2Error(false);
+    goToStep(3);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const otpInputs = document.querySelectorAll('.otp-input');
+
+    otpInputs.forEach((input, idx) => {
+      input.addEventListener('input', (e) => {
+        setStep2Error(false);
+        const val = e.target.value;
+        if (val.length === 1 && idx < otpInputs.length - 1) {
+          otpInputs[idx + 1].focus();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) {
+          otpInputs[idx - 1].focus();
+        }
+        if (e.key === 'Enter') {
+          validateAndConfirmOtp();
+        }
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').trim();
+        const digits = pasted.replace(/\D/g, '').slice(0, 6);
+        if (digits) {
+          digits.split('').forEach((char, i) => {
+            if (otpInputs[i]) {
+              otpInputs[i].value = char;
+            }
+          });
+          const nextFocus = Math.min(digits.length, otpInputs.length - 1);
+          otpInputs[nextFocus].focus();
+        }
+      });
+    });
+  });
+</script></body></html>

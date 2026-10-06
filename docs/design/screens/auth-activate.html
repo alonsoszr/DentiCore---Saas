@@ -1,0 +1,148 @@
+<!DOCTYPE html><html class="h-full" lang="es" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_blank" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "tertiary-fixed-dim": "#80d5cb", "on-tertiary-fixed": "#00201d", "surface-dim": "#cddbf3", "outline-variant": "#c6c6ce", "surface": "#f8f9ff", "secondary-fixed": "#cde5ff", "background": "#f8f9ff", "on-surface": "#0e1c2e", "secondary": "#006399", "surface-container": "#e6eeff", "on-tertiary-container": "#389189", "tertiary": "#000000", "on-background": "#0e1c2e", "surface-container-highest": "#d5e3fc", "inverse-surface": "#233144", "on-error": "#ffffff", "on-error-container": "#93000a", "on-secondary-fixed-variant": "#004b74", "tertiary-container": "#00201d", "surface-variant": "#d5e3fc", "error-container": "#ffdad6", "on-tertiary": "#ffffff", "error": "#ba1a1a", "inverse-on-surface": "#eaf1ff", "surface-container-high": "#dce9ff", "on-secondary": "#ffffff", "secondary-container": "#7bc2ff", "on-primary-fixed-variant": "#3c4662", "on-primary-fixed": "#101b35", "on-tertiary-fixed-variant": "#00504a", "on-surface-variant": "#45464d", "surface-bright": "#f8f9ff", "on-primary": "#ffffff", "on-primary-container": "#7983a3", "primary-fixed-dim": "#bbc6e8", "primary": "#000000", "surface-container-lowest": "#ffffff", "surface-container-low": "#eff4ff", "surface-tint": "#535e7b", "primary-container": "#101b35", "on-secondary-fixed": "#001d32", "tertiary-fixed": "#9cf2e8", "outline": "#76777e", "primary-fixed": "#dae2ff", "on-secondary-container": "#004f7b", "inverse-primary": "#bbc6e8", "secondary-fixed-dim": "#94ccff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: {}, fontFamily: { "headline": ["Plus Jakarta Sans"], "display": ["Plus Jakarta Sans"], "body": ["Plus Jakarta Sans"], "label": ["Plus Jakarta Sans"] }, fontSize: {} } } }</script></head><body class="min-h-full bg-background font-body text-on-surface antialiased selection:bg-secondary-container selection:text-on-secondary-container"><main class="min-h-screen w-full"><div class="flex flex-col w-full min-h-screen">
+<!-- Interactive View Switcher Bar (Discreet / Top Prototype Controls) -->
+<div class="w-full bg-surface-container px-4 py-2 flex items-center justify-between shadow-sm z-30">
+<div class="flex items-center space-x-2 text-on-surface-variant text-xs font-medium">
+<span class="material-symbols-outlined text-sm text-secondary">tune</span>
+<span class="tracking-tight uppercase font-semibold text-[10px]">Vista de Prueba:</span>
+</div>
+<div class="flex items-center space-x-1.5 bg-surface-container-lowest p-1 rounded-lg shadow-sm">
+<button class="px-2.5 py-1 text-xs rounded font-medium transition-colors bg-primary-container text-on-primary shadow-sm" id="btnViewDoctor" onclick="setViewMode('doctor')" type="button">
+        Odontólogo
+      </button>
+<button class="px-2.5 py-1 text-xs rounded font-medium transition-colors text-on-surface-variant hover:bg-surface-container" id="btnViewAdmin" onclick="setViewMode('admin')" type="button">
+        Administrador
+      </button>
+<button class="px-2.5 py-1 text-xs rounded font-medium transition-colors text-on-surface-variant hover:bg-surface-container" id="btnViewExpired" onclick="setViewMode('expired')" type="button">Invitación inválida</button>
+</div>
+</div>
+<!-- Main Split 50/50 Architecture -->
+<div class="w-full flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0"><div class="w-full bg-surface-container-lowest flex flex-col justify-between p-6 sm:p-10 lg:p-14 xl:p-16"><div class="max-w-xl w-full mx-auto flex flex-col my-auto"><div class="w-full mb-6 sm:mb-8"><div class="flex items-center gap-2.5 mb-7"><div class="w-8 h-8 rounded-lg bg-[#0F1A34] flex items-center justify-center text-white shadow-sm"><svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C7 2 4 5 4 10c0 4 2.5 9 5 12 1.2-1.5 2-4 3-4s1.8 2.5 3 4c2.5-3 5-8 5-12 0-5-3-8-8-8z"></path></svg></div><div class="flex items-baseline gap-1.5"><span class="text-lg font-bold tracking-tight text-[#0F1A34]">DentiCore</span></div></div><div class="pb-6 border-b border-[#E2E8F0]"><div class="flex items-center gap-3.5"><div class="w-12 h-12 rounded-full bg-[#E5EEFF] border border-[#BBC6E8] flex items-center justify-center shrink-0 shadow-sm text-[#0F1A34]"><svg class="w-6 h-6 text-[#0F1A34]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9" stroke="#0369A1" stroke-width="1.25"></circle><path d="M7 14c1.5 2 3.5 3 5 3s3.5-1 5-3" stroke-linecap="round"></path><path d="M8 9h.01M16 9h.01" stroke-width="2.5" stroke-linecap="round"></path><path d="M12 4l3 5H9l3-5z" fill="#0F1A34" stroke="none" opacity="0.3"></path></svg></div><div><h2 class="text-base font-bold text-[#0F1A34] tracking-tight leading-snug">Clínica Dental Sonrisa Andina</h2></div></div></div></div><div class="flex flex-col" id="activeStatePanel"><div class="space-y-1.5 mb-6"><h1 class="text-2xl sm:text-3xl font-bold font-headline text-on-surface tracking-tight leading-tight">Te invitaron a Clínica Dental Sonrisa Andina</h1><p class="text-sm text-on-surface-variant font-normal">Completa tus datos de acceso para ingresar a la clínica.</p></div><div class="w-full bg-surface-container-low rounded-xl p-4 mb-6 shadow-sm"><div class="flex items-center justify-between"><div class="space-y-0.5"><p class="text-sm font-semibold text-on-surface" id="userNameDisplay">Luis Paredes Rojas</p><p class="text-xs font-mono text-on-surface-variant" id="userEmailDisplay">l.paredes@sonrisaandina.pe</p></div><div id="roleBadgeContainer"><span class="items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#EFF6FF] text-[#1D4ED8] inline-flex" id="roleBadgeDoctor">Odontólogo</span><span class="items-center px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container-highest text-primary-container hidden" id="roleBadgeAdmin">Administrador de Clínica</span></div></div></div><form class="space-y-5" id="activationForm" onsubmit="handleActivation(event)"><div class="space-y-1.5"><label class="block text-sm font-medium text-[#334155]" for="passwordInput">Crea tu contraseña</label><div class="relative"><input class="w-full h-12 px-3.5 pr-11 bg-white text-on-surface text-sm rounded-lg shadow-sm placeholder:text-outline focus:outline-none transition-all" id="passwordInput" oninput="validatePasswordRules()" placeholder="Ingresa al menos 10 caracteres" required="" style="border: 1px solid #7C8AA0;" type="password"><button aria-label="Mostrar u ocultar contraseña" class="absolute inset-y-0 right-0 px-3.5 flex items-center text-outline hover:text-on-surface focus:outline-none" onclick="togglePasswordVisibility('passwordInput', 'toggleEyeIcon1')" type="button"><span class="material-symbols-outlined text-lg" id="toggleEyeIcon1">visibility</span></button></div></div><div class="bg-surface-container-low rounded-xl p-3.5 space-y-2.5"><div class="flex items-center justify-between"><span class="text-xs font-semibold text-on-surface">Requisitos</span><span class="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant" id="reqCounter">0/3</span></div><ul class="space-y-1.5 text-xs text-on-surface-variant"><li class="flex items-center space-x-2 transition-colors" id="reqLen"><span class="material-symbols-outlined text-sm text-outline" id="iconLen">close</span><span class="">Entre 10 y 128 caracteres</span></li><li class="flex items-center space-x-2 transition-colors" id="reqCommon"><span class="material-symbols-outlined text-sm text-outline" id="iconCommon">close</span><span class="">No es una contraseña común</span></li><li class="flex items-center space-x-2 transition-colors" id="reqEmailName"><span class="material-symbols-outlined text-sm text-outline" id="iconEmailName">close</span><span class="">No contiene tu correo ni tu nombre</span></li></ul></div><div class="space-y-1.5"><label class="block text-sm font-medium text-[#334155]" for="confirmPasswordInput">Confirmar contraseña</label><div class="relative"><input class="w-full h-12 px-3.5 pr-11 bg-white text-on-surface text-sm rounded-lg shadow-sm placeholder:text-outline focus:outline-none transition-all" id="confirmPasswordInput" placeholder="Repite tu contraseña" required="" style="border: 1px solid #7C8AA0;" type="password"><button aria-label="Mostrar u ocultar contraseña" class="absolute inset-y-0 right-0 px-3.5 flex items-center text-outline hover:text-on-surface focus:outline-none" onclick="togglePasswordVisibility('confirmPasswordInput', 'toggleEyeIcon2')" type="button"><span class="material-symbols-outlined text-lg" id="toggleEyeIcon2">visibility</span></button></div></div><div class="flex items-start space-x-3 pt-1"><input class="mt-1 w-4 h-4 rounded text-secondary focus:ring-0 cursor-pointer accent-[#006399]" id="termsCheck" required="" type="checkbox"><label class="text-xs text-on-surface-variant leading-relaxed cursor-pointer select-none" for="termsCheck">Acepto los <a class="text-on-surface font-semibold underline underline-offset-2 hover:text-secondary" href="#">términos de uso</a> y la <a class="text-on-surface font-semibold underline underline-offset-2 hover:text-secondary" href="#">política de privacidad</a></label></div><button class="w-full h-12 bg-primary-container hover:opacity-95 text-on-primary text-sm font-semibold rounded-lg shadow-md transition-all flex items-center justify-center space-x-2" type="submit"><span class="">Activar cuenta</span><span class="material-symbols-outlined text-sm">arrow_forward</span></button><div class="hidden p-3 rounded-lg bg-surface-container-high text-xs text-on-surface flex items-center space-x-2" id="admin2FANote"><span class="material-symbols-outlined text-sm text-secondary">security</span><span class="">En el siguiente paso configurarás la verificación en dos pasos.</span></div></form></div><div class="flex-col items-center text-center py-6 hidden" id="expiredStatePanel"><div class="w-16 h-16 rounded-full bg-error-container text-error flex items-center justify-center mb-5"><span class="material-symbols-outlined text-3xl">schedule</span></div><h2 class="text-2xl font-bold font-headline text-on-surface tracking-tight mb-3">Esta invitación ya no es válida</h2><p class="text-sm text-on-surface-variant max-w-md mb-6 leading-relaxed">Las invitaciones vencen a las 72 horas y se usan una sola vez. Pide al administrador de tu clínica que te envíe una nueva.</p><a class="inline-flex items-center space-x-1.5 text-xs font-semibold text-secondary hover:underline" href="/c/sonrisa-andina/login"><span class="material-symbols-outlined text-sm">arrow_back</span><span class="">Ir al inicio de sesión</span></a></div><div class="mt-8 text-center"><a class="inline-flex items-center space-x-1.5 text-xs font-semibold text-secondary hover:underline" href="/c/sonrisa-andina/login"><span class="material-symbols-outlined text-sm">arrow_back</span><span class="">Volver al inicio de sesión</span></a></div></div></div><div class="hidden lg:flex w-full h-full bg-[#0F1A34] text-white flex-col justify-between p-12 xl:p-16 relative overflow-hidden"><div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-secondary opacity-10 filter blur-3xl pointer-events-none"></div><div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-secondary opacity-15 filter blur-3xl pointer-events-none"></div><div class="relative z-10"><div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium text-white/90"><span class="material-symbols-outlined text-sm text-[#7bc2ff]">domain</span><span class="">Clínica Dental Sonrisa Andina</span></div></div><div class="relative z-10 max-w-lg space-y-4 my-auto py-12"><h2 class="text-3xl xl:text-4xl font-headline font-bold text-white tracking-tight leading-snug">Historia clínica, odontograma y agenda en un solo lugar</h2><p class="text-base text-[#CBD5E1] font-normal leading-relaxed">Gestión odontológica digital para clínicas del Perú.</p></div><div class="relative z-10 grid grid-cols-1 gap-3.5 pt-4 mt-auto"><div class="p-4 rounded-xl bg-white/5 backdrop-blur-sm shadow-sm transition-all hover:bg-white/[0.08]"><div class="flex items-start space-x-3.5"><div class="p-2 rounded-lg bg-white/10 text-white shrink-0 mt-0.5"><span class="material-symbols-outlined text-base">dentistry</span></div><div class="space-y-0.5"><h3 class="text-xs font-semibold text-white tracking-wide">Odontograma según NTS N° 188</h3><p class="text-xs text-[#CBD5E1] leading-relaxed">Registro en azul y rojo con las siglas oficiales y numeración FDI.</p></div></div></div><div class="p-4 rounded-xl bg-white/5 backdrop-blur-sm shadow-sm transition-all hover:bg-white/[0.08]"><div class="flex items-start space-x-3.5"><div class="p-2 rounded-lg bg-white/10 text-white shrink-0 mt-0.5"><span class="material-symbols-outlined text-base">lock</span></div><div class="space-y-0.5"><h3 class="text-xs font-semibold text-white tracking-wide">Datos aislados por clínica</h3><p class="text-xs text-[#CBD5E1] leading-relaxed">Cada clínica accede solo a su información, con cifrado de datos sensibles y registro de auditoría.</p></div></div></div><div class="p-4 rounded-xl bg-white/5 backdrop-blur-sm shadow-sm transition-all hover:bg-white/[0.08]"><div class="flex items-start space-x-3.5"><div class="p-2 rounded-lg bg-white/10 text-white shrink-0 mt-0.5"><span class="material-symbols-outlined text-base">verified_user</span></div><div class="space-y-0.5"><h3 class="text-xs font-semibold text-white tracking-wide">Verificación en dos pasos</h3><p class="text-xs text-[#CBD5E1] leading-relaxed">Protección adicional con código de 6 dígitos para las cuentas que lo requieren.</p></div></div></div></div></div></div>
+</div>
+<script>
+  // Prototype View Switcher Behavior
+  function setViewMode(mode) {
+    const activePanel = document.getElementById('activeStatePanel');
+    const expiredPanel = document.getElementById('expiredStatePanel');
+    const roleDoctor = document.getElementById('roleBadgeDoctor');
+    const roleAdmin = document.getElementById('roleBadgeAdmin');
+    const adminNote = document.getElementById('admin2FANote');
+
+    const btnDoctor = document.getElementById('btnViewDoctor');
+    const btnAdmin = document.getElementById('btnViewAdmin');
+    const btnExpired = document.getElementById('btnViewExpired');
+
+    // Reset button states
+    [btnDoctor, btnAdmin, btnExpired].forEach(b => {
+      b.className = 'px-2.5 py-1 text-xs rounded font-medium transition-colors text-on-surface-variant hover:bg-surface-container';
+    });
+
+    if (mode === 'doctor') {
+      btnDoctor.className = 'px-2.5 py-1 text-xs rounded font-medium transition-colors bg-primary-container text-on-primary shadow-sm';
+      activePanel.classList.remove('hidden');
+      expiredPanel.classList.add('hidden');
+      roleDoctor.classList.remove('hidden');
+      roleDoctor.classList.add('inline-flex');
+      roleAdmin.classList.add('hidden');
+      roleAdmin.classList.remove('inline-flex');
+      adminNote.classList.add('hidden');
+    } else if (mode === 'admin') {
+      btnAdmin.className = 'px-2.5 py-1 text-xs rounded font-medium transition-colors bg-primary-container text-on-primary shadow-sm';
+      activePanel.classList.remove('hidden');
+      expiredPanel.classList.add('hidden');
+      roleDoctor.classList.add('hidden');
+      roleDoctor.classList.remove('inline-flex');
+      roleAdmin.classList.remove('hidden');
+      roleAdmin.classList.add('inline-flex');
+      adminNote.classList.remove('hidden');
+    } else if (mode === 'expired') {
+      btnExpired.className = 'px-2.5 py-1 text-xs rounded font-medium transition-colors bg-primary-container text-on-primary shadow-sm';
+      activePanel.classList.add('hidden');
+      expiredPanel.classList.remove('hidden');
+      expiredPanel.classList.add('flex');
+    }
+  }
+
+  // Password Visibility Toggle
+  function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!input || !icon) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.textContent = 'visibility_off';
+    } else {
+      input.type = 'password';
+      icon.textContent = 'visibility';
+    }
+  }
+
+  // Real-time Password Rules Evaluator
+  function validatePasswordRules() {
+    const pwd = document.getElementById('passwordInput').value || '';
+    const counterDisplay = document.getElementById('reqCounter');
+
+    const commonPasswords = ['12345678', 'password', 'admin123', 'sonrisa2024', 'odontologo', 'clinica123'];
+    const forbiddenSubstrings = ['luis', 'paredes', 'rojas', 'l.paredes'];
+
+    // Rule 1: Length 10-128
+    const isLenValid = pwd.length >= 10 && pwd.length <= 128;
+    // Rule 2: Not common
+    const isNotCommon = pwd.length > 0 && !commonPasswords.includes(pwd.toLowerCase());
+    // Rule 3: No personal email/name fragments
+    const lower = pwd.toLowerCase();
+    const hasPersonal = forbiddenSubstrings.some(sub => lower.includes(sub));
+    const isPersonalValid = pwd.length > 0 && !hasPersonal;
+    // Rule 4: Not in last 5 passwords (simulated as valid if length >= 10 and passed other checks)
+    const isHistoryValid = pwd.length >= 10;
+
+    let passedCount = 0;
+    if (isLenValid) passedCount++;
+    if (isNotCommon) passedCount++;
+    if (isPersonalValid) passedCount++;
+    if (isHistoryValid) passedCount++;
+
+    counterDisplay.textContent = passedCount + '/4';
+
+    updateRuleItem('reqLen', 'iconLen', isLenValid);
+    updateRuleItem('reqCommon', 'iconCommon', isNotCommon);
+    updateRuleItem('reqEmailName', 'iconEmailName', isPersonalValid);
+    updateRuleItem('reqHistory', 'iconHistory', isHistoryValid);
+  }
+
+  function updateRuleItem(itemId, iconId, isValid) {
+    const item = document.getElementById(itemId);
+    const icon = document.getElementById(iconId);
+    if (!item || !icon) return;
+
+    if (isValid) {
+      item.classList.remove('text-on-surface-variant');
+      item.classList.add('text-[#0F766E]', 'font-medium');
+      icon.textContent = 'check';
+      icon.classList.remove('text-outline');
+      icon.classList.add('text-[#0F766E]');
+    } else {
+      item.classList.remove('text-[#0F766E]', 'font-medium');
+      item.classList.add('text-on-surface-variant');
+      icon.textContent = 'close';
+      icon.classList.remove('text-[#0F766E]');
+      icon.classList.add('text-outline');
+    }
+  }
+
+  function handleActivation(event) {
+    event.preventDefault();
+    const pwd = document.getElementById('passwordInput').value;
+    const confirm = document.getElementById('confirmPasswordInput').value;
+
+    if (pwd !== confirm) {
+      alert('Las contraseñas no coinciden. Por favor verifícalas.');
+      return;
+    }
+    // Simulation redirect on active click
+    window.location.href = '/c/sonrisa-andina/login';
+  }
+</script></main>
+
+</body></html>
