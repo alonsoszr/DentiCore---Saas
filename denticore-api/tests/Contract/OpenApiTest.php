@@ -14,6 +14,7 @@ use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
@@ -185,6 +186,29 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->patchJson('/api/v1/clinic/settings', ['budget_validity_days' => 0]), 'PATCH', '/clinic/settings');
     $check($this->actingWithToken($admin)->post('/api/v1/clinic/logo', ['logo' => UploadedFile::fake()->image('logo.png')], ['Accept' => 'application/json']), 'POST', '/clinic/logo');
     $check($this->actingWithToken($admin)->postJson('/api/v1/clinic/logo', []), 'POST', '/clinic/logo');
+
+    // Atenciones (el adulto ya tiene consentimiento; el menor sin representante no).
+    $dentist = User::factory()->for($tenant)->create(['role' => 'dentist', 'cop_number' => '54321']);
+    $attentions = "/api/v1/patients/{$adult->uuid}/attentions";
+    $opened = $this->actingWithToken($dentist)->postJson($attentions, [], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($opened, 'POST', '/patients/{patient}/attentions');
+    $check($this->actingWithToken($dentist)->postJson($attentions, [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/attentions');
+    $check($this->actingWithToken($dentist)->postJson("/api/v1/patients/{$unrepresentedMinor->uuid}/attentions", [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/attentions');
+    $check($this->actingWithToken($admin)->getJson($attentions), 'GET', '/patients/{patient}/attentions');
+    $attentionId = $opened->json('data.id');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/attentions/{$attentionId}"), 'GET', '/attentions/{attention}');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/attentions/'.fake()->uuid()), 'GET', '/attentions/{attention}');
+    $close = fn () => $this->actingWithToken($dentist)->postJson("/api/v1/attentions/{$attentionId}/close", [], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($close(), 'POST', '/attentions/{attention}/close');
+    TenantContext::run($tenant, function () use ($attentionId, $tenant, $dentist) {
+        $id = DB::table('attentions')->where('uuid', $attentionId)->value('id');
+        DB::table('clinical_notes')->insert(['tenant_id' => $tenant->id, 'attention_id' => $id, 'chief_complaint' => 'Dolor al masticar']);
+        DB::table('attention_diagnoses')->insert([
+            'tenant_id' => $tenant->id, 'attention_id' => $id, 'cie10_code' => 'K02.1', 'type' => 'definitivo', 'origin' => 'nota', 'created_by' => $dentist->id,
+        ]);
+    });
+    $check($close(), 'POST', '/attentions/{attention}/close');
+    $check($close(), 'POST', '/attentions/{attention}/close');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

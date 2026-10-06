@@ -3,6 +3,7 @@
 use App\Modules\Patients\Http\Middleware\EnsurePatientConsent;
 use App\Support\Http\CorrelationId;
 use App\Support\Http\EnforceTokenFreshness;
+use App\Support\Http\EnsureDentistLicense;
 use App\Support\Http\EnsureRole;
 use App\Support\Http\EnsureTwoFactorPassed;
 use App\Support\Http\HandleIdempotencyKey;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Support/Http/Commands',
         __DIR__.'/../app/Support/Evidence/Commands',
         __DIR__.'/../app/Modules/Patients/Console',
+        __DIR__.'/../app/Modules/Odontogram/Console',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Alias de SDD §4.2.
@@ -52,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.exportable' => AllowCancelledExport::class,
             'plan.feature' => EnsurePlanFeature::class,
             'consent' => EnsurePatientConsent::class,
+            'cop' => EnsureDentistLicense::class,
             'token.fresh' => EnforceTokenFreshness::class,
             '2fa' => EnsureTwoFactorPassed::class,
             'ability' => CheckForAnyAbility::class,

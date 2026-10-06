@@ -59,6 +59,12 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/representatives', 'cus' => 'CUS-16', 'denied' => ['super_admin', 'dentist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/representatives/{representative}/end', 'cus' => 'CUS-16', 'denied' => ['super_admin', 'dentist', 'patient']],
 
+    // M04 (SDD §3.4, §4.3.4). Recepción abre atenciones solo mediante el check-in (CUS-50).
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/attentions', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/attentions', 'cus' => 'CUS-25', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/attentions/{attention}', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/close', 'cus' => 'CUS-26', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],
 ];

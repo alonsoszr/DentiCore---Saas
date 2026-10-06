@@ -10,6 +10,332 @@
         }
     ],
     "paths": {
+        "/patients/{patient}/attentions": {
+            "get": {
+                "operationId": "attention.index",
+                "summary": "CUS-21 (RF-076): atenciones del paciente, de la m\u00e1s reciente a la m\u00e1s antigua",
+                "tags": [
+                    "Attention"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `AttentionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AttentionResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "attention.store",
+                "summary": "CUS-25 (RF-082): abre la atenci\u00f3n del odont\u00f3logo autenticado. Sin consentimiento vigente\nse abre igual, con `consent_warning` (RN-10, RN-15): los registros cl\u00ednicos quedan\nbloqueados hasta que se otorgue",
+                "tags": [
+                    "Attention"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "`AttentionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AttentionResource"
+                                        },
+                                        "consent_warning": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "rule": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "RN-10",
+                                                        "RN-15"
+                                                    ]
+                                                },
+                                                "detail": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "rule",
+                                                "detail"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "consent_warning"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos no v\u00e1lidos",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/attentions/{attention}": {
+            "get": {
+                "operationId": "attention.show",
+                "tags": [
+                    "Attention"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`AttentionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AttentionResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/attentions/{attention}/close": {
+            "post": {
+                "operationId": "attention.close",
+                "summary": "CUS-26 (RF-094): cierra y firma la atenci\u00f3n; solo el odont\u00f3logo a cargo",
+                "tags": [
+                    "Attention"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`AttentionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AttentionResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos no v\u00e1lidos",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
@@ -4069,6 +4395,117 @@
     },
     "components": {
         "schemas": {
+            "AttentionResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "patient_id": {
+                        "type": "string"
+                    },
+                    "dentist": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "cop": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "cop"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "abierta",
+                            "cerrada",
+                            "cerrada_incompleta"
+                        ]
+                    },
+                    "is_first_attention": {
+                        "type": "boolean"
+                    },
+                    "opened_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "clinical_started_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "closed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "closed_by_system": {
+                        "type": "boolean"
+                    },
+                    "signer": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "cop": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "cop"
+                        ]
+                    },
+                    "signed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "patient_id",
+                    "dentist",
+                    "status",
+                    "is_first_attention",
+                    "opened_at",
+                    "clinical_started_at",
+                    "closed_at",
+                    "closed_by_system",
+                    "signer",
+                    "signed_at"
+                ],
+                "title": "AttentionResource"
+            },
             "BusinessRuleException": {
                 "type": "object",
                 "properties": {
