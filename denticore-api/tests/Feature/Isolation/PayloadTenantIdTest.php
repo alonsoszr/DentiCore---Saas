@@ -17,11 +17,14 @@ it('ignores a tenant_id injected in any write payload', function () {
 
     $this->actingWithToken($admin)->postJson('/api/v1/patients', [
         'tenant_id' => $other->id,
-        'document_id' => '70000001',
+        'document_type' => 'dni',
+        'document_number' => '70000001',
         'first_name' => 'Ana',
         'last_name' => 'Quispe',
         'birth_date' => '1990-01-01',
-    ])->assertCreated();
+        'sex' => 'femenino',
+        'phone' => '987654321',
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
 
     $this->actingWithToken($admin)->postJson('/api/v1/users', [
         'tenant_id' => $other->id,

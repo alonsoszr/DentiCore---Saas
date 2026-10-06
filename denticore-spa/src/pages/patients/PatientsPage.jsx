@@ -56,7 +56,7 @@ export function PatientsPage() {
                       <td>
                         {patient.last_name}, {patient.first_name}
                       </td>
-                      <td>{patient.document_id}</td>
+                      <td>{patient.document_number}</td>
                       <td className="muted">{formatCivilDate(patient.birth_date)}</td>
                       <td className="muted">{patient.phone ?? '—'}</td>
                       <td style={{ textAlign: 'right' }}>

@@ -57,10 +57,9 @@ it('writes one audit row for each auditable event type without clinical values',
 
     // patient.created y clinical_record.viewed
     $patientUuid = $this->actingWithToken($admin)->postJson('/api/v1/patients', [
-        'document_id' => '45678912', 'first_name' => 'Rosa', 'last_name' => 'Quispe',
-        'birth_date' => '1990-05-10', 'phone' => '987654321', 'email' => 'rosa@correo.test',
-        'medical_history' => ['alergias' => ['Penicilina']],
-    ])->assertCreated()->json('data.id');
+        'document_type' => 'dni', 'document_number' => '45678912', 'first_name' => 'Rosa', 'last_name' => 'Quispe',
+        'birth_date' => '1990-05-10', 'sex' => 'femenino', 'phone' => '987654321', 'email' => 'rosa@correo.test',
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated()->json('data.id');
     $this->actingWithToken($admin)->getJson("/api/v1/patients/{$patientUuid}")->assertOk();
 
     $rows = AuditLog::query()->orderBy('id')->get();

@@ -13,7 +13,9 @@ describe('PatientDetailPage', () => {
           id: 'p-1',
           first_name: 'Ana',
           last_name: 'Núñez',
-          document_id: '40000001',
+          document_type: 'dni',
+          document_number: '40000001',
+          clinical_record_number: '40000001',
           birth_date: '1990-01-31',
           phone: '999888777',
           email: null,
@@ -25,7 +27,7 @@ describe('PatientDetailPage', () => {
     renderPage(<PatientDetailPage />, { user: makeUser('dentist'), ...ROUTE })
 
     expect(await screen.findByRole('heading', { name: 'Ana Núñez' })).toBeInTheDocument()
-    expect(screen.getByText('40000001')).toBeInTheDocument()
+    expect(screen.getByText('DNI 40000001')).toBeInTheDocument()
     expect(screen.getByText('Penicilina')).toBeInTheDocument()
     expect(screen.getAllByText('Ninguna registrada')).toHaveLength(2)
     expect(screen.getByText('Vinculada')).toBeInTheDocument()
@@ -39,7 +41,9 @@ describe('PatientDetailPage', () => {
           id: 'p-1',
           first_name: 'Ana',
           last_name: 'Núñez',
-          document_id: '1',
+          document_type: 'dni',
+          document_number: '1',
+          clinical_record_number: '1',
           birth_date: '1990-01-31',
           phone: null,
           email: null,

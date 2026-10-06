@@ -1,6 +1,9 @@
 import { generalError } from '../../api/errors'
 import { ageFrom, formatCivilDate } from '../../ui/format'
 
+const DOCUMENT_LABELS = { dni: 'DNI', ce: 'CE', pasaporte: 'Pasaporte', cpp: 'CPP' }
+const SEX_LABELS = { femenino: 'Femenino', masculino: 'Masculino' }
+
 const HISTORY_LISTS = [
   ['alergias', 'Alergias'],
   ['enfermedades', 'Enfermedades'],
@@ -26,7 +29,17 @@ export function PatientRecord({ query }) {
         <dl className="details">
           <div>
             <dt>Documento de identidad</dt>
-            <dd>{patient.document_id}</dd>
+            <dd>
+              {DOCUMENT_LABELS[patient.document_type] ?? patient.document_type} {patient.document_number}
+            </dd>
+          </div>
+          <div>
+            <dt>Historia clínica</dt>
+            <dd>{patient.clinical_record_number}</dd>
+          </div>
+          <div>
+            <dt>Sexo</dt>
+            <dd>{SEX_LABELS[patient.sex] ?? '—'}</dd>
           </div>
           <div>
             <dt>Fecha de nacimiento</dt>
@@ -41,6 +54,10 @@ export function PatientRecord({ query }) {
           <div>
             <dt>Correo electrónico</dt>
             <dd>{patient.email ?? '—'}</dd>
+          </div>
+          <div>
+            <dt>Dirección</dt>
+            <dd>{patient.address ?? '—'}</dd>
           </div>
           <div>
             <dt>Cuenta de portal</dt>

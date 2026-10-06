@@ -1,6 +1,13 @@
 // Archivo generado por scripts/gen-api.mjs desde denticore-api/openapi.json. No editar a mano.
 import { z } from 'zod'
 
+export const businessRuleExceptionSchema = z.object({
+  rule: z.string(),
+  errors: z.record(z.string(), z.array(z.string())),
+  status: z.number().int(),
+  extensions: z.record(z.string(), z.union([z.string(), z.null()])),
+})
+
 export const clinicSettingsResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -44,12 +51,20 @@ export const loginRequestSchema = z
 
 export const patientResourceSchema = z.object({
   id: z.string(),
-  document_id: z.union([z.string(), z.null()]),
+  document_type: z.union([z.string(), z.null()]),
+  document_number: z.union([z.string(), z.null()]),
+  clinical_record_number: z.union([z.string(), z.null()]),
   first_name: z.string(),
   last_name: z.string(),
   birth_date: z.string(),
+  age_years: z.number().int(),
+  is_minor: z.boolean(),
+  sex: z.union([z.string(), z.null()]),
   phone: z.union([z.string(), z.null()]),
   email: z.union([z.string(), z.null()]),
+  address: z.union([z.string(), z.null()]),
+  archive_status: z.string(),
+  has_current_consent: z.boolean().describe('El consentimiento vigente se calcula con TASK-036 (CUS-17).'),
   medical_history: z.union([
     z.object({
       alergias: z.array(z.string()),
@@ -75,25 +90,20 @@ export const problemDetailsSchema = z.object({
 
 export const storePatientRequestSchema = z
   .object({
-    document_id: z.string().max(20),
-    first_name: z.string().max(100),
-    last_name: z.string().max(100),
+    document_type: z.enum(['dni', 'ce', 'pasaporte', 'cpp']),
+    document_number: z.string(),
+    first_name: z.string().min(1).max(100),
+    last_name: z.string().min(1).max(100),
     birth_date: z.string().date().describe('Fecha civil (SDD §2.1): AAAA-MM-DD.'),
-    phone: z.union([z.string().max(20), z.null()]).optional(),
+    sex: z.enum(['femenino', 'masculino']),
+    phone: z.string().regex(new RegExp('^(9\\d{8}|\\+[1-9]\\d{7,14})$')),
     email: z.union([z.string().email().max(180), z.null()]).optional(),
-    medical_history: z
-      .object({
-        alergias: z.array(z.union([z.string().max(150), z.null()])),
-        enfermedades: z.array(z.union([z.string().max(150), z.null()])),
-        medicamentos: z.array(z.union([z.string().max(150), z.null()])),
-        observaciones: z.union([z.string().max(2000), z.null()]),
-      })
-      .describe('Estructura de SDD §2.14.1.')
-      .optional(),
+    address: z.union([z.string().min(5).max(200), z.null()]).optional(),
+    representative: z.union([z.array(z.string()), z.null()]).optional(),
     user_uuid: z.union([z.string().uuid(), z.null()]).optional(),
   })
   .describe(
-    'Alta de paciente (CUS-14, contrato heredado). Los límites de longitud se aplican sobre el valor en\nclaro (las columnas cifradas son `text`). La unicidad del DNI y la validez de\nuser_uuid se comprueban en PatientService (requieren el índice ciego y el tenant).',
+    'Alta de paciente (CUS-14; contrato de SDD §4.5 y datos de SRS §11.3). La fecha de nacimiento no\npuede ser posterior a hoy ni dar más de 120 años (fecha de la clínica). Un menor de 18 años\ndebe traer su representante legal (RN-12, CA-14.4). La unicidad del documento la comprueba\nPatientService con el índice ciego. `user_uuid` es heredado y se retira en TASK-038 (S-14).',
   )
 
 export const storeTenantRequestSchema = z
@@ -191,6 +201,22 @@ export const updateClinicSettingsRequestSchema = z
   })
   .describe(
     'Parámetros de la clínica (CUS-04): los límites son los CHECK de `clinic_settings` (SDD §2.3;\nRN-31, RN-35, RN-49) y de RF-024. `ai_enabled` (RF-027) se acepta desde MS-12 y\n`complaints_book_url` (RNF-164) desde MS-13.',
+  )
+
+export const updatePatientRequestSchema = z
+  .object({
+    document_type: z.enum(['dni', 'ce', 'pasaporte', 'cpp']).optional(),
+    document_number: z.string().optional(),
+    first_name: z.string().min(1).max(100).optional(),
+    last_name: z.string().min(1).max(100).optional(),
+    birth_date: z.string().date().optional(),
+    sex: z.enum(['femenino', 'masculino']).optional(),
+    phone: z.string().regex(new RegExp('^(9\\d{8}|\\+[1-9]\\d{7,14})$')).optional(),
+    email: z.union([z.string().email().max(180), z.null()]).optional(),
+    address: z.union([z.string().min(5).max(200), z.null()]).optional(),
+  })
+  .describe(
+    'Actualización de la identificación y el contacto del paciente (CUS-15; RF-062, SRS §11.3). El\nnúmero de historia clínica no cambia (RN-79). El tipo y el número de documento van juntos.',
   )
 
 export const updateTenantRequestSchema = z
