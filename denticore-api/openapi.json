@@ -3752,6 +3752,239 @@
                 }
             }
         },
+        "/procedures": {
+            "get": {
+                "operationId": "procedureCatalog.index",
+                "summary": "RF-107: el cat\u00e1logo completo, activos e inactivos, por categor\u00eda y nombre",
+                "tags": [
+                    "ProcedureCatalog"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ProcedureResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ProcedureResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "procedureCatalog.store",
+                "tags": [
+                    "ProcedureCatalog"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProcedureRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ProcedureResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProcedureResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/procedures/{procedure}": {
+            "patch": {
+                "operationId": "procedureCatalog.update",
+                "tags": [
+                    "ProcedureCatalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "procedure",
+                        "in": "path",
+                        "required": true,
+                        "description": "The procedure UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProcedureRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ProcedureResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProcedureResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "procedureCatalog.destroy",
+                "summary": "RF-109: solo un procedimiento sin uso se elimina; el usado se desactiva con PATCH",
+                "tags": [
+                    "ProcedureCatalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "procedure",
+                        "in": "path",
+                        "required": true,
+                        "description": "The procedure UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "El procedimiento se us\u00f3 en planes o presupuestos: solo puede desactivarse (RF-109)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/public/clinics/{slug}": {
             "get": {
                 "operationId": "publicClinic.show",
@@ -4815,6 +5048,16 @@
                     },
                     "429": {
                         "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "La pieza no existe en el Sistema D\u00edgito Dos (RN-16)",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -6717,6 +6960,173 @@
                     "instance"
                 ],
                 "title": "ProblemDetails"
+            },
+            "ProcedureRequest": {
+                "type": "object",
+                "description": "Alta y edici\u00f3n de un procedimiento del cat\u00e1logo (CUS-32; RF-107, RN-26, RN-39, RN-76). En la\nedici\u00f3n los campos son opcionales; las reglas que combinan campos usan el valor nuevo o, si no\nllega, el guardado.",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 30
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 60
+                    },
+                    "price": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 99999.99
+                    },
+                    "requires_tooth": {
+                        "type": "boolean"
+                    },
+                    "requires_surface": {
+                        "type": "boolean"
+                    },
+                    "requires_informed_consent": {
+                        "type": "boolean"
+                    },
+                    "resulting_finding_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "resulting_state_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "name",
+                    "price",
+                    "requires_tooth",
+                    "requires_surface"
+                ],
+                "title": "ProcedureRequest"
+            },
+            "ProcedureResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "price": {
+                        "type": "string"
+                    },
+                    "requires_tooth": {
+                        "type": "boolean"
+                    },
+                    "requires_surface": {
+                        "type": "boolean"
+                    },
+                    "requires_informed_consent": {
+                        "type": "boolean"
+                    },
+                    "resulting_finding": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "acronym": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "code",
+                            "name",
+                            "acronym"
+                        ]
+                    },
+                    "resulting_state": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "color": {
+                                "type": "string",
+                                "enum": [
+                                    "azul",
+                                    "rojo"
+                                ]
+                            },
+                            "acronym": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "code",
+                            "name",
+                            "color",
+                            "acronym"
+                        ]
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "category",
+                    "price",
+                    "requires_tooth",
+                    "requires_surface",
+                    "requires_informed_consent",
+                    "resulting_finding",
+                    "resulting_state",
+                    "is_active"
+                ],
+                "title": "ProcedureResource"
             },
             "StorePatientRequest": {
                 "type": "object",

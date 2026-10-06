@@ -252,6 +252,48 @@ export const problemDetailsSchema = z.object({
   errors: z.record(z.string(), z.array(z.string())).optional(),
 })
 
+export const procedureRequestSchema = z
+  .object({
+    code: z.string().max(30),
+    name: z.string().max(150),
+    category: z.union([z.string().max(60), z.null()]).optional(),
+    price: z.number().gte(0).lte(99999.99),
+    requires_tooth: z.boolean(),
+    requires_surface: z.boolean(),
+    requires_informed_consent: z.boolean().optional(),
+    resulting_finding_code: z.union([z.string().max(20), z.null()]).optional(),
+    resulting_state_code: z.union([z.string().max(20), z.null()]).optional(),
+    is_active: z.boolean().optional(),
+  })
+  .describe(
+    'Alta y edición de un procedimiento del catálogo (CUS-32; RF-107, RN-26, RN-39, RN-76). En la\nedición los campos son opcionales; las reglas que combinan campos usan el valor nuevo o, si no\nllega, el guardado.',
+  )
+
+export const procedureResourceSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  category: z.union([z.string(), z.null()]),
+  price: z.string(),
+  requires_tooth: z.boolean(),
+  requires_surface: z.boolean(),
+  requires_informed_consent: z.boolean(),
+  resulting_finding: z.union([
+    z.object({ code: z.string(), name: z.string(), acronym: z.union([z.string(), z.null()]) }),
+    z.null(),
+  ]),
+  resulting_state: z.union([
+    z.object({
+      code: z.string(),
+      name: z.string(),
+      color: z.enum(['azul', 'rojo']),
+      acronym: z.union([z.string(), z.null()]),
+    }),
+    z.null(),
+  ]),
+  is_active: z.boolean(),
+})
+
 export const storePatientRequestSchema = z
   .object({
     document_type: z.enum(['dni', 'ce', 'pasaporte', 'cpp']),
