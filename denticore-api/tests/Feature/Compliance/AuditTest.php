@@ -14,10 +14,12 @@ use App\Support\Audit\AuditLog;
 use App\Support\Audit\AuditLogger;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
+use Tests\Support\ClinicalFixtures;
 
 function auditActions(): array
 {
@@ -234,6 +236,54 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
     // RN-67: sin documentos, teléfonos, nombres, correos, motivos ni contraseñas en la bitácora.
     $serialized = json_encode(DB::table('audit_logs')->get());
     foreach (['71234567', '41234567', '987654321', '911222333', 'Lucía', 'Quispe', 'Rosa', 'hitos.test', 'Falta de pago', 'Nueva-Clave-2026', $secret] as $value) {
+        expect($serialized)->not->toContain($value);
+    }
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
+
+it('writes the audit events of the MS-02 clinical flows without clinical values', function () {
+    Storage::fake('s3');
+    Carbon::setTestNow(Carbon::parse('2026-10-06 10:00', 'America/Lima'));
+    ClinicalFixtures::cariesFinding();
+    $tenant = Tenant::factory()->create();
+    $this->actingAsRole('dentist', $tenant, ['cop_number' => '12345']);
+
+    // attention.opened, note.saved, diagnosis.added, odontogram.entry_added y .entry_corrected,
+    // attention.closed y clinical_record.viewed (CUS-21 a CUS-26, CUS-80)
+    $attention = ClinicalFixtures::openAttention($tenant);
+    $this->putJson("/api/v1/attentions/{$attention->uuid}/note", ['chief_complaint' => 'Dolor punzante al masticar'])->assertOk();
+    $this->postJson("/api/v1/attentions/{$attention->uuid}/diagnoses", ['cie10_code' => 'K02.1', 'type' => 'definitivo'])->assertCreated();
+    $entry = ClinicalFixtures::recordFinding($attention, ['note' => 'Lesión cavitada profunda'])->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/odontogram-entries/{$entry}/corrections", [
+        'kind' => 'anulacion', 'reason' => 'Registrada en el paciente equivocado',
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
+    $this->postJson("/api/v1/attentions/{$attention->uuid}/close", [], ['Idempotency-Key' => (string) Str::uuid()])->assertOk();
+    $patientUuid = TenantContext::run($tenant, fn () => $attention->patient->uuid);
+    $this->getJson("/api/v1/patients/{$patientUuid}/odontogram")->assertOk();
+
+    // attention.auto_closed y addendum.added (CUS-27, CUS-81)
+    $pending = ClinicalFixtures::openAttention($tenant);
+    $this->travelTo(Carbon::parse('2026-10-06 23:59', 'America/Lima'));
+    $this->artisan('attentions:auto-close')->assertSuccessful();
+    $this->postJson("/api/v1/attentions/{$pending->uuid}/addenda", [
+        'text' => 'Paciente refiere sangrado gingival', 'chief_complaint' => 'Sangrado de encías',
+        'diagnoses' => [['cie10_code' => 'K05', 'type' => 'presuntivo']],
+    ])->assertCreated();
+
+    TenantContext::run($tenant, function () use ($patientUuid) {
+        $actions = AuditLog::query()->pluck('action')->all();
+        foreach ([
+            'attention.opened', 'note.saved', 'diagnosis.added', 'odontogram.entry_added', 'odontogram.entry_corrected',
+            'attention.closed', 'clinical_record.viewed', 'attention.auto_closed', 'addendum.added',
+        ] as $action) {
+            expect($actions)->toContain($action);
+        }
+        expect(AuditLog::query()->where('action', 'odontogram.entry_added')->sole()->patient_uuid)->toBe($patientUuid)
+            ->and(AuditLog::query()->where('action', 'note.saved')->sole()->changed_fields)->toBe(['chief_complaint']);
+    });
+
+    // RN-67: sin textos clínicos, códigos CIE-10 ni motivos en la bitácora.
+    $serialized = json_encode(DB::table('audit_logs')->get());
+    foreach (['Dolor punzante', 'K02.1', 'K05', 'Lesión cavitada', 'paciente equivocado', 'sangrado gingival', 'Sangrado de encías'] as $value) {
         expect($serialized)->not->toContain($value);
     }
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');

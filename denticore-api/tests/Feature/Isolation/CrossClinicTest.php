@@ -6,6 +6,7 @@
  */
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Jobs\EndRepresentationsAtMajorityJob;
 use App\Modules\Patients\Models\Consent;
 use App\Modules\Patients\Models\LegalRepresentative;
@@ -50,22 +51,34 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
     [$own, $other] = Tenant::factory()->count(2)->create();
     $this->actingAsRole('clinic_admin', $own);
     $foreign = foreignClinicRecord($other);
+    // Registros clínicos de la otra clínica: atención, hallazgo y diagnóstico (MS-02).
+    [$foreignEntry, $foreignDiagnosis] = TenantContext::run($other, function () use ($other) {
+        $entry = OdontogramEntry::factory()->create(['tenant_id' => $other->id]);
+
+        return [$entry, $entry->attention->diagnoses()->forceCreate([
+            'cie10_code' => 'K02.1', 'type' => 'definitivo', 'origin' => 'nota', 'created_by' => $entry->author_id,
+        ])];
+    });
     $bindings = [
         '{patient}' => $foreign['patient']->uuid,
         '{representative}' => $foreign['representative']->uuid,
         '{consent}' => $foreign['consent']->uuid,
         '{user}' => User::factory()->for($other)->create(['role' => 'receptionist'])->uuid,
+        '{attention}' => $foreignEntry->attention->uuid,
+        '{entry}' => $foreignEntry->uuid,
+        '{diagnosis}' => $foreignDiagnosis->uuid,
+        '{tooth}' => '16',
     ];
 
     // Toda ruta de la clínica que recibe el uuid de un registro (RF-003).
     $routes = collect(Route::getRoutes()->getRoutes())
         ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/')
-            && preg_match('/\{(patient|representative|consent|user)\}/', $route->uri()) === 1)
+            && preg_match('/\{(patient|representative|consent|user|attention|entry)\}/', $route->uri()) === 1)
         ->flatMap(fn ($route) => collect($route->methods())->reject(fn ($method) => $method === 'HEAD')
             ->map(fn ($method) => [$method, $route->uri()]))
         ->values();
 
-    expect($routes->count())->toBeGreaterThanOrEqual(15);
+    expect($routes->count())->toBeGreaterThanOrEqual(29);
 
     foreach ($routes as [$method, $uri]) {
         $path = '/'.strtr($uri, $bindings);
