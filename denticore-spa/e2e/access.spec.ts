@@ -33,7 +33,11 @@ async function invitationLink(page: Page, email: string): Promise<string> {
   return link
 }
 
-test('registers a clinic, activates its administrator and configures the second factor', async ({ page }) => {
+test('registers a clinic, activates its administrator and configures the second factor', async ({
+  page: platformPage,
+  browser,
+}) => {
+  let page = platformPage
   const suffix = Date.now().toString(36)
   const slug = `e2e-${suffix}`
   const adminEmail = `admin.${suffix}@clinica-e2e.test`
@@ -63,8 +67,10 @@ test('registers a clinic, activates its administrator and configures the second 
   const link = await invitationLink(page, adminEmail)
   expect(link).toContain(`/c/${slug}/activar/`)
 
-  // Activación (A6) y primer ingreso con configuración del 2FA (A4; criterio 2 de TASK-040).
+  // Activación (A6) y primer ingreso con configuración del 2FA (A4; criterio 2 de TASK-040). El
+  // administrador abre el enlace en su propio navegador, sin la sesión del Súper Administrador.
   const password = 'Molar-Sano-2026!'
+  page = await (await browser.newContext()).newPage()
   await page.goto(new URL(link).pathname)
   await expect(page.getByText(`Te invitaron a Clínica E2E ${suffix}`)).toBeVisible()
   await page.getByLabel('Crea tu contraseña').fill(password)
