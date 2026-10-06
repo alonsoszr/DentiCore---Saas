@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { generalError } from '../../api/errors'
+import { Field } from '../../components/Field'
 import { PageHeader } from '../../components/PageHeader'
 import { useClinic } from '../../auth/useClinic'
 import { formatCivilDate } from '../../ui/format'
@@ -10,17 +12,35 @@ export function PatientsPage() {
   const { slug, appPath } = useClinic()
   const [searchParams, setSearchParams] = useSearchParams()
   const page = Number(searchParams.get('page') ?? 1)
+  const term = searchParams.get('q') ?? ''
+  const [search, setSearch] = useState(term)
 
+  // CUS-13 (RF-054): nombre o apellido sin importar tildes ni mayúsculas.
   const patientsQuery = useQuery({
-    queryKey: ['patients', slug, { page }],
-    queryFn: async () => (await apiClient.get('/patients', { params: { page } })).data,
+    queryKey: ['patients', slug, { page, term }],
+    queryFn: async () => {
+      // Un DNI de 8 dígitos se busca por el índice ciego (RF-056).
+      if (/^\d{8}$/.test(term)) {
+        try {
+          const { data } = await apiClient.get('/patients/lookup', {
+            params: { document_type: 'dni', document_number: term },
+          })
+          return { data: [data.data], meta: null }
+        } catch (error) {
+          if (error?.response?.status === 404) return { data: [], meta: null }
+          throw error
+        }
+      }
+      return (await apiClient.get('/patients', { params: { page, ...(term ? { q: term } : {}) } })).data
+    },
     placeholderData: keepPreviousData,
   })
 
   const patients = patientsQuery.data?.data ?? []
   const meta = patientsQuery.data?.meta
 
-  const goTo = (target) => setSearchParams(target > 1 ? { page: String(target) } : {})
+  const goTo = (target) =>
+    setSearchParams({ ...(term ? { q: term } : {}), ...(target > 1 ? { page: String(target) } : {}) })
 
   return (
     <>
@@ -31,10 +51,32 @@ export function PatientsPage() {
       </PageHeader>
 
       <div className="card">
+        <form
+          className="form-actions"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault()
+            setSearchParams(search.trim() ? { q: search.trim() } : {})
+          }}
+        >
+          <Field
+            label="Buscar paciente"
+            name="q"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            hint="Nombre, apellido o DNI."
+            maxLength={100}
+          />
+          <button type="submit" className="btn btn-secondary">
+            Buscar
+          </button>
+        </form>
         {patientsQuery.isLoading && <div className="empty">Cargando…</div>}
         {patientsQuery.isError && <div className="alert alert-error">{generalError(patientsQuery.error)}</div>}
         {patientsQuery.isSuccess && patients.length === 0 && (
-          <div className="empty">Aún no hay pacientes registrados.</div>
+          <div className="empty">
+            {term ? 'Ningún paciente coincide con la búsqueda.' : 'Aún no hay pacientes registrados.'}
+          </div>
         )}
 
         {patients.length > 0 && (

@@ -44,7 +44,7 @@ export default function StaffArea() {
         />
         <Route path="pacientes" element={<PatientsPage />} />
         <Route path="pacientes/nuevo" element={<PatientCreatePage />} />
-        <Route path="pacientes/:uuid" element={<PatientDetailPage />} />
+        <Route path="pacientes/:uuid/*" element={<PatientDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
