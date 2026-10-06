@@ -59,6 +59,11 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingAs($superAdmin, 'sanctum')->getJson("/api/v1/platform/tenants/{$newTenant}"), 'GET', '/platform/tenants/{tenant}');
     $check($this->actingAs($superAdmin, 'sanctum')->patchJson("/api/v1/platform/tenants/{$newTenant}", ['name' => 'Clínica Renovada']), 'PATCH', '/platform/tenants/{tenant}');
     $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/admin-invitation"), 'POST', '/platform/tenants/{tenant}/admin-invitation');
+    $check($this->actingAs($superAdmin, 'sanctum')->putJson("/api/v1/platform/tenants/{$newTenant}/plan", ['subscription_plan' => 'pro']), 'PUT', '/platform/tenants/{tenant}/plan');
+    $check($this->actingAs($superAdmin, 'sanctum')->putJson("/api/v1/platform/tenants/{$newTenant}/plan", []), 'PUT', '/platform/tenants/{tenant}/plan');
+    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/suspend", ['reason' => 'Falta de pago']), 'POST', '/platform/tenants/{tenant}/suspend');
+    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/suspend", ['reason' => 'Otra vez']), 'POST', '/platform/tenants/{tenant}/suspend');
+    $check($this->actingAs($superAdmin, 'sanctum')->postJson("/api/v1/platform/tenants/{$newTenant}/reactivate", ['reason' => 'Pago regularizado']), 'POST', '/platform/tenants/{tenant}/reactivate');
 
     // Usuarios
     $check($this->actingAs($admin, 'sanctum')->getJson('/api/v1/users'), 'GET', '/users');

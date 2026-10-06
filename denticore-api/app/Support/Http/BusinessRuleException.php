@@ -13,12 +13,14 @@ class BusinessRuleException extends RuntimeException
 {
     /**
      * @param  array<string, list<string>>  $errors
+     * @param  array<string, scalar|null>  $extensions  Miembros adicionales del problem+json (RFC 9457 §3.2).
      */
     public function __construct(
         public readonly string $rule,
         string $detail,
         public readonly array $errors = [],
         public readonly int $status = 422,
+        public readonly array $extensions = [],
     ) {
         parent::__construct($detail);
     }

@@ -69,6 +69,9 @@ final class ProblemDetails
             if ($exception->errors !== []) {
                 $body['errors'] = $exception->errors;
             }
+
+            // Los miembros estándar no se pueden reemplazar.
+            $body += $exception->extensions;
         }
 
         if ($exception instanceof ValidationException) {

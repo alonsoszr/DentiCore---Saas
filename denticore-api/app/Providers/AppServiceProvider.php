@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Modules\Platform\Models\Tenant;
 use App\Support\Encryption\BlindIndex;
 use App\Support\Encryption\KeyRing;
 use App\Support\Encryption\TenantEncryption;
@@ -49,6 +50,17 @@ class AppServiceProvider extends ServiceProvider
 
         // throttle:api: 60 solicitudes por minuto por usuario (SDD §1.7, §4.2; DD-19).
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+
+        // throttle:tenant: solicitudes por minuto por clínica según su plan (SDD §4.2; RNF-042).
+        // Laravel ordena los limitadores antes que `tenant`, así que la clínica sale del usuario.
+        RateLimiter::for('tenant', function (Request $request) {
+            $tenantId = $request->user()?->tenant_id;
+            $perMinute = $tenantId === null ? null : Tenant::query()->whereKey($tenantId)
+                ->join('subscription_plans', 'subscription_plans.id', '=', 'tenants.subscription_plan_id')
+                ->value('subscription_plans.rate_limit_per_minute');
+
+            return Limit::perMinute((int) ($perMinute ?? 1200))->by('tenant:'.($tenantId ?? $request->ip()));
+        });
 
         // throttle:codes: 5 intentos fallidos cada 15 min por usuario (o token) y propósito
         // (SDD §1.7, §4.2; RNF-111). Solo cuentan las respuestas de error.

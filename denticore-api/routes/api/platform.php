@@ -2,6 +2,8 @@
 
 use App\Modules\Platform\Http\Controllers\SubscriptionPlanController;
 use App\Modules\Platform\Http\Controllers\TenantController;
+use App\Modules\Platform\Http\Controllers\TenantPlanController;
+use App\Modules\Platform\Http\Controllers\TenantStatusController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,4 +24,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'role:super_admin'])->prefix(
     Route::get('/tenants/{tenant}', [TenantController::class, 'show']);
     Route::patch('/tenants/{tenant}', [TenantController::class, 'update']);
     Route::post('/tenants/{tenant}/admin-invitation', [TenantController::class, 'resendInvitation']);
+    Route::post('/tenants/{tenant}/suspend', [TenantStatusController::class, 'suspend']);
+    Route::post('/tenants/{tenant}/reactivate', [TenantStatusController::class, 'reactivate']);
+    Route::put('/tenants/{tenant}/plan', [TenantPlanController::class, 'update']);
 });

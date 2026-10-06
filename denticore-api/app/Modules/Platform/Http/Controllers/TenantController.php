@@ -7,6 +7,7 @@ use App\Modules\Platform\Http\Requests\UpdateTenantRequest;
 use App\Modules\Platform\Http\Resources\TenantResource;
 use App\Modules\Platform\Services\TenantService;
 use App\Support\Http\Controller;
+use App\Support\Http\ProblemResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -66,6 +67,7 @@ class TenantController extends Controller
     /**
      * FA-1 de CUS-01 (RF-016): nuevo enlace de 72 h; el anterior deja de servir.
      */
+    #[ProblemResponse(409, 'El administrador ya activó su cuenta (RF-016)')]
     public function resendInvitation(string $tenant): Response
     {
         $this->tenants->resendInvitation($this->tenants->find($tenant));

@@ -14,6 +14,8 @@ use Dedoc\Scramble\Support\Generator\Types\StringType;
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use ReflectionAttribute;
+use ReflectionMethod;
 
 /**
  * Transformador del documento OpenAPI (TASK-018; SDD §4.1, §4.2; RNF-044):
@@ -91,6 +93,10 @@ class ProblemDetailsDocumentation
             $codes += [400 => 'Falta la cabecera Idempotency-Key', 409 => 'Solicitud en curso con la misma clave', 422 => 'Datos no válidos'];
         }
 
+        foreach ($this->declaredProblems($route) as $declared) {
+            $codes[$declared->status] ??= $declared->description;
+        }
+
         $documented = array_map('strval', array_keys($operation->toArray()['responses'] ?? []));
 
         foreach ($codes as $code => $description) {
@@ -100,6 +106,26 @@ class ProblemDetailsDocumentation
                     ->setContent('application/problem+json', Schema::fromType($problem)));
             }
         }
+    }
+
+    /**
+     * Errores de reglas de negocio declarados con #[ProblemResponse] en la acción.
+     *
+     * @return list<ProblemResponse>
+     */
+    private function declaredProblems(LaravelRoute $route): array
+    {
+        $controller = $route->getControllerClass();
+        $method = $route->getActionMethod();
+
+        if ($controller === null || ! method_exists($controller, $method)) {
+            return [];
+        }
+
+        return array_map(
+            fn (ReflectionAttribute $attribute): ProblemResponse => $attribute->newInstance(),
+            (new ReflectionMethod($controller, $method))->getAttributes(ProblemResponse::class),
+        );
     }
 
     /**
