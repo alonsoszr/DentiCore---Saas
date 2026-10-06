@@ -2,7 +2,10 @@ import { expect, test } from '@playwright/test'
 
 // TASK-041: registrar paciente → consentimiento → antecedentes. Crea una ficha nueva en cada
 // ejecución (DNI sintético), así que corre en un solo proyecto de la matriz.
-test.skip(({ browserName }, testInfo) => browserName !== 'chromium' || !testInfo.project.name.endsWith('1280'))
+test.skip(
+  ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
+  'Flujo con datos nuevos: solo en Chrome a 1280 px',
+)
 
 test('registers a patient, the data consent and the medical history', async ({ page }) => {
   const dni = String(10_000_000 + Math.floor(Math.random() * 89_999_999))
