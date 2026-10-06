@@ -66,6 +66,46 @@ class NotificationService
         return $notification;
     }
 
+    /**
+     * Aviso dentro de la aplicación para un usuario de la clínica (SDD §4.8, canal `in_app`).
+     * No hay envío externo: queda `enviada` al registrarse y el usuario lo marca como leído
+     * (`read_at`). Con `$dedupeKey`, repetir el aviso no lo duplica.
+     *
+     * @param  array<string, mixed>  $data  Datos del aviso, sin datos de identificación (RNF-110).
+     * @param  array<string, string>  $links
+     */
+    public function notifyInApp(
+        NotificationEvent $event,
+        User $recipient,
+        array $data = [],
+        array $links = [],
+        ?string $dedupeKey = null,
+    ): Notification {
+        if ($dedupeKey !== null && ($existing = Notification::query()->where('dedupe_key', $dedupeKey)->first()) !== null) {
+            return $existing;
+        }
+
+        $notification = new Notification;
+        $notification->forceFill([
+            'tenant_id' => TenantContext::id(),
+            'channel' => 'in_app',
+            'event' => $event,
+            'recipient_user_id' => $recipient->id,
+            'payload' => [
+                'template' => $event->value,
+                'locale' => 'es-PE',
+                'clinic' => ['name' => $this->clinicName()],
+                'data' => $data,
+                'links' => $links,
+            ],
+            'dedupe_key' => $dedupeKey,
+            'status' => 'enviada',
+            'sent_at' => now(),
+        ])->save();
+
+        return $notification;
+    }
+
     /** RNF-110: la auditoría del envío identifica el correo sin guardarlo en claro. */
     public static function emailHash(string $email): string
     {

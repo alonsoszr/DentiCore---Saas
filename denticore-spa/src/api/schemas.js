@@ -1,6 +1,20 @@
 // Archivo generado por scripts/gen-api.mjs desde denticore-api/openapi.json. No editar a mano.
 import { z } from 'zod'
 
+export const attentionResourceSchema = z.object({
+  id: z.string(),
+  patient_id: z.string(),
+  dentist: z.object({ id: z.string(), name: z.string(), cop: z.union([z.string(), z.null()]) }),
+  status: z.enum(['abierta', 'cerrada', 'cerrada_incompleta']),
+  is_first_attention: z.boolean(),
+  opened_at: z.string().datetime({ offset: true }),
+  clinical_started_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  closed_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  closed_by_system: z.boolean(),
+  signer: z.union([z.object({ id: z.string(), name: z.string(), cop: z.union([z.string(), z.null()]) }), z.null()]),
+  signed_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+})
+
 export const businessRuleExceptionSchema = z.object({
   rule: z.string(),
   errors: z.record(z.string(), z.array(z.string())),

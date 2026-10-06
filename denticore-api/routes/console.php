@@ -25,3 +25,7 @@ Schedule::command('partitions:ensure')->daily()->onOneServer()->withoutOverlappi
 // Representaciones de pacientes que cumplen 18 años (SDD §1.9, RF-061): a las 00:05 de cada
 // clínica. Corre cada hora en el minuto 5 para cubrir cualquier zona horaria; es idempotente.
 Schedule::command('representations:end-at-majority')->hourlyAt(5)->onOneServer()->withoutOverlapping();
+
+// Cierre de las atenciones y los odontogramas iniciales pendientes (SDD §1.9; CUS-27, RF-096): a
+// las 23:59 de cada clínica. Corre cada 5 minutos para cubrir cualquier zona horaria; es idempotente.
+Schedule::command('attentions:auto-close')->everyFiveMinutes()->onOneServer()->withoutOverlapping();

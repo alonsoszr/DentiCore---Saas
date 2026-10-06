@@ -6,6 +6,7 @@
  */
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
@@ -52,6 +53,7 @@ it('applies the read-only rule to every registered staff route', function () {
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
         '{representative}' => fn () => (string) Str::uuid(),
         '{consent}' => fn () => (string) Str::uuid(),
+        '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
     ];
 
     $routes = staffRoutes();
