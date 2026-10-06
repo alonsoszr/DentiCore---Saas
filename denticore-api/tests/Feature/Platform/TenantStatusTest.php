@@ -11,6 +11,7 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
 use App\Support\Audit\AuditLog;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -48,12 +49,23 @@ it('forbids writes in a suspended clinic and allows reads', function () {
 it('applies the read-only rule to every registered staff route', function () {
     $tenant = Tenant::factory()->create(['status' => 'suspendida']);
     $this->actingAsRole('clinic_admin', $tenant);
+    $attention = null;
     $bindings = [
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'receptionist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
         '{representative}' => fn () => (string) Str::uuid(),
         '{consent}' => fn () => (string) Str::uuid(),
-        '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{attention}' => function () use ($tenant, &$attention) {
+            $attention = Attention::factory()->create(['tenant_id' => $tenant->id]);
+
+            return $attention->uuid;
+        },
+        // Diagnóstico de la misma atención: el binding anidado lo resuelve antes de la regla RN-07.
+        '{diagnosis}' => function () use ($tenant, &$attention) {
+            return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([
+                'cie10_code' => 'K02.1', 'type' => 'definitivo', 'origin' => 'nota', 'created_by' => $attention->dentist_id,
+            ]))->uuid;
+        },
     ];
 
     $routes = staffRoutes();

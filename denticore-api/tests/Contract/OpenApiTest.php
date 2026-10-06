@@ -14,7 +14,6 @@ use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
@@ -200,15 +199,30 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->getJson('/api/v1/attentions/'.fake()->uuid()), 'GET', '/attentions/{attention}');
     $close = fn () => $this->actingWithToken($dentist)->postJson("/api/v1/attentions/{$attentionId}/close", [], ['Idempotency-Key' => (string) Str::uuid()]);
     $check($close(), 'POST', '/attentions/{attention}/close');
-    TenantContext::run($tenant, function () use ($attentionId, $tenant, $dentist) {
-        $id = DB::table('attentions')->where('uuid', $attentionId)->value('id');
-        DB::table('clinical_notes')->insert(['tenant_id' => $tenant->id, 'attention_id' => $id, 'chief_complaint' => 'Dolor al masticar']);
-        DB::table('attention_diagnoses')->insert([
-            'tenant_id' => $tenant->id, 'attention_id' => $id, 'cie10_code' => 'K02.1', 'type' => 'definitivo', 'origin' => 'nota', 'created_by' => $dentist->id,
-        ]);
-    });
+
+    // Nota, diagnósticos CIE-10 y adendas
+    $check($this->actingWithToken($dentist)->getJson('/api/v1/cie10?q=caries'), 'GET', '/cie10');
+    $check($this->actingWithToken($dentist)->getJson('/api/v1/cie10'), 'GET', '/cie10');
+    $note = "/api/v1/attentions/{$attentionId}/note";
+    $check($this->actingWithToken($dentist)->putJson($note, ['chief_complaint' => 'Dolor al masticar', 'intraoral_exam' => 'Lesión en 36']), 'PUT', '/attentions/{attention}/note');
+    $check($this->actingWithToken($dentist)->putJson($note, ['chief_complaint' => str_repeat('a', 2001)]), 'PUT', '/attentions/{attention}/note');
+    $diagnoses = "/api/v1/attentions/{$attentionId}/diagnoses";
+    $added = $this->actingWithToken($dentist)->postJson($diagnoses, ['cie10_code' => 'K05', 'type' => 'presuntivo']);
+    $check($added, 'POST', '/attentions/{attention}/diagnoses');
+    $check($this->actingWithToken($dentist)->postJson($diagnoses, ['cie10_code' => 'X00']), 'POST', '/attentions/{attention}/diagnoses');
+    $check($this->actingWithToken($dentist)->deleteJson("{$diagnoses}/".$added->json('data.id')), 'DELETE', '/attentions/{attention}/diagnoses/{diagnosis}');
+    $check($this->actingWithToken($dentist)->deleteJson("{$diagnoses}/".fake()->uuid()), 'DELETE', '/attentions/{attention}/diagnoses/{diagnosis}');
+    $this->actingWithToken($dentist)->postJson($diagnoses, ['cie10_code' => 'K02.1', 'type' => 'definitivo']);
+    $addenda = "/api/v1/attentions/{$attentionId}/addenda";
+    $check($this->actingWithToken($dentist)->postJson($addenda, ['text' => 'Antes del cierre']), 'POST', '/attentions/{attention}/addenda');
     $check($close(), 'POST', '/attentions/{attention}/close');
     $check($close(), 'POST', '/attentions/{attention}/close');
+    $check($this->actingWithToken($dentist)->putJson($note, ['chief_complaint' => 'Otro']), 'PUT', '/attentions/{attention}/note');
+    $check($this->actingWithToken($dentist)->postJson($addenda, [
+        'text' => 'Control telefónico.', 'diagnoses' => [['cie10_code' => 'K05', 'type' => 'presuntivo']],
+    ]), 'POST', '/attentions/{attention}/addenda');
+    $check($this->actingWithToken($dentist)->postJson($addenda, []), 'POST', '/attentions/{attention}/addenda');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/attentions/{$attentionId}"), 'GET', '/attentions/{attention}');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

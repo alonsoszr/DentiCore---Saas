@@ -64,6 +64,11 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/attentions', 'cus' => 'CUS-25', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/attentions/{attention}', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/close', 'cus' => 'CUS-26', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/cie10', 'cus' => 'CUS-80', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'PUT', 'uri' => 'api/v1/attentions/{attention}/note', 'cus' => 'CUS-80', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/diagnoses', 'cus' => 'CUS-80', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'DELETE', 'uri' => 'api/v1/attentions/{attention}/diagnoses/{diagnosis}', 'cus' => 'CUS-80', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/addenda', 'cus' => 'CUS-81', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
 
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],

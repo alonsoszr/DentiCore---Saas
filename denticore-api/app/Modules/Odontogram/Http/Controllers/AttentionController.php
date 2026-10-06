@@ -65,7 +65,11 @@ class AttentionController extends Controller
     {
         Gate::authorize('view', $attention);
 
-        return AttentionResource::make($attention->load(['patient', 'dentist', 'signer']));
+        return AttentionResource::make($attention->load([
+            'patient', 'dentist', 'signer', 'note',
+            'diagnoses' => fn ($query) => $query->with('cie10')->orderBy('id'),
+            'addenda' => fn ($query) => $query->with(['author', 'diagnoses.cie10'])->orderBy('id'),
+        ]));
     }
 
     /**

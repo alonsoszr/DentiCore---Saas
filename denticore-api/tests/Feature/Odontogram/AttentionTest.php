@@ -9,7 +9,6 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\InitialOdontogram;
 use App\Modules\Patients\Models\Patient;
-use App\Modules\Patients\Services\ConsentService;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
 use App\Support\Audit\AuditLog;
@@ -21,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Tests\Support\ClinicalFixtures;
 
 beforeEach(function () {
     Storage::fake('s3');
@@ -30,20 +30,7 @@ beforeEach(function () {
 /** @param  array<string, mixed>  $attributes */
 function attentionPatient(Tenant $tenant, bool $withConsent = true, array $attributes = []): Patient
 {
-    return TenantContext::run($tenant, function () use ($tenant, $withConsent, $attributes) {
-        $patient = Patient::factory()->for($tenant)->create(['birth_date' => '1990-01-31', ...$attributes]);
-
-        if ($withConsent) {
-            app(ConsentService::class)->grant(
-                $patient,
-                ['channel' => 'presencial', 'confirmation_document_number' => $patient->document_number],
-                User::factory()->for($tenant)->create(['role' => 'receptionist']),
-                '127.0.0.1',
-            );
-        }
-
-        return $patient;
-    });
+    return ClinicalFixtures::patient($tenant, $withConsent, $attributes);
 }
 
 function openAttention(Patient $patient): TestResponse
@@ -75,7 +62,7 @@ function completeNote(Attention $attention, bool $withChiefComplaint = true, boo
 
 function attentionByUuid(Tenant $tenant, string $uuid): Attention
 {
-    return TenantContext::run($tenant, fn () => Attention::query()->where('uuid', $uuid)->firstOrFail());
+    return ClinicalFixtures::attention($tenant, $uuid);
 }
 
 it('opens the first attention with the initial odontogram and reactivates a passive record', function () {
@@ -288,3 +275,74 @@ it('lets only the dentist in charge close the attention and lists the attentions
         ->assertJsonPath('data.0.status', 'abierta');
     $this->getJson("/api/v1/attentions/{$attention->uuid}")->assertOk()->assertJsonPath('data.id', $attention->uuid);
 })->group('CUS-26', 'CUS-21', 'RF-094');
+
+function addAddendum(string $attentionUuid, array $payload): TestResponse
+{
+    return test()->postJson("/api/v1/attentions/{$attentionUuid}/addenda", $payload);
+}
+
+it('leaves an auto closed attention incomplete and completes it with an addendum', function () {
+    $tenant = Tenant::factory()->create();
+    $dentist = $this->actingAsRole('dentist', $tenant, ['cop_number' => '12345']);
+    $attention = attentionByUuid($tenant, openAttention(attentionPatient($tenant))->json('data.id'));
+
+    $this->travelTo(Carbon::parse('2026-10-06 23:59', 'America/Lima'));
+    $this->artisan('attentions:auto-close')->assertSuccessful();
+    expect(attentionByUuid($tenant, $attention->uuid)->status)->toBe('cerrada_incompleta');
+
+    // Una adenda sin motivo ni diagnóstico no la completa.
+    $this->travelTo(Carbon::parse('2026-10-07 09:00', 'America/Lima'));
+    addAddendum($attention->uuid, ['text' => 'Paciente refiere mejoría.'])->assertCreated()
+        ->assertJsonPath('data.author.cop', '12345')
+        ->assertJsonPath('data.attention_status', 'cerrada_incompleta');
+
+    addAddendum($attention->uuid, [
+        'text' => 'Se completa la atención del día anterior.',
+        'chief_complaint' => 'Dolor al masticar',
+        'diagnoses' => [['cie10_code' => 'K02.1', 'type' => 'definitivo']],
+    ])->assertCreated()
+        ->assertJsonPath('data.attention_status', 'cerrada')
+        ->assertJsonPath('data.diagnoses.0.code', 'K02.1')
+        ->assertJsonPath('data.diagnoses.0.origin', 'adenda');
+
+    TenantContext::run($tenant, function () use ($attention, $dentist) {
+        $completed = $attention->fresh();
+
+        expect($completed)
+            ->status->toBe('cerrada')
+            ->signed_by->toBe($dentist->id)
+            ->signer_cop->toBe('12345')
+            ->closed_at->toIso8601ZuluString()->toBe('2026-10-07T04:59:00Z')
+            ->and(app(EvidenceSealer::class)->verify($completed->evidencePayload(), (string) $completed->evidence_hmac))->toBeTrue()
+            ->and(AuditLog::query()->where('action', 'addendum.added')->count())->toBe(2);
+    });
+})->group('T-065', 'RN-77', 'RF-096', 'RF-097');
+
+it('rejects editing a signed note and keeps it unchanged after an addendum', function () {
+    $tenant = Tenant::factory()->create();
+    $this->actingAsRole('dentist', $tenant);
+    $attention = attentionByUuid($tenant, openAttention(attentionPatient($tenant))->json('data.id'));
+    $note = ['chief_complaint' => 'Dolor al masticar', 'intraoral_exam' => 'Lesión cavitada en 36'];
+
+    $this->putJson("/api/v1/attentions/{$attention->uuid}/note", $note)->assertOk();
+    $this->postJson("/api/v1/attentions/{$attention->uuid}/diagnoses", ['cie10_code' => 'K02.1', 'type' => 'definitivo'])->assertCreated();
+    closeAttention($attention->uuid)->assertOk();
+
+    $this->putJson("/api/v1/attentions/{$attention->uuid}/note", ['chief_complaint' => 'Otro motivo'])
+        ->assertConflict()->assertJsonPath('rule', 'RN-78');
+    $this->postJson("/api/v1/attentions/{$attention->uuid}/diagnoses", ['cie10_code' => 'K05', 'type' => 'presuntivo'])
+        ->assertConflict()->assertJsonPath('rule', 'RN-78');
+
+    addAddendum($attention->uuid, [
+        'text' => 'Control telefónico: sin dolor.',
+        'diagnoses' => [['cie10_code' => 'K05', 'type' => 'presuntivo']],
+    ])->assertCreated()->assertJsonPath('data.attention_status', 'cerrada');
+
+    $this->getJson("/api/v1/attentions/{$attention->uuid}")->assertOk()
+        ->assertJsonPath('data.note.chief_complaint', 'Dolor al masticar')
+        ->assertJsonPath('data.note.intraoral_exam', 'Lesión cavitada en 36')
+        ->assertJsonPath('data.note.status', 'firmada')
+        ->assertJsonPath('data.diagnoses.*.code', ['K02.1', 'K05'])
+        ->assertJsonPath('data.diagnoses.*.origin', ['nota', 'adenda'])
+        ->assertJsonPath('data.addenda.0.text', 'Control telefónico: sin dolor.');
+})->group('T-066', 'RN-78', 'RF-094', 'RF-097');

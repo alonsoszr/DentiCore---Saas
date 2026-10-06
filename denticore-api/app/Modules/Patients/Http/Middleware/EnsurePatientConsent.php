@@ -6,13 +6,14 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\ConsentGate;
 use App\Support\Http\BusinessRuleException;
 use Closure;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Middleware `consent:<finalidad>` (SDD §4.2; RN-10, RN-14, RN-53, RN-58, CA-64.3): el
- * `{patient}` de la ruta necesita un consentimiento vigente con la finalidad y no estar
+ * paciente de la ruta necesita un consentimiento vigente con la finalidad y no estar
  * bloqueado ni fusionado. Responde 422 `RN-10`, 403 `RN-53` (IA) o 422 `RN-58` (predicción).
  */
 class EnsurePatientConsent
@@ -42,7 +43,8 @@ class EnsurePatientConsent
     }
 
     /**
-     * El `{patient}` ya enlazado o su uuid; el Global Scope limita la búsqueda a la clínica.
+     * El `{patient}` ya enlazado o su uuid; el Global Scope limita la búsqueda a la clínica. En
+     * las rutas de un registro clínico (`{attention}`, …), el paciente de ese registro.
      */
     private function patient(Request $request): Patient
     {
@@ -50,6 +52,18 @@ class EnsurePatientConsent
 
         if ($patient instanceof Patient) {
             return $patient;
+        }
+
+        if ($patient === null) {
+            foreach ((array) $request->route()?->parameters() as $parameter) {
+                if ($parameter instanceof Model && method_exists($parameter, 'patient')) {
+                    $owner = $parameter->getRelationValue('patient');
+
+                    abort_unless($owner instanceof Patient, 404);
+
+                    return $owner;
+                }
+            }
         }
 
         abort_unless(is_string($patient) && Str::isUuid($patient), 404);
