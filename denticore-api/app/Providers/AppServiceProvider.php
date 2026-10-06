@@ -61,7 +61,7 @@ class AppServiceProvider extends ServiceProvider
         Builder::macro('disableTenantRls', fn (string $table) => RowLevelSecurity::disable($table));
 
         // throttle:api: 60 solicitudes por minuto por usuario (SDD §1.7, §4.2; DD-19).
-        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(config('auth.api_requests_per_minute'))->by($request->user()?->id ?: $request->ip()));
 
         // throttle:login: 5 intentos por minuto por IP (SDD §4.2; RF-035). throttle:public: 60 por
         // minuto por IP en las rutas públicas (grupo PUB).
