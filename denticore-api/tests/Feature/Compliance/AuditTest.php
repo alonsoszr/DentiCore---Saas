@@ -8,13 +8,16 @@
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\Notification;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLog;
 use App\Support\Audit\AuditLogger;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use PragmaRX\Google2FA\Google2FA;
 
 function auditActions(): array
 {
@@ -147,3 +150,90 @@ it('keeps partitions for the current year and the next two', function () {
 
     $this->artisan('partitions:ensure', ['--connection' => 'pgsql_migrator'])->assertSuccessful();
 })->group('DI-17');
+
+it('writes the audit events of the MS-01 flows without clinical values', function () {
+    Storage::fake('s3');
+    // El recorrido inicia sesión 6 veces desde la misma IP (throttle:login es de 5 por minuto).
+    config(['auth.login_attempts_per_minute' => 100]);
+    $superAdmin = User::factory()->superAdmin()->create();
+    $tenant = Tenant::factory()->plan('pro')->create(['slug' => 'clinica-hitos']);
+    $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin', 'email' => 'ana@hitos.test', 'password' => 'Clave-Segura-2026', 'is_data_officer' => true]);
+    $receptionist = User::factory()->for($tenant)->create(['role' => 'receptionist', 'email' => 'rita@hitos.test', 'password' => 'Clave-Segura-2026']);
+
+    // tenant.suspended, tenant.reactivated y tenant.plan_changed (CUS-02, CUS-03)
+    $platform = $this->actingWithToken($superAdmin);
+    $platform->postJson("/api/v1/platform/tenants/{$tenant->uuid}/suspend", ['reason' => 'Falta de pago'])->assertOk();
+    $platform->postJson("/api/v1/platform/tenants/{$tenant->uuid}/reactivate", ['reason' => 'Pago regularizado'])->assertOk();
+    $platform->putJson("/api/v1/platform/tenants/{$tenant->uuid}/plan", ['subscription_plan' => 'enterprise'])->assertOk();
+    $this->app['auth']->forgetGuards();
+
+    // auth.locked: 5 fallos seguidos (CA-06.2)
+    $locked = User::factory()->for($tenant)->create(['role' => 'receptionist', 'email' => 'luis@hitos.test', 'password' => 'Clave-Segura-2026']);
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson('/api/v1/auth/login', ['tenant_slug' => 'clinica-hitos', 'email' => $locked->email, 'password' => 'mala-clave'])
+            ->assertUnauthorized();
+    }
+
+    // auth.2fa_configured (CUS-08) y auth.logout (CUS-10)
+    $setupToken = $this->postJson('/api/v1/auth/login', ['tenant_slug' => 'clinica-hitos', 'email' => $admin->email, 'password' => 'Clave-Segura-2026'])
+        ->assertOk()->json('token');
+    $secret = $this->withToken($setupToken)->postJson('/api/v1/auth/2fa/setup')->assertOk()->json('secret');
+    $fullToken = $this->withToken($setupToken)->postJson('/api/v1/auth/2fa/confirm', ['code' => (new Google2FA)->getCurrentOtp($secret)])
+        ->assertOk()->json('token');
+    $this->withToken($fullToken)->postJson('/api/v1/auth/logout')->assertNoContent();
+    $this->app['auth']->forgetGuards();
+    $this->withoutToken();
+
+    // auth.password_changed (CUS-09)
+    $this->postJson('/api/v1/auth/password/forgot', ['tenant_slug' => 'clinica-hitos', 'email' => $receptionist->email])->assertNoContent();
+    $link = Notification::query()->where('event', 'restablecimiento_contrasena')->latest('id')->first()->payload['links']['reset'];
+    $this->postJson('/api/v1/auth/password/reset', [
+        'token' => substr($link, strrpos($link, '/') + 1), 'password' => 'Nueva-Clave-2026', 'password_confirmation' => 'Nueva-Clave-2026',
+    ])->assertNoContent();
+
+    // user.data_officer_changed (CUS-11)
+    $clinic = $this->actingWithToken($admin);
+    $otherAdmin = User::factory()->for($tenant)->create(['role' => 'clinic_admin']);
+    $clinic->patchJson("/api/v1/users/{$otherAdmin->uuid}", ['is_data_officer' => true])->assertOk();
+
+    // patient.created, patient.identity_updated, representative.created y .ended, consent.granted (CUS-14 a CUS-17)
+    $patientUuid = $clinic->postJson('/api/v1/patients', [
+        'document_type' => 'dni', 'document_number' => '71234567', 'first_name' => 'Lucía', 'last_name' => 'Quispe',
+        'birth_date' => '2015-05-10', 'sex' => 'femenino', 'phone' => '987654321',
+        'representative' => [
+            'document_type' => 'dni', 'document_number' => '41234567', 'first_name' => 'Rosa', 'last_name' => 'Quispe',
+            'relationship' => 'madre', 'phone' => '912345678', 'valid_from' => '2026-01-01',
+        ],
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated()->json('data.id');
+    $clinic->patchJson("/api/v1/patients/{$patientUuid}", ['phone' => '911222333'])->assertOk();
+    $father = $clinic->postJson("/api/v1/patients/{$patientUuid}/representatives", [
+        'document_type' => 'dni', 'document_number' => '42345678', 'first_name' => 'Luis', 'last_name' => 'Quispe',
+        'relationship' => 'padre', 'phone' => '912345679', 'valid_from' => '2026-01-01',
+    ])->assertCreated()->json('data.id');
+    $clinic->postJson("/api/v1/patients/{$patientUuid}/representatives/{$father}/end", ['reason' => 'revocada'])->assertOk();
+    $consentId = $clinic->postJson("/api/v1/patients/{$patientUuid}/consents", [
+        'channel' => 'presencial', 'purpose_care' => true, 'confirmation_document_number' => '41234567',
+    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated()->json('data.id');
+
+    // document.downloaded: la constancia PDF por su URL firmada (RF-066)
+    $this->artisan('outbox:dispatch', ['--once' => true])->assertSuccessful();
+    $url = $clinic->getJson("/api/v1/consents/{$consentId}/certificate")->assertOk()->json('data.url');
+    $this->get($url)->assertOk();
+
+    $actions = AuditLog::query()->pluck('action')->all();
+    foreach ([
+        'tenant.suspended', 'tenant.reactivated', 'tenant.plan_changed', 'auth.locked', 'auth.2fa_configured', 'auth.logout',
+        'auth.password_changed', 'user.data_officer_changed', 'patient.created', 'patient.identity_updated',
+        'representative.created', 'representative.ended', 'consent.granted', 'document.downloaded',
+    ] as $action) {
+        expect($actions)->toContain($action);
+    }
+    expect(AuditLog::query()->where('action', 'consent.granted')->sole()->patient_uuid)->toBe($patientUuid)
+        ->and(AuditLog::query()->where('action', 'tenant.plan_changed')->sole()->changed_fields)->toBe(['subscription_plan_id']);
+
+    // RN-67: sin documentos, teléfonos, nombres, correos, motivos ni contraseñas en la bitácora.
+    $serialized = json_encode(DB::table('audit_logs')->get());
+    foreach (['71234567', '41234567', '987654321', '911222333', 'Lucía', 'Quispe', 'Rosa', 'hitos.test', 'Falta de pago', 'Nueva-Clave-2026', $secret] as $value) {
+        expect($serialized)->not->toContain($value);
+    }
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
