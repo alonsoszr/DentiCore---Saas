@@ -10,6 +10,8 @@ use App\Modules\Identity\Services\InvitationService;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Treatment\Models\PlanItem;
+use App\Modules\Treatment\Models\Procedure;
 use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\UploadedFile;
@@ -32,6 +34,8 @@ it('keeps openapi.json in sync with the code', function () {
 
 it('matches every API response against the OpenAPI 3.1 document', function () {
     OpenApiContract::$covered = [];
+    // El recorrido hace más de 60 solicitudes por usuario (throttle:api); el límite real se prueba aparte.
+    config(['auth.api_requests_per_minute' => 1000]);
     $check = fn ($response, string $method, string $path) => OpenApiContract::assertMatches($response, $method, $path);
 
     $superAdmin = User::factory()->superAdmin()->create(['email' => 'sa@denticore.test']);
@@ -248,6 +252,23 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     ]), 'POST', '/attentions/{attention}/addenda');
     $check($this->actingWithToken($dentist)->postJson($addenda, []), 'POST', '/attentions/{attention}/addenda');
     $check($this->actingWithToken($admin)->getJson("/api/v1/attentions/{$attentionId}"), 'GET', '/attentions/{attention}');
+
+    // Catálogo de procedimientos (CUS-32)
+    $check($this->actingWithToken($admin)->getJson('/api/v1/procedures'), 'GET', '/procedures');
+    $created = $this->actingWithToken($admin)->postJson('/api/v1/procedures', [
+        'code' => 'RES-01', 'name' => 'Restauración con resina', 'category' => 'Operatoria', 'price' => '150.00',
+        'requires_tooth' => true, 'requires_surface' => true, 'resulting_finding_code' => 'RESTAURACION', 'resulting_state_code' => 'R_BUENO',
+    ]);
+    $check($created, 'POST', '/procedures');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/procedures', ['code' => 'RES-01']), 'POST', '/procedures');
+    $procedureId = $created->json('data.id');
+    $check($this->actingWithToken($admin)->patchJson("/api/v1/procedures/{$procedureId}", ['price' => '180.50']), 'PATCH', '/procedures/{procedure}');
+    $check($this->actingWithToken($admin)->patchJson("/api/v1/procedures/{$procedureId}", ['price' => '-1']), 'PATCH', '/procedures/{procedure}');
+    $used = PlanItem::factory()->create(['tenant_id' => $tenant->id]);
+    $usedId = TenantContext::run($tenant, fn () => Procedure::query()->whereKey($used->procedure_id)->value('uuid'));
+    $check($this->actingWithToken($admin)->deleteJson("/api/v1/procedures/{$usedId}"), 'DELETE', '/procedures/{procedure}');
+    $check($this->actingWithToken($admin)->deleteJson("/api/v1/procedures/{$procedureId}"), 'DELETE', '/procedures/{procedure}');
+    $check($this->actingWithToken($admin)->deleteJson('/api/v1/procedures/'.fake()->uuid()), 'DELETE', '/procedures/{procedure}');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

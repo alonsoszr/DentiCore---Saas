@@ -4,10 +4,12 @@ namespace App\Modules\Treatment\Models;
 
 use App\Modules\Odontogram\Models\FindingCatalog;
 use App\Modules\Odontogram\Models\FindingState;
+use App\Modules\Treatment\Policies\ProcedurePolicy;
 use App\Support\Database\HasUuid;
 use App\Support\Tenancy\BelongsToTenant;
 use Database\Factories\ProcedureFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read FindingState|null $resultingFindingState
  */
 #[UseFactory(ProcedureFactory::class)]
+#[UsePolicy(ProcedurePolicy::class)]
 class Procedure extends Model
 {
     /** @use HasFactory<ProcedureFactory> */
