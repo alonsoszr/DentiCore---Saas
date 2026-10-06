@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -53,6 +54,7 @@ use Illuminate\Support\Carbon;
  * @property-read FindingState|null $findingState
  * @property-read User $author
  * @property-read OdontogramEntry|null $correctedEntry
+ * @property-read OdontogramEntry|null $correction
  */
 #[UseFactory(OdontogramEntryFactory::class)]
 #[UsePolicy(OdontogramEntryPolicy::class)]
@@ -138,6 +140,16 @@ class OdontogramEntry extends Model
     public function correctedEntry(): BelongsTo
     {
         return $this->belongsTo(OdontogramEntry::class, 'corrects_entry_id');
+    }
+
+    /**
+     * Corrección que recibió la entrada; a lo más una (RN-23, CA-23.3).
+     *
+     * @return HasOne<OdontogramEntry, $this>
+     */
+    public function correction(): HasOne
+    {
+        return $this->hasOne(OdontogramEntry::class, 'corrects_entry_id');
     }
 
     public function auditPatientUuid(): ?string

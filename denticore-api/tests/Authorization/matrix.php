@@ -60,6 +60,10 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/representatives/{representative}/end', 'cus' => 'CUS-16', 'denied' => ['super_admin', 'dentist', 'patient']],
 
     // M04 (SDD §3.4, §4.3.4). Recepción abre atenciones solo mediante el check-in (CUS-50).
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/clinical-record', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/odontogram', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/odontogram/initial', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/teeth/{tooth}/history', 'cus' => 'CUS-24', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/attentions', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/attentions', 'cus' => 'CUS-25', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/attentions/{attention}', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'receptionist', 'patient']],

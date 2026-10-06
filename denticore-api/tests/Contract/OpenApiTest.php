@@ -229,6 +229,15 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     ], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/odontogram-entries/{entry}/corrections');
     $check($this->actingWithToken($dentist)->postJson($corrections, ['kind' => 'anulacion', 'reason' => 'Segunda corrección'], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/odontogram-entries/{entry}/corrections');
 
+    // Historia clínica y odontograma
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$adult->uuid}/clinical-record"), 'GET', '/patients/{patient}/clinical-record');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$adult->uuid}/odontogram"), 'GET', '/patients/{patient}/odontogram');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$adult->uuid}/odontogram?at=no-es-fecha"), 'GET', '/patients/{patient}/odontogram');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$adult->uuid}/odontogram/initial"), 'GET', '/patients/{patient}/odontogram/initial');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$unrepresentedMinor->uuid}/odontogram/initial"), 'GET', '/patients/{patient}/odontogram/initial');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$adult->uuid}/teeth/36/history"), 'GET', '/patients/{patient}/teeth/{tooth}/history');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$adult->uuid}/teeth/19/history"), 'GET', '/patients/{patient}/teeth/{tooth}/history');
+
     $addenda = "/api/v1/attentions/{$attentionId}/addenda";
     $check($this->actingWithToken($dentist)->postJson($addenda, ['text' => 'Antes del cierre']), 'POST', '/attentions/{attention}/addenda');
     $check($close(), 'POST', '/attentions/{attention}/close');

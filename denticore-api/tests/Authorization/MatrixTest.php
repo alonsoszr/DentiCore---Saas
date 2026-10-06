@@ -43,6 +43,7 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{consent}' => fn () => (string) Str::uuid(),
         '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
         // Diagnóstico inexistente: el rol o el estado de la clínica se rechazan antes de buscarlo.
+        '{tooth}' => fn () => '16',
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => fn () => (string) Str::uuid(),
     ];
