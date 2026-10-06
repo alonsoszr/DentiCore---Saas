@@ -730,6 +730,44 @@
     @apply text-mono-md;
   }
 
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tabs a {
+    @apply text-label-md;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    color: var(--color-on-surface-variant);
+    text-decoration: none;
+  }
+
+  .tabs a.active {
+    background: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
+  }
+
+  .consent-text {
+    white-space: pre-wrap;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius);
+    background: var(--color-surface-container-low);
+  }
+
+  .consent-purposes {
+    border: 0;
+    margin: 16px 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
   .session-timeout {
     position: fixed;
     right: 16px;
