@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { apiClient } from '../api/client'
+import { adminPath } from '../auth/paths'
 import { fieldErrors, generalError } from '../api/errors'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
@@ -36,10 +38,14 @@ export function TenantsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [slugEdited, setSlugEdited] = useState(false)
   const [created, setCreated] = useState(null)
+  const [search, setSearch] = useState('')
+  const [term, setTerm] = useState('')
 
+  // RF-018: búsqueda por nombre, razón social o RUC.
   const tenantsQuery = useQuery({
-    queryKey: ['tenants'],
-    queryFn: async () => (await apiClient.get('/platform/tenants')).data.data,
+    queryKey: ['tenants', term],
+    queryFn: async () =>
+      (await apiClient.get('/platform/tenants', { params: term ? { q: term } : undefined })).data.data,
   })
 
   const createTenant = useMutation({
@@ -206,6 +212,25 @@ export function TenantsPage() {
       )}
 
       <div className="card">
+        <form
+          className="form-actions"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault()
+            setTerm(search.trim())
+          }}
+        >
+          <Field
+            label="Buscar clínica"
+            name="q"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            hint="Nombre, razón social o RUC."
+          />
+          <button type="submit" className="btn btn-secondary">
+            Buscar
+          </button>
+        </form>
         {tenantsQuery.isLoading && <div className="empty">Cargando…</div>}
         {tenantsQuery.isError && <div className="alert alert-error">{generalError(tenantsQuery.error)}</div>}
         {tenantsQuery.isSuccess && tenants.length === 0 && (
@@ -227,7 +252,9 @@ export function TenantsPage() {
               <tbody>
                 {tenants.map((tenant) => (
                   <tr key={tenant.id}>
-                    <td>{tenant.name}</td>
+                    <td>
+                      <Link to={adminPath(`/clinicas/${tenant.id}`)}>{tenant.name}</Link>
+                    </td>
                     <td className="muted">{tenant.slug}</td>
                     <td>{PLAN_LABELS[tenant.plan?.code]}</td>
                     <td>{tenant.active_dentists}</td>

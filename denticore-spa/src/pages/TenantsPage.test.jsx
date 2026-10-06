@@ -58,6 +58,20 @@ describe('TenantsPage', () => {
     })
   })
 
+  it('searches by name, legal name or RUC and links to the detail (RF-018)', async () => {
+    const calls = mockApi(() => ({
+      data: { data: [{ id: 't-1', name: 'Clínica Demo', slug: 'clinica-demo', status: 'activa', plan: null }] },
+    }))
+    renderPage(<TenantsPage />, ROUTE)
+
+    expect(await screen.findByRole('link', { name: 'Clínica Demo' })).toHaveAttribute('href', '/admin/clinicas/t-1')
+    await userEvent.type(screen.getByLabelText('Buscar clínica'), 'demo')
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+
+    await screen.findByRole('link', { name: 'Clínica Demo' })
+    expect(calls.at(-1).params).toEqual({ q: 'demo' })
+  })
+
   it('shows the RUC error next to its field and keeps the typed value', async () => {
     mockApi((config) =>
       config.method === 'post'
