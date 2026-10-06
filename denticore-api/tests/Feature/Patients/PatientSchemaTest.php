@@ -13,11 +13,11 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
-it('fills the new identification columns of a patient registered with the legacy contract', function () {
+it('derives the blind indexes, the clinical record number and the search name from the document', function () {
     $tenant = Tenant::factory()->create();
 
     TenantContext::run($tenant, function () use ($tenant) {
-        $patient = Patient::factory()->for($tenant)->create(['document_id' => '45678912', 'first_name' => 'José', 'last_name' => 'Núñez Ñahui']);
+        $patient = Patient::factory()->for($tenant)->create(['document_number' => '45678912', 'first_name' => 'José', 'last_name' => 'Núñez Ñahui']);
         $raw = DB::table('patients')->where('id', $patient->id)->first();
 
         expect($raw->document_type)->toBe('dni')

@@ -220,7 +220,7 @@ class UserService
             $this->audit->record(AuditEvent::UserDataOfficerChanged, $user, ['is_data_officer']);
         }
 
-        $otherFields = array_values(array_diff($changed, ['role', 'is_data_officer', 'status', 'is_active']));
+        $otherFields = array_values(array_diff($changed, ['role', 'is_data_officer', 'status']));
 
         if ($otherFields !== []) {
             $this->audit->record(AuditEvent::UserUpdated, $user, $otherFields);

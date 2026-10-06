@@ -14,10 +14,10 @@ use App\Support\Tokens\TokenPurpose;
 use Tests\Support\Outbox;
 
 it('lists clinics with plan, status and active dentists, searching and filtering', function () {
-    $sonrisa = Tenant::factory()->create(['name' => 'Clínica Sonrisa', 'slug' => 'sonrisa', 'ruc' => '20600000013', 'subscription_plan' => 'pro']);
-    $muela = Tenant::factory()->create(['name' => 'Centro Muela Sana', 'slug' => 'muela', 'subscription_plan' => 'basic', 'status' => 'suspendida']);
+    $sonrisa = Tenant::factory()->plan('pro')->create(['name' => 'Clínica Sonrisa', 'slug' => 'sonrisa', 'ruc' => '20600000013']);
+    $muela = Tenant::factory()->plan('basic')->create(['name' => 'Centro Muela Sana', 'slug' => 'muela', 'status' => 'suspendida']);
     User::factory()->for($sonrisa)->count(2)->create(['role' => 'dentist']);
-    User::factory()->for($sonrisa)->create(['role' => 'dentist', 'is_active' => false]);
+    User::factory()->for($sonrisa)->create(['role' => 'dentist', 'status' => 'inactivo']);
     $this->actingAsRole('super_admin');
 
     $this->getJson('/api/v1/platform/tenants')

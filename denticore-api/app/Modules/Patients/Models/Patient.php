@@ -25,14 +25,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
- * Ficha del paciente (SDD §2.5 `patients`; esquema heredado de las fases 0–3 que TASK-031
- * expande). document_id y phone se cifran en reposo
- * con la clave de la clínica (cast TenantEncrypted); tenant_id y user_id nunca son
- * asignables masivamente.
- *
- * TASK-031 agregó la identificación de SDD §2.5 (tipo y número de documento, HC, sexo, dirección,
- * estado de archivo); mientras el registro heredado envíe `document_id`, la ficha completa las
- * columnas nuevas desde él (DNI). `document_id` se elimina en TASK-038.
+ * Ficha del paciente (SDD §2.5 `patients`). Documento, número de HC, teléfono y dirección se
+ * cifran en reposo con la clave de la clínica (cast TenantEncrypted); el documento y la HC
+ * llevan además su índice ciego. tenant_id y user_id nunca son asignables masivamente.
  *
  * @property Carbon $birth_date
  * @property string|null $document_type
@@ -50,8 +45,8 @@ use Illuminate\Support\Carbon;
  * @property int|null $created_by
  * @property array{alergias: list<string>, enfermedades: list<string>, medicamentos: list<string>, observaciones: string|null}|null $medical_history
  */
-#[Fillable(['document_id', 'first_name', 'last_name', 'birth_date', 'phone', 'email', 'medical_history', 'sex', 'address'])]
-#[Hidden(['document_id_hash', 'document_hash', 'clinical_record_hash'])]
+#[Fillable(['first_name', 'last_name', 'birth_date', 'phone', 'email', 'medical_history', 'sex', 'address'])]
+#[Hidden(['document_hash', 'clinical_record_hash'])]
 #[UseFactory(PatientFactory::class)]
 #[UsePolicy(PatientPolicy::class)]
 class Patient extends Model
@@ -72,7 +67,6 @@ class Patient extends Model
     protected function casts(): array
     {
         return [
-            'document_id' => TenantEncrypted::class.':document_id_hash',
             'document_number' => TenantEncrypted::class,
             'clinical_record_number' => TenantEncrypted::class,
             'phone' => TenantEncrypted::class,
@@ -102,22 +96,26 @@ class Patient extends Model
                 $patient->search_name = PatientIdentity::searchName((string) $patient->first_name, (string) $patient->last_name);
             }
 
-            // Escritura doble de la etapa de expansión (Plan §1.5): el registro heredado solo
-            // envía `document_id` (un DNI). Se retira en TASK-038.
-            if ($patient->getAttributes()['document_number'] ?? null) {
+            // Índices ciegos y número de HC derivados del documento cuando faltan (RN-09, RN-79).
+            // PatientService los fija explícitamente; aquí se completan para cualquier otra alta.
+            $number = $patient->getAttributes()['document_number'] ?? null;
+            if ($patient->document_hash !== null || $number === null || $patient->document_type === null) {
                 return;
             }
 
             $tenantId = $patient->tenant_id ?? TenantContext::idOrFail();
-            $number = PatientIdentity::normalizedNumber($patient->document_id);
-            $record = PatientIdentity::clinicalRecordNumber('dni', $number);
+            $type = $patient->document_type;
+            $plain = PatientIdentity::normalizedNumber((string) $patient->document_number);
             $encryption = app(TenantEncryption::class);
 
-            $patient->document_type = 'dni';
-            $patient->document_number = $number;
-            $patient->document_hash = $encryption->blindIndex($tenantId, PatientIdentity::normalizedDocument('dni', $number));
-            $patient->clinical_record_number = $record;
-            $patient->clinical_record_hash = $encryption->blindIndex($tenantId, $record);
+            $patient->document_number = $plain;
+            $patient->document_hash = $encryption->blindIndex($tenantId, PatientIdentity::normalizedDocument($type, $plain));
+
+            if ($patient->clinical_record_hash === null) {
+                $record = PatientIdentity::clinicalRecordNumber($type, $plain);
+                $patient->clinical_record_number = $record;
+                $patient->clinical_record_hash = $encryption->blindIndex($tenantId, $record);
+            }
         });
     }
 

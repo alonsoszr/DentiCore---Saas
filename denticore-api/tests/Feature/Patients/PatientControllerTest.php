@@ -58,7 +58,7 @@ class PatientControllerTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
         $receptionist = User::factory()->for($tenant)->create(['role' => 'receptionist']);
-        $patient = Patient::factory()->for($tenant)->create(['document_id' => '11223344', 'phone' => '911222333']);
+        $patient = Patient::factory()->for($tenant)->create(['document_number' => '11223344', 'phone' => '911222333']);
 
         $this->actingWithToken($receptionist)
             ->getJson("/api/v1/patients/{$patient->uuid}")
@@ -68,7 +68,7 @@ class PatientControllerTest extends TestCase
             ->assertJsonPath('data.clinical_record_number', '11223344')
             ->assertJsonPath('data.phone', '911222333')
             ->assertJsonMissingPath('data.document_hash')
-            ->assertJsonMissingPath('data.document_id_hash');
+            ->assertJsonMissingPath('data.document_hash');
     }
 
     public function test_index_lists_only_own_clinic_patients_paginated(): void
@@ -147,37 +147,6 @@ class PatientControllerTest extends TestCase
         $this->actingWithToken($patientUser)
             ->getJson("/api/v1/patients/{$otherRecord->uuid}")
             ->assertForbidden();
-    }
-
-    public function test_patient_can_be_linked_to_portal_account_of_same_clinic(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin']);
-        $portalUser = User::factory()->for($tenant)->create(['role' => 'patient']);
-
-        $this->register($admin, $this->payload(['user_uuid' => $portalUser->uuid]))
-            ->assertCreated()
-            ->assertJsonPath('data.user_uuid', $portalUser->uuid);
-
-        // La misma cuenta no puede vincularse a una segunda ficha.
-        $this->register($admin, $this->payload(['document_number' => '99887766', 'user_uuid' => $portalUser->uuid]))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('user_uuid');
-    }
-
-    public function test_portal_account_must_be_patient_role_of_same_clinic(): void
-    {
-        $tenant = Tenant::factory()->create();
-        $otherTenant = Tenant::factory()->create();
-        $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin']);
-        $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
-        $foreignPatientUser = User::factory()->for($otherTenant)->create(['role' => 'patient']);
-
-        foreach ([$dentist, $foreignPatientUser] as $candidate) {
-            $this->register($admin, $this->payload(['user_uuid' => $candidate->uuid]))
-                ->assertUnprocessable()
-                ->assertJsonValidationErrors('user_uuid');
-        }
     }
 
     public function test_portal_account_receives_its_patient_uuid_on_login_and_me(): void

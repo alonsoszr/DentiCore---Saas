@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
  * Alta de paciente (CUS-14; contrato de SDD §4.5 y datos de SRS §11.3). La fecha de nacimiento no
  * puede ser posterior a hoy ni dar más de 120 años (fecha de la clínica). Un menor de 18 años
  * debe traer su representante legal (RN-12, CA-14.4). La unicidad del documento la comprueba
- * PatientService con el índice ciego. `user_uuid` es heredado y se retira en TASK-038 (S-14).
+ * PatientService con el índice ciego.
  */
 class StorePatientRequest extends FormRequest
 {
@@ -43,7 +43,6 @@ class StorePatientRequest extends FormRequest
             'email' => ['nullable', 'email:rfc', 'max:180'],
             'address' => ['nullable', 'string', 'min:5', 'max:200'],
             'representative' => [Rule::requiredIf(fn (): bool => $this->isMinor()), 'nullable', 'array'],
-            'user_uuid' => ['nullable', 'uuid'],
         ];
 
         return $this->has('representative')

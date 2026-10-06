@@ -79,8 +79,6 @@ class TenantService
                 'ruc' => $data['ruc'],
                 'slug' => $data['slug'],
                 'address' => $data['address'],
-                // `subscription_plan` heredado convive con la FK hasta TASK-038.
-                'subscription_plan' => $plan->code,
                 'subscription_plan_id' => $plan->id,
                 'status' => 'activa',
             ]);
@@ -173,7 +171,7 @@ class TenantService
                 );
             }
 
-            $tenant->forceFill(['subscription_plan' => $plan->code, 'subscription_plan_id' => $plan->id])->save();
+            $tenant->forceFill(['subscription_plan_id' => $plan->id])->save();
             $this->audit->record(AuditEvent::TenantPlanChanged, $tenant, ['subscription_plan_id']);
 
             return $this->find($tenant->uuid);

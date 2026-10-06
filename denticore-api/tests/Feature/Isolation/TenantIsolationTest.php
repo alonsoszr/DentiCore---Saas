@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Isolation;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
@@ -44,13 +45,19 @@ class TenantIsolationTest extends TestCase
 
         TenantContext::set($tenantA);
 
-        $patient = Patient::create([
+        $patient = new Patient([
             'tenant_id' => $otherTenant->id,
-            'document_id' => '12345678',
             'first_name' => 'Ana',
             'last_name' => 'Quispe',
             'birth_date' => '1990-05-10',
+            'sex' => 'femenino',
+            'phone' => '987654321',
         ]);
+        $patient->forceFill([
+            'document_type' => 'dni',
+            'document_number' => '12345678',
+            'created_by' => User::factory()->for($tenantA)->create(['role' => 'receptionist'])->id,
+        ])->save();
 
         $this->assertSame($tenantA->id, $patient->fresh()->tenant_id);
     }

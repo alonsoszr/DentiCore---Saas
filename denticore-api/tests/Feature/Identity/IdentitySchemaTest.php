@@ -68,17 +68,6 @@ it('accepts only the statuses of SRS §5.5.7 and allows a pending user without p
         ->toThrow(QueryException::class, 'users_status_check');
 })->group('DD-22', 'CA-01.1');
 
-it('keeps status and the legacy is_active flag in sync while both columns exist', function () {
-    $user = User::factory()->create(['role' => 'receptionist']);
-    expect($user->fresh())->status->toBe('activo')->is_active->toBeTrue();
-
-    $user->update(['is_active' => false]);
-    expect($user->fresh())->status->toBe('inactivo')->is_active->toBeFalse();
-
-    $user->update(['status' => 'activo']);
-    expect($user->fresh())->status->toBe('activo')->is_active->toBeTrue();
-})->group('RNF-132');
-
 it('stores the email in lowercase', function () {
     $user = User::factory()->create(['email' => 'Rosa.Quispe@Clinica.TEST']);
 

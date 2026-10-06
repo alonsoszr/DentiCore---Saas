@@ -62,7 +62,7 @@ class PatientController extends Controller
     #[ProblemResponse(422, 'El documento ya está registrado: incluye existing_patient_id (RF-056)')]
     public function store(StorePatientRequest $request): JsonResponse
     {
-        /** @var array{document_type: string, document_number: string, first_name: string, last_name: string, birth_date: string, sex: string, phone: string, email?: string|null, address?: string|null, representative?: array<string, mixed>|null, user_uuid?: string|null} $data */
+        /** @var array{document_type: string, document_number: string, first_name: string, last_name: string, birth_date: string, sex: string, phone: string, email?: string|null, address?: string|null, representative?: array<string, mixed>|null} $data */
         $data = $request->validated();
         /** @var User $creator */
         $creator = $request->user();

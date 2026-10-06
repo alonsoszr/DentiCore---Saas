@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 
@@ -16,8 +17,8 @@ class PatientFactory extends TenantScopedFactory
     protected $model = Patient::class;
 
     /**
-     * tenant_id debe ir primero: el cast TenantEncrypted lo necesita para cifrar
-     * document_id y phone con la clave de esa clínica.
+     * tenant_id debe ir primero: el cast TenantEncrypted lo necesita para cifrar el documento y
+     * el teléfono con la clave de esa clínica. El modelo deriva los índices ciegos y la HC.
      *
      * @return array<string, mixed>
      */
@@ -25,7 +26,8 @@ class PatientFactory extends TenantScopedFactory
     {
         return [
             'tenant_id' => Tenant::factory(),
-            'document_id' => fake()->unique()->numerify('########'),
+            'document_type' => 'dni',
+            'document_number' => fake()->unique()->numerify('########'),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'birth_date' => fake()->date(max: '-1 year'),
@@ -33,6 +35,12 @@ class PatientFactory extends TenantScopedFactory
             'phone' => fake()->numerify('9########'),
             'email' => fake()->safeEmail(),
             'medical_history' => null,
+            // RN-67: el personal de la clínica que registró la ficha.
+            'created_by' => fn (array $attributes) => User::query()
+                ->where('tenant_id', $attributes['tenant_id'])
+                ->whereIn('role', ['clinic_admin', 'receptionist', 'dentist'])
+                ->value('id')
+                ?? User::factory()->create(['tenant_id' => $attributes['tenant_id'], 'role' => 'receptionist'])->id,
         ];
     }
 }

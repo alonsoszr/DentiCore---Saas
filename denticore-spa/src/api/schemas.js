@@ -11,7 +11,7 @@ export const businessRuleExceptionSchema = z.object({
 export const clinicSettingsResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
-  address: z.union([z.string(), z.null()]),
+  address: z.string(),
   phone: z.union([z.string(), z.null()]),
   contact_email: z.union([z.string(), z.null()]),
   logo: z.union([z.object({ id: z.string(), status: z.string(), url: z.union([z.string(), z.null()]) }), z.null()]),
@@ -121,10 +121,9 @@ export const storePatientRequestSchema = z
     email: z.union([z.string().email().max(180), z.null()]).optional(),
     address: z.union([z.string().min(5).max(200), z.null()]).optional(),
     representative: z.union([z.array(z.string()), z.null()]).optional(),
-    user_uuid: z.union([z.string().uuid(), z.null()]).optional(),
   })
   .describe(
-    'Alta de paciente (CUS-14; contrato de SDD §4.5 y datos de SRS §11.3). La fecha de nacimiento no\npuede ser posterior a hoy ni dar más de 120 años (fecha de la clínica). Un menor de 18 años\ndebe traer su representante legal (RN-12, CA-14.4). La unicidad del documento la comprueba\nPatientService con el índice ciego. `user_uuid` es heredado y se retira en TASK-038 (S-14).',
+    'Alta de paciente (CUS-14; contrato de SDD §4.5 y datos de SRS §11.3). La fecha de nacimiento no\npuede ser posterior a hoy ni dar más de 120 años (fecha de la clínica). Un menor de 18 años\ndebe traer su representante legal (RN-12, CA-14.4). La unicidad del documento la comprueba\nPatientService con el índice ciego.',
   )
 
 export const storeTenantRequestSchema = z
@@ -180,10 +179,10 @@ export const subscriptionPlanResourceSchema = z.object({
 export const tenantResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
-  legal_name: z.union([z.string(), z.null()]),
-  ruc: z.union([z.string(), z.null()]),
+  legal_name: z.string(),
+  ruc: z.string(),
   slug: z.string(),
-  address: z.union([z.string(), z.null()]),
+  address: z.string(),
   phone: z.union([z.string(), z.null()]),
   contact_email: z.union([z.string(), z.null()]),
   plan: z
@@ -281,17 +280,16 @@ export const userResourceSchema = z.object({
   cop_number: z.union([z.string(), z.null()]),
   specialty: z.union([z.string(), z.null()]),
   rne_number: z.union([z.string(), z.null()]),
-  is_active: z.boolean().describe('Heredado: la SPA lo lee hasta la contracción (TASK-038).'),
   last_login_at: z.union([z.string().datetime({ offset: true }), z.null()]),
   tenant: z
     .union([
       z.object({
         id: z.string(),
         name: z.string(),
-        legal_name: z.union([z.string(), z.null()]),
-        ruc: z.union([z.string(), z.null()]),
+        legal_name: z.string(),
+        ruc: z.string(),
         slug: z.string(),
-        address: z.union([z.string(), z.null()]),
+        address: z.string(),
         phone: z.union([z.string(), z.null()]),
         contact_email: z.union([z.string(), z.null()]),
         plan: z

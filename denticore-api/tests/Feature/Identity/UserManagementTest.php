@@ -17,7 +17,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 /** Administrador de una clínica del plan indicado, autenticado con token completo. */
 function adminOf(string $plan = 'pro'): User
 {
-    $tenant = Tenant::factory()->create(['subscription_plan' => $plan, 'slug' => 'clinica-'.Str::lower(Str::random(6))]);
+    $tenant = Tenant::factory()->plan($plan)->create(['slug' => 'clinica-'.Str::lower(Str::random(6))]);
     $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin', 'is_data_officer' => true]);
     test()->actingWithToken($admin);
 
@@ -61,7 +61,7 @@ it('validates the role, the COP and the data officer flag', function (array $pay
 it('rejects creating or reactivating a dentist above the plan maximum', function () {
     $admin = adminOf('basic');
     User::factory()->for($admin->tenant)->count(2)->create(['role' => 'dentist']);
-    $inactive = User::factory()->for($admin->tenant)->create(['role' => 'dentist', 'is_active' => false]);
+    $inactive = User::factory()->for($admin->tenant)->create(['role' => 'dentist', 'status' => 'inactivo']);
 
     createUser(['name' => 'Tercer Odontólogo', 'email' => 'tercero@sonrisa.test', 'role' => 'dentist', 'cop_number' => '33333'])
         ->assertUnprocessable()
@@ -115,7 +115,7 @@ it('prevents deactivating the last clinic_admin or data officer', function () {
 
 it('reactivates a user within the plan limit', function () {
     $admin = adminOf();
-    $receptionist = User::factory()->for($admin->tenant)->create(['role' => 'receptionist', 'is_active' => false]);
+    $receptionist = User::factory()->for($admin->tenant)->create(['role' => 'receptionist', 'status' => 'inactivo']);
 
     $this->postJson("/api/v1/users/{$receptionist->uuid}/reactivate")->assertOk()->assertJsonPath('data.status', 'activo');
     expect(AuditLog::query()->where('action', 'user.reactivated')->count())->toBe(1);
@@ -136,7 +136,7 @@ it('resends the invitation of a pending user only', function () {
 it('lists the users of the clinic with filters and pagination', function () {
     $admin = adminOf();
     User::factory()->for($admin->tenant)->count(2)->create(['role' => 'dentist']);
-    User::factory()->for($admin->tenant)->create(['role' => 'receptionist', 'is_active' => false]);
+    User::factory()->for($admin->tenant)->create(['role' => 'receptionist', 'status' => 'inactivo']);
     User::factory()->for(Tenant::factory())->create(['role' => 'dentist']);
 
     $this->getJson('/api/v1/users')->assertOk()->assertJsonCount(4, 'data')->assertJsonStructure(['meta' => ['total']]);

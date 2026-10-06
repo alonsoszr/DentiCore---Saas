@@ -46,8 +46,8 @@ it('rejects writing a row for another clinic', function () {
         expect($updated)->toBe(0);
 
         expect(fn () => DB::transaction(fn () => DB::insert(
-            "insert into patients (uuid, tenant_id, document_id, document_id_hash, first_name, last_name, birth_date) values (gen_random_uuid(), ?, 'x', repeat('0', 64), 'A', 'B', '2000-01-01')",
-            [$tenantB->id],
+            "insert into patients (uuid, tenant_id, document_type, document_number, document_hash, clinical_record_number, clinical_record_hash, first_name, last_name, search_name, birth_date, sex, phone, created_by) values (gen_random_uuid(), ?, 'dni', 'x', repeat('0', 64), 'x', repeat('1', 64), 'A', 'B', 'a b', '2000-01-01', 'femenino', 'x', ?)",
+            [$tenantB->id, $patientB->created_by],
         )))->toThrow(QueryException::class);
     });
 })->group('DD-40', 'RNF-102');

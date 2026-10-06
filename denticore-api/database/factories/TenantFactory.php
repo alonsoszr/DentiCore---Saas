@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Platform\Models\SubscriptionPlan;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Platform\Services\RucValidator;
 use App\Modules\Platform\Services\TenantService;
@@ -37,9 +38,8 @@ class TenantFactory extends Factory
             'address' => fake()->streetAddress(),
             // SDD §2.3: slug de 3 a 50 caracteres que no termina en guion.
             'slug' => rtrim(str($name)->slug()->limit(50, '')->toString(), '-'),
-            'subscription_plan' => fake()->randomElement(['basic', 'pro', 'enterprise']),
+            'subscription_plan_id' => fn () => SubscriptionPlan::forCode(fake()->randomElement(['basic', 'pro', 'enterprise']))->id,
             'status' => 'activa',
-            'settings' => null,
         ];
     }
 
@@ -52,6 +52,14 @@ class TenantFactory extends Factory
         return $this->afterCreating(function (Tenant $tenant): void {
             app(TenantService::class)->provision($tenant);
         });
+    }
+
+    /**
+     * Clínica con el plan indicado (`basic`, `pro` o `enterprise`; DD-16).
+     */
+    public function plan(string $code): static
+    {
+        return $this->state(fn () => ['subscription_plan_id' => SubscriptionPlan::forCode($code)->id]);
     }
 
     /**

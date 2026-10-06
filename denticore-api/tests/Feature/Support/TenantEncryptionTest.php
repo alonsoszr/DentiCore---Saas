@@ -19,19 +19,19 @@ class TenantEncryptionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_patient_document_id_is_encrypted_at_rest(): void
+    public function test_patient_document_is_encrypted_at_rest(): void
     {
-        $patient = Patient::factory()->create(['document_id' => '45678912', 'phone' => '987654321']);
+        $patient = Patient::factory()->create(['document_number' => '45678912', 'phone' => '987654321']);
 
         TenantContext::run($patient->tenant_id, function () use ($patient) {
             $row = DB::table('patients')->where('id', $patient->id)->first();
 
-            $this->assertNotSame('45678912', $row->document_id);
-            $this->assertStringNotContainsString('45678912', $row->document_id);
+            $this->assertNotSame('45678912', $row->document_number);
+            $this->assertStringNotContainsString('45678912', $row->document_number);
             $this->assertNotSame('987654321', $row->phone);
-            $this->assertStringNotContainsString('45678912', $row->document_id_hash);
+            $this->assertStringNotContainsString('45678912', $row->document_hash);
 
-            $this->assertSame('45678912', $patient->fresh()->document_id);
+            $this->assertSame('45678912', $patient->fresh()->document_number);
             $this->assertSame('987654321', $patient->fresh()->phone);
         });
     }
@@ -42,7 +42,7 @@ class TenantEncryptionTest extends TestCase
 
         $key = TenantContext::run($tenant, fn () => EncryptionKey::query()->sole());
 
-        $this->assertTrue($key->is_active);
+        $this->assertSame('activa', $key->status);
         $this->assertSame(32, strlen(base64_decode(decrypt($key->key_ciphertext, false))));
     }
 
