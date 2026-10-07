@@ -10,6 +10,9 @@ use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Treatment\Models\PlanItem;
+use App\Modules\Treatment\Models\Procedure;
+use App\Modules\Treatment\Models\TreatmentPlan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -42,11 +45,13 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{representative}' => fn () => (string) Str::uuid(),
         '{consent}' => fn () => (string) Str::uuid(),
         '{template}' => fn () => (string) Str::uuid(),
-        '{item}' => fn () => (string) Str::uuid(),
         '{informedConsent}' => fn () => (string) Str::uuid(),
         '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
         // Diagnóstico inexistente: el rol o el estado de la clínica se rechazan antes de buscarlo.
         '{tooth}' => fn () => '16',
+        '{procedure}' => fn () => Procedure::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{plan}' => fn () => TreatmentPlan::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{item}' => fn () => PlanItem::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => fn () => (string) Str::uuid(),
     ];

@@ -53,6 +53,8 @@ it('forbids writes in a suspended clinic and allows reads', function () {
 })->group('CA-06.6', 'RN-07', 'RF-006');
 
 it('applies the read-only rule to every registered staff route', function () {
+    // El recorrido hace más de 60 solicitudes por usuario (throttle:api); el límite real se prueba aparte.
+    config(['auth.api_requests_per_minute' => 1000]);
     $tenant = Tenant::factory()->create(['status' => 'suspendida']);
     $this->actingAsRole('clinic_admin', $tenant);
 
@@ -103,6 +105,8 @@ it('applies the read-only rule to every registered staff route', function () {
         },
         // Diagnóstico de la misma atención: el binding anidado lo resuelve antes de la regla RN-07.
         '{tooth}' => fn () => '16',
+        '{procedure}' => fn () => Procedure::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{plan}' => fn () => TreatmentPlan::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => function () use ($tenant, &$attention) {
             return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([

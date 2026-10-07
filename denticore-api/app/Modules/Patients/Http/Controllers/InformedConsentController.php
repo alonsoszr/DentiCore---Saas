@@ -27,16 +27,22 @@ class InformedConsentController extends Controller
      * RF-073: versión vigente de la plantilla activa del procedimiento completada con los datos
      * del paciente, el ítem y los riesgos/alternativas escritos por la recepción.
      */
-    #[ProblemResponse(422, 'Paciente menor sin representante legal vigente (RN-12)')]
-    #[ProblemResponse(422, 'El procedimiento no tiene una única plantilla activa (RF-073)')]
+    #[ProblemResponse(422, 'El procedimiento no tiene una única plantilla activa (RF-073) o el odontólogo indicado no está activo')]
     public function preview(Request $request, PlanItem $item): JsonResponse
     {
         Gate::authorize('create', [InformedConsent::class, $item]);
 
+        /** @var array{riesgos?: string|null, alternativas?: string|null, informed_by?: string|null} $query */
+        $query = $request->validate([
+            'riesgos' => ['nullable', 'string', 'max:500'],
+            'alternativas' => ['nullable', 'string', 'max:1000'],
+            'informed_by' => ['nullable', 'uuid'],
+        ], [], ['informed_by' => 'odontólogo que informa']);
+
         $preview = $this->consents->preview($item, $request->user(), [
-            'riesgos' => (string) $request->query('riesgos', ''),
-            'alternativas' => (string) $request->query('alternativas', ''),
-        ]);
+            'riesgos' => (string) ($query['riesgos'] ?? ''),
+            'alternativas' => (string) ($query['alternativas'] ?? ''),
+        ], $query['informed_by'] ?? null);
         $representative = $preview['representative'];
         $informedBy = $preview['informed_by'];
 
@@ -44,7 +50,6 @@ class InformedConsentController extends Controller
             'template_version' => $preview['template_version'],
             'text' => $preview['text'],
             'text_sha256' => $preview['text_sha256'],
-            /** @var 'titular'|'representante' */
             'signer' => $preview['signer'],
             'representative' => $representative === null ? null : [
                 'id' => $representative->uuid,
@@ -92,9 +97,10 @@ class InformedConsentController extends Controller
     }
 
     /**
-     * RF-074: solo se revoca un consentimiento vigente; la segunda revocación es 422.
+     * RF-074: solo se revoca un consentimiento vigente; la segunda revocación es 409.
      */
-    #[ProblemResponse(422, 'El consentimiento informado ya no está vigente (RF-074)')]
+    #[ProblemResponse(409, 'El consentimiento informado ya no está vigente (RF-074)')]
+    #[ProblemResponse(422, 'Falta el motivo (RF-074)')]
     public function revoke(Request $request, InformedConsent $informedConsent): JsonResponse
     {
         Gate::authorize('revoke', $informedConsent);
@@ -102,7 +108,7 @@ class InformedConsentController extends Controller
         /** @var array{reason: string} $data */
         $data = $request->validate([
             'reason' => ['required', 'string', 'max:500'],
-        ]);
+        ], [], ['reason' => 'motivo']);
 
         $consent = $this->consents->revoke($informedConsent, $data['reason']);
 

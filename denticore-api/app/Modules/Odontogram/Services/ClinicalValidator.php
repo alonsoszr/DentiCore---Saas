@@ -8,7 +8,7 @@ use App\Modules\Odontogram\Models\FindingState;
 /**
  * Validador clínico central (SDD §5.3; RN-16, RN-17, RN-18, RN-25, RNF-003, RNF-121): la única
  * clase que valida piezas, superficies y hallazgos del catálogo NTS 188. La usan el registro
- * manual, la IA y la importación; los CHECK de la BD (`fn_valid_tooth`, `fn_valid_surfaces`,
+ * manual, la IA, la importación y los ítems del plan de tratamiento; los CHECK de la BD (`fn_valid_tooth`, `fn_valid_surfaces`,
  * `fn_same_arch`) aplican la misma tabla como última barrera.
  *
  * No consulta la BD: recibe el hallazgo y el estado ya resueltos por su código.
@@ -104,6 +104,44 @@ final class ClinicalValidator
         }
 
         return $errors;
+    }
+
+    /**
+     * Valida la pieza y las superficies de un ítem de plan contra lo que exige su procedimiento
+     * (SDD §5.4 «Crear ítems desde hallazgos»; RN-16, RN-18, RN-26).
+     *
+     * @param  list<string>  $surfaces
+     * @return array<string, string> Primer motivo por campo (`tooth`, `surfaces`); vacío si es válido.
+     */
+    public function procedureSite(?int $tooth, array $surfaces, bool $requiresTooth, bool $requiresSurface): array
+    {
+        if ($tooth === null) {
+            return match (true) {
+                $requiresTooth => ['tooth' => 'El procedimiento requiere la pieza.'],
+                $surfaces !== [] => ['surfaces' => 'Las superficies requieren la pieza.'],
+                default => [],
+            };
+        }
+
+        if (($error = $this->toothError($tooth)) !== null) {
+            return ['tooth' => $error];
+        }
+
+        if ($requiresSurface && $surfaces === []) {
+            return ['surfaces' => 'El procedimiento requiere al menos una superficie.'];
+        }
+
+        if (count($surfaces) !== count(array_unique($surfaces))) {
+            return ['surfaces' => 'Cada superficie se indica una sola vez.'];
+        }
+
+        foreach ($surfaces as $surface) {
+            if (($error = $this->surfaceError($tooth, $surface)) !== null) {
+                return ['surfaces' => $error];
+            }
+        }
+
+        return [];
     }
 
     /**

@@ -87,12 +87,17 @@ class InformedConsentTemplateService
     {
         /** @var list<Procedure> $procedures */
         $procedures = Procedure::query()->whereIn('uuid', $uuids)->get()->all();
-        $found = collect($procedures)->pluck('uuid');
+        $found = collect($procedures)->pluck('uuid')->flip();
+        $errors = [];
 
-        if (collect($uuids)->diff($found)->isNotEmpty()) {
-            throw ValidationException::withMessages([
-                'procedures.0' => 'El procedimiento no pertenece a esta clínica.',
-            ]);
+        foreach ($uuids as $index => $uuid) {
+            if (! $found->has($uuid)) {
+                $errors["procedures.{$index}"] = 'El procedimiento no pertenece a esta clínica.';
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
         }
 
         return $procedures;

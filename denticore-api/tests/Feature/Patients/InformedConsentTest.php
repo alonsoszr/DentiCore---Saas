@@ -188,6 +188,26 @@ it('requires the informing dentist when a receptionist registers the signature',
         ->assertJsonPath('data.informed_by.id', $f['dentist']->uuid);
 })->group('RF-073', 'CUS-83');
 
+it('previews for the receptionist the same text that is signed with the informing dentist', function () {
+    $f = icFixture();
+    $this->actingAsRole('receptionist', $f['tenant']);
+    $query = http_build_query(['riesgos' => 'Sangrado leve', 'alternativas' => 'Corona', 'informed_by' => $f['dentist']->uuid]);
+
+    $preview = $this->getJson("/api/v1/plan-items/{$f['item']->uuid}/informed-consents/preview?{$query}")
+        ->assertOk()
+        ->assertJsonPath('data.informed_by.id', $f['dentist']->uuid);
+    expect($preview->json('data.text'))->toContain($f['dentist']->name);
+
+    $signed = icSign($f['item'], ['informed_by' => $f['dentist']->uuid, 'riesgos' => 'Sangrado leve', 'alternativas' => 'Corona'])
+        ->assertCreated();
+    expect($signed->json('data.text_sha256'))->toBe($preview->json('data.text_sha256'));
+
+    $receptionist = TenantContext::run($f['tenant'], fn () => User::factory()->for($f['tenant'])->create(['role' => 'receptionist']));
+    $this->getJson("/api/v1/plan-items/{$f['item']->uuid}/informed-consents/preview?informed_by={$receptionist->uuid}")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('informed_by');
+})->group('RF-073', 'CUS-83');
+
 it('uses the current representative as signer for a minor', function () {
     $tenant = icTenant();
     $dentist = icDentist($tenant);
@@ -229,16 +249,14 @@ it('rejects any modification of a signed informed consent (immutable)', function
     $uuid = icSign($f['item'])->assertCreated()->json('data.id');
 
     TenantContext::run($f['tenant'], function () use ($uuid) {
-        DB::beginTransaction();
-
-        try {
-            DB::table('informed_consents')->where('uuid', $uuid)->update(['rendered_text' => 'alterado']);
-        } catch (QueryException $exception) {
-            expect($exception->getMessage())->toContain('immutable_row');
-        } finally {
-            DB::rollBack();
+        // Cada intento va en su propio savepoint: el error no aborta la transacción de la prueba.
+        foreach (['rendered_text' => 'alterado', 'text_sha256' => str_repeat('0', 64), 'signer' => 'representante', 'signed_at' => now()->subDay()] as $column => $value) {
+            expect(fn () => DB::transaction(fn () => DB::table('informed_consents')->where('uuid', $uuid)->update([$column => $value])))
+                ->toThrow(QueryException::class, 'immutable_row');
         }
 
+        expect(fn () => DB::transaction(fn () => DB::table('informed_consents')->where('uuid', $uuid)->delete()))
+            ->toThrow(QueryException::class, 'immutable_row');
         expect(DB::table('informed_consents')->where('uuid', $uuid)->value('rendered_text'))->not->toBe('alterado');
     });
 })->group('T-046', 'RF-073', 'DD-31');
@@ -261,10 +279,11 @@ it('revokes a signed informed consent before the procedure and records the event
 
     expect(AuditLog::query()->where('action', 'informed_consent.revoked')->sole()->patient_uuid)->toBe($f['patient']->uuid);
 
-    // RF-074: una segunda revocación (o una sobre uno ya utilizado) responde 422.
+    // RF-074: una segunda revocación (o una sobre uno ya utilizado) es un conflicto de estado.
     $this->postJson("/api/v1/informed-consents/{$uuid}/revoke", ['reason' => 'Otra vez'])
-        ->assertUnprocessable()
+        ->assertConflict()
         ->assertJsonPath('rule', 'RF-074');
+    $this->postJson("/api/v1/informed-consents/{$uuid}/revoke", [])->assertUnprocessable()->assertJsonValidationErrors('reason');
 })->group('T-046', 'RF-074', 'RN-76', 'CUS-83');
 
 it('does not let another clinic revoke or see the consent', function () {
@@ -348,7 +367,11 @@ it('rejects templates with procedures outside the clinic', function () {
 
     $foreign = TenantContext::run(icTenant(), fn () => Procedure::factory()->create(['requires_informed_consent' => true])->uuid);
 
+    $own = Procedure::factory()->create(['tenant_id' => $tenant->id, 'requires_informed_consent' => true])->uuid;
+
     $this->postJson('/api/v1/informed-consent-templates', [
-        'title' => 'Ajeno', 'body' => 'Texto', 'procedures' => [$foreign],
-    ], ['Idempotency-Key' => (string) Str::uuid()])->assertUnprocessable()->assertJsonValidationErrors(['procedures.0']);
+        'title' => 'Ajeno', 'body' => 'Texto', 'procedures' => [$own, $foreign],
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors(['procedures.1'])
+        ->assertJsonMissingValidationErrors(['procedures.0']);
 })->group('RF-072', 'RNF-101', 'CUS-82');

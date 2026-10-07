@@ -38,16 +38,23 @@ class InformedConsentService
     /**
      * Texto que se presenta para firmar y quién debe firmarlo.
      *
-     * @param  array{riesgos?: string, alternativas?: string}  $fills
+     * El odontólogo que informa es el actor si es odontólogo; si no, el indicado en `$informedByUuid`
+     * (el mismo que se enviará al firmar), para que el texto y su huella coincidan con lo firmado.
+     *
+     * @param  array{riesgos: string, alternativas: string}  $fills
      * @return array{template_version: int, text: string, text_sha256: string, signer: 'titular'|'representante', representative: LegalRepresentative|null, informed_by: User|null}
      *
-     * @throws BusinessRuleException
+     * @throws BusinessRuleException|ValidationException
      */
-    public function preview(PlanItem $item, User $actor, array $fills = []): array
+    public function preview(PlanItem $item, User $actor, array $fills, ?string $informedByUuid = null): array
     {
         $template = $this->activeTemplateFor($item);
         $patient = $item->plan->patient;
-        $informedBy = $actor->role === 'dentist' ? $actor : null;
+        $informedBy = match (true) {
+            $actor->role === 'dentist' => $actor,
+            $informedByUuid !== null && $informedByUuid !== '' => $this->resolveInformedBy($item, $informedByUuid),
+            default => null,
+        };
 
         // El preview solo informa quién debe firmar; la exigencia de representante (RN-12) se
         // aplica al firmar, no aquí: un menor sin representante aún debe poder previsualizar.
@@ -137,19 +144,24 @@ class InformedConsentService
      */
     public function revoke(InformedConsent $consent, string $reason): InformedConsent
     {
-        if ($consent->status !== 'vigente') {
-            throw new BusinessRuleException('RF-074', 'Solo se puede revocar un consentimiento informado vigente.');
-        }
+        return DB::transaction(function () use ($consent, $reason): InformedConsent {
+            // Bloquea la fila: el registro del procedimiento (RN-76) la marca `utilizado` en paralelo.
+            $consent = InformedConsent::query()->whereKey($consent->id)->lockForUpdate()->firstOrFail();
 
-        $consent->forceFill([
-            'status' => 'revocado',
-            'revoked_at' => now(),
-            'revocation_reason' => $reason,
-        ])->save();
+            if ($consent->status !== 'vigente') {
+                throw new BusinessRuleException('RF-074', 'Solo se puede revocar un consentimiento informado vigente.', status: 409);
+            }
 
-        $this->audit->record(AuditEvent::InformedConsentRevoked, $consent, ['status', 'revoked_at', 'revocation_reason']);
+            $consent->forceFill([
+                'status' => 'revocado',
+                'revoked_at' => now(),
+                'revocation_reason' => $reason,
+            ])->save();
 
-        return $consent;
+            $this->audit->record(AuditEvent::InformedConsentRevoked, $consent, ['status', 'revoked_at', 'revocation_reason']);
+
+            return $consent;
+        });
     }
 
     /**

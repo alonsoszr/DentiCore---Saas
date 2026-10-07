@@ -50,7 +50,7 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     Route::get('/informed-consent-templates', [InformedConsentTemplateController::class, 'index'])
         ->middleware('role:clinic_admin,dentist,receptionist');
     Route::middleware('role:clinic_admin')->group(function () {
-        Route::post('/informed-consent-templates', [InformedConsentTemplateController::class, 'store'])->middleware('idempotent');
+        Route::post('/informed-consent-templates', [InformedConsentTemplateController::class, 'store']);
         Route::put('/informed-consent-templates/{template}', [InformedConsentTemplateController::class, 'update']);
         Route::post('/informed-consent-templates/{template}/deactivate', [InformedConsentTemplateController::class, 'deactivate']);
     });

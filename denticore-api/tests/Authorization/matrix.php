@@ -77,6 +77,28 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/attentions/{attention}/odontogram-entries', 'cus' => 'CUS-22', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/odontogram-entries/{entry}/corrections', 'cus' => 'CUS-23', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
 
+    // M05 (SDD §3.4, §4.3.5). CUS-32: el personal consulta el catálogo; solo CA lo modifica.
+    ['method' => 'GET', 'uri' => 'api/v1/procedures', 'cus' => 'CUS-32', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/procedures', 'cus' => 'CUS-32', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/procedures/{procedure}', 'cus' => 'CUS-32', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'DELETE', 'uri' => 'api/v1/procedures/{procedure}', 'cus' => 'CUS-32', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    // CUS-33: el personal consulta los planes; solo OD los elabora (TreatmentPlanPolicy@{create,update}).
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/treatment-plans', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/treatment-plans', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/treatment-plans/{plan}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/treatment-plans/{plan}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/items', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/plan-items/{item}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'DELETE', 'uri' => 'api/v1/plan-items/{item}', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/propose', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/reopen', 'cus' => 'CUS-33', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    // CUS-34: solo OD (OdontogramEntryPolicy@decideNoTreat).
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/pending-findings', 'cus' => 'CUS-34', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/odontogram-entries/{entry}/no-treat', 'cus' => 'CUS-34', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    // CUS-40: CA y OD (TreatmentPlanPolicy@cancel, PlanItemPolicy@discard).
+    ['method' => 'POST', 'uri' => 'api/v1/plan-items/{item}/discard', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/treatment-plans/{plan}/cancellation-preview', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/cancel', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
     // M03 — Consentimiento informado de procedimientos (SDD §2.5, §4.3.3; CUS-82, CUS-83).
     ['method' => 'GET', 'uri' => 'api/v1/informed-consent-templates', 'cus' => 'CUS-82', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/informed-consent-templates', 'cus' => 'CUS-82', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
