@@ -3,9 +3,20 @@ import { useEffect, useId, useRef } from 'react'
 /**
  * Diálogo de confirmación de acciones irreversibles (RNF-063; DESIGN.md › Confirmation dialogs):
  * título, consecuencias y el contenido del formulario que la acción necesite. Escape o
- * «Cancelar» lo cierran sin efectos; el foco entra al diálogo al abrirse.
+ * «Cancelar» lo cierran sin efectos; el foco entra al diálogo al abrirse. Con `destructive` el botón
+ * de confirmar usa el estilo destructivo; `confirmDisabled` lo bloquea mientras falten datos.
  */
-export function ConfirmDialog({ title, children, confirmLabel, onConfirm, onCancel, busy = false, error = null }) {
+export function ConfirmDialog({
+  title,
+  children,
+  confirmLabel,
+  onConfirm,
+  onCancel,
+  busy = false,
+  error = null,
+  destructive = false,
+  confirmDisabled = false,
+}) {
   const titleId = useId()
   const dialogRef = useRef(null)
 
@@ -31,7 +42,12 @@ export function ConfirmDialog({ title, children, confirmLabel, onConfirm, onCanc
           </div>
         )}
         <div className="form-actions">
-          <button type="button" className="btn" onClick={onConfirm} disabled={busy}>
+          <button
+            type="button"
+            className={destructive ? 'btn btn-danger' : 'btn'}
+            onClick={onConfirm}
+            disabled={busy || confirmDisabled}
+          >
             {confirmLabel}
           </button>
           <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={busy}>
