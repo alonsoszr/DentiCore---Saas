@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Treatment\Models\Procedure;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLog;
 use App\Support\Audit\AuditLogger;
@@ -286,6 +287,87 @@ it('writes the audit events of the MS-02 clinical flows without clinical values'
     // RN-67: sin textos clínicos, códigos CIE-10 ni motivos en la bitácora.
     $serialized = json_encode(DB::table('audit_logs')->get());
     foreach (['Dolor punzante', 'K02.1', 'K05', 'Lesión cavitada', 'paciente equivocado', 'sangrado gingival', 'Sangrado de encías'] as $value) {
+        expect($serialized)->not->toContain($value);
+    }
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
+
+it('writes the audit events of the MS-03 commercial flows without clinical values', function () {
+    Storage::fake('s3');
+    Carbon::setTestNow(Carbon::parse('2026-10-06 10:00', 'America/Lima'));
+    ClinicalFixtures::cariesFinding();
+    $tenant = Tenant::factory()->create();
+    $dentist = $this->actingAsRole('dentist', $tenant, ['cop_number' => '12345']);
+    $attention = ClinicalFixtures::openAttention($tenant);
+    $treated = ClinicalFixtures::recordFinding($attention, ['note' => null])->assertCreated()->json('data.id');
+    $observed = ClinicalFixtures::recordFinding($attention, ['tooth' => 26, 'surfaces' => ['O'], 'note' => null])->assertCreated()->json('data.id');
+    [$patientUuid, $document] = TenantContext::run($tenant, fn () => [$attention->patient->uuid, $attention->patient->document_number]);
+    $procedure = Procedure::factory()->create(['tenant_id' => $tenant->id, 'requires_surface' => true]);
+    $key = fn () => ['Idempotency-Key' => (string) Str::uuid()];
+
+    // finding.no_treat (CUS-34) y plan.created / plan.status_changed (CUS-33)
+    $this->postJson("/api/v1/odontogram-entries/{$observed}/no-treat", ['reason' => 'Paciente prefiere esperar al control'])->assertCreated();
+    $plan = $this->postJson("/api/v1/patients/{$patientUuid}/treatment-plans", ['title' => 'Plan de restauraciones', 'items' => [[
+        'procedure_id' => $procedure->uuid, 'tooth' => 36, 'surfaces' => ['O'], 'finding_ids' => [$treated],
+    ]]], $key())->assertCreated();
+    $planId = $plan->json('data.id');
+    $itemId = $plan->json('data.items.0.id');
+    $this->postJson("/api/v1/treatment-plans/{$planId}/propose")->assertOk();
+
+    // budget.issued y budget.decided (CUS-35, CUS-37)
+    $receptionist = $this->actingAsRole('receptionist', $tenant);
+    $budget = $this->postJson("/api/v1/treatment-plans/{$planId}/budgets", [], $key())->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/budgets/{$budget}/issue", [], $key())->assertOk();
+    $this->post("/api/v1/budgets/{$budget}/decision", [
+        'decision' => 'aceptado', 'signer' => 'titular', 'signer_document_number' => $document,
+    ], ['Accept' => 'application/json', ...$key()])->assertOk();
+
+    // informed_consent.signed y .revoked (CUS-83)
+    $admin = $this->actingAsRole('clinic_admin', $tenant);
+    $this->postJson('/api/v1/informed-consent-templates', [
+        'title' => 'Consentimiento de restauración', 'body' => 'El paciente {{paciente}} autoriza {{procedimiento}}.', 'procedures' => [$procedure->uuid],
+    ])->assertCreated();
+    $this->actingWithToken($receptionist);
+    $consent = $this->postJson("/api/v1/plan-items/{$itemId}/informed-consents", [
+        'channel' => 'dispositivo', 'confirmation_document_number' => $document, 'informed_by' => $dentist->uuid,
+    ], $key())->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/informed-consents/{$consent}/revoke", ['reason' => 'El paciente cambió de opinión'])->assertOk();
+
+    // procedure.performed (CUS-39), que lleva el plan a en_ejecucion y completado
+    $this->actingWithToken($dentist);
+    $this->postJson("/api/v1/plan-items/{$itemId}/performed-procedures", [
+        'attention_id' => $attention->uuid, 'quantity' => 1, 'observations' => 'Resina compuesta sin complicaciones',
+    ], $key())->assertCreated();
+
+    // plan.status_changed por cancelación (CUS-40) y budget.expired (CUS-38) en otro plan
+    $other = $this->postJson("/api/v1/patients/{$patientUuid}/treatment-plans", ['title' => 'Plan alternativo', 'items' => [[
+        'procedure_id' => $procedure->uuid, 'tooth' => 46, 'surfaces' => ['O'],
+    ]]], $key())->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/treatment-plans/{$other}/propose")->assertOk();
+    $this->actingWithToken($receptionist);
+    $expiring = $this->postJson("/api/v1/treatment-plans/{$other}/budgets", [], $key())->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/budgets/{$expiring}/issue", [], $key())->assertOk();
+    $this->actingWithToken($admin);
+    $this->postJson("/api/v1/treatment-plans/{$other}/cancel", ['reason' => 'El paciente se mudó a otra ciudad'])->assertOk();
+    $this->travelTo(Carbon::parse('2026-11-06 00:01', 'America/Lima'));
+    $this->artisan('budgets:expire')->assertSuccessful();
+
+    TenantContext::run($tenant, function () use ($patientUuid) {
+        $actions = AuditLog::query()->pluck('action')->all();
+        foreach ([
+            'finding.no_treat', 'plan.created', 'plan.status_changed', 'budget.issued', 'budget.decided', 'budget.expired',
+            'informed_consent.signed', 'informed_consent.revoked', 'procedure.performed',
+        ] as $action) {
+            expect($actions)->toContain($action);
+        }
+        expect(AuditLog::query()->where('action', 'procedure.performed')->sole()->patient_uuid)->toBe($patientUuid)
+            ->and(AuditLog::query()->where('action', 'budget.decided')->sole()->metadata)->toEqual(['decision' => 'aceptado', 'channel' => 'presencial']);
+    });
+
+    // RN-67: sin motivos, observaciones, documentos ni el texto del consentimiento en la bitácora.
+    $serialized = json_encode(DB::table('audit_logs')->get());
+    foreach ([
+        'esperar al control', 'cambió de opinión', 'Resina compuesta', 'mudó a otra ciudad', $document, 'autoriza',
+    ] as $value) {
         expect($serialized)->not->toContain($value);
     }
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
