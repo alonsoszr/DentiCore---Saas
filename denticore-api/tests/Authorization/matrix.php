@@ -111,6 +111,8 @@ return [
     ['method' => 'GET', 'uri' => 'api/v1/budgets/{budget}/pdf', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/budgets/{budget}/pdf/regenerate', 'cus' => 'CUS-35', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/documents/{document}', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'patient']],
+    // CUS-37: la decisión presencial la registran RE y CA (BudgetPolicy@decide); el portal, en MS-06.
+    ['method' => 'POST', 'uri' => 'api/v1/budgets/{budget}/decision', 'cus' => 'CUS-37', 'denied' => ['super_admin', 'dentist', 'patient']],
     // M03 — Consentimiento informado de procedimientos (SDD §2.5, §4.3.3; CUS-82, CUS-83).
     ['method' => 'GET', 'uri' => 'api/v1/informed-consent-templates', 'cus' => 'CUS-82', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/informed-consent-templates', 'cus' => 'CUS-82', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],

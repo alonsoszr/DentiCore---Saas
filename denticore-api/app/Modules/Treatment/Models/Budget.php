@@ -7,6 +7,7 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Treatment\Policies\BudgetPolicy;
 use App\Support\Database\HasUuid;
 use App\Support\Files\GeneratedDocument;
+use App\Support\Files\StoredFile;
 use App\Support\Tenancy\BelongsToTenant;
 use Database\Factories\BudgetFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -65,6 +66,8 @@ use Illuminate\Support\Carbon;
  * @property-read Budget|null $correctedBudget
  * @property-read User|null $dentist
  * @property-read GeneratedDocument|null $pdfDocument
+ * @property-read User|null $decisionBy
+ * @property-read StoredFile|null $signedFile
  */
 #[UseFactory(BudgetFactory::class)]
 #[UsePolicy(BudgetPolicy::class)]
@@ -149,6 +152,51 @@ class Budget extends Model
     public function pdfDocument(): BelongsTo
     {
         return $this->belongsTo(GeneratedDocument::class, 'pdf_document_id');
+    }
+
+    /**
+     * Usuario que registró la decisión (RF-122): la recepción o el administrador en la clínica.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function decisionBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'decision_by_user_id');
+    }
+
+    /**
+     * PDF firmado que se adjuntó a la decisión presencial (SRS §11.10 FA-2).
+     *
+     * @return BelongsTo<StoredFile, $this>
+     */
+    public function signedFile(): BelongsTo
+    {
+        return $this->belongsTo(StoredFile::class, 'signed_file_id');
+    }
+
+    /**
+     * Datos sellados con `decision_evidence_hmac` (DD-46, RN-36): qué presupuesto, por cuánto, qué
+     * se decidió, por qué canal, quién firmó (huella de su documento), quién lo registró, cuándo y
+     * desde qué IP, y la huella del PDF firmado si se adjuntó.
+     *
+     * @return array<string, mixed>
+     */
+    public function decisionEvidencePayload(): array
+    {
+        return [
+            'budget' => $this->uuid,
+            'number' => $this->number,
+            'total' => $this->total,
+            'decision' => $this->status,
+            'channel' => $this->decision_channel,
+            'signer' => $this->decision_signer,
+            'signer_document_hash' => $this->decision_signer_document_hash,
+            'decided_at' => $this->decided_at?->toIso8601ZuluString(),
+            'decided_by' => $this->decisionBy?->uuid,
+            'ip' => $this->decision_ip,
+            'rejection_reason' => $this->rejection_reason,
+            'signed_file_sha256' => $this->signedFile?->sha256,
+        ];
     }
 
     public function auditPatientUuid(): ?string

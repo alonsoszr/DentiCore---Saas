@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Treatment\Http\Controllers\BudgetController;
+use App\Modules\Treatment\Http\Controllers\BudgetDecisionController;
 use App\Modules\Treatment\Http\Controllers\BudgetDocumentController;
 use App\Modules\Treatment\Http\Controllers\BudgetIssueController;
 use App\Modules\Treatment\Http\Controllers\BudgetLineController;
@@ -63,4 +64,9 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         Route::get('/budgets/{budget}/pdf', [BudgetDocumentController::class, 'show']);
         Route::post('/budgets/{budget}/pdf/regenerate', [BudgetDocumentController::class, 'regenerate']);
     });
+
+    // CUS-37: decisión presencial sobre el presupuesto (RF-122, RF-123). La registran la recepción y
+    // el Administrador de Clínica; el portal y el enlace con OTP llegan en MS-06.
+    Route::post('/budgets/{budget}/decision', [BudgetDecisionController::class, 'store'])
+        ->middleware(['role:clinic_admin,receptionist', 'idempotent']);
 });

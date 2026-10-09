@@ -242,6 +242,19 @@ class TreatmentPlanService
     }
 
     /**
+     * Propuesto → aceptado al aceptarse un presupuesto del plan (SRS §5.5.2; RN-37). El plan ya
+     * viene bloqueado por BudgetDecisionService.
+     *
+     * @throws BusinessRuleException
+     */
+    public function markAccepted(TreatmentPlan $plan): TreatmentPlan
+    {
+        $this->ensureTransition($plan, 'aceptado');
+
+        return $this->changeStatus($plan, 'aceptado');
+    }
+
+    /**
      * @param  list<ItemData>  $items
      *
      * @throws ValidationException
