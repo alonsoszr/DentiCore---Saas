@@ -22,7 +22,9 @@ function clinicReceptionist(): User
 {
     $tenant = Tenant::factory()->create(['slug' => 'sonrisa']);
 
-    return User::factory()->for($tenant)->create(['role' => 'receptionist', 'email' => 'rosa@sonrisa.test', 'password' => 'Clave-Anterior-01']);
+    // Nombre fijo: la política rechaza contraseñas con palabras del nombre, y uno aleatorio de
+    // Faker (p. ej. el apellido «Segura») chocaría con las contraseñas de estas pruebas.
+    return User::factory()->for($tenant)->create(['role' => 'receptionist', 'name' => 'Rosa Quispe', 'email' => 'rosa@sonrisa.test', 'password' => 'Clave-Anterior-01']);
 }
 
 it('answers the same whether the email exists or not', function () {
