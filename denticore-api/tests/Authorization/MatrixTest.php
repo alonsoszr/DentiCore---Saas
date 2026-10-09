@@ -10,6 +10,7 @@ use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Treatment\Models\Budget;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
@@ -54,6 +55,10 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{item}' => fn () => PlanItem::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => fn () => (string) Str::uuid(),
+        '{budget}' => fn () => Budget::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        // Línea y documento inexistentes: el rol se rechaza antes de buscarlos.
+        '{line}' => fn () => (string) Str::uuid(),
+        '{document}' => fn () => (string) Str::uuid(),
     ];
 
     $path = preg_replace_callback('/\{[a-z_]+\}/i', fn ($match) => $bindings[$match[0]](), $uri);

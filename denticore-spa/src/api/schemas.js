@@ -96,6 +96,54 @@ export const attentionResourceSchema = z.object({
     .optional(),
 })
 
+export const budgetLineRequestSchema = z
+  .object({
+    discount_pct: z.number().gte(0).lte(100),
+    discount_reason: z.union([z.string().max(200), z.null()]).optional(),
+  })
+  .describe(
+    'Descuento de una línea del borrador (CUS-35 paso 3; RN-31): 0,00 a 100,00 %. El motivo (5 a 200\ncaracteres si el descuento es mayor que 0) y el tope de la clínica los aplica BudgetService.',
+  )
+
+export const budgetResourceSchema = z.object({
+  id: z.string(),
+  number: z.union([z.string(), z.null()]),
+  status: z.enum(['borrador', 'emitido', 'aceptado', 'rechazado', 'vencido', 'reemplazado']),
+  plan_id: z.string(),
+  patient_id: z.string(),
+  corrects_budget_id: z.union([z.string(), z.null()]),
+  prices_include_igv: z.boolean(),
+  igv_rate: z.string(),
+  subtotal: z.string(),
+  discount_total: z.string(),
+  base_amount: z.string(),
+  igv_amount: z.string(),
+  total: z.string(),
+  validity_days: z.union([z.number().int(), z.null()]),
+  issued_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  expires_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  terms: z.union([z.string(), z.null()]),
+  dentist: z.union([z.object({ id: z.string(), name: z.string(), cop: z.union([z.string(), z.null()]) }), z.null()]),
+  pdf: z.union([z.object({ status: z.enum(['pendiente', 'generando', 'listo', 'fallido']) }), z.null()]),
+  lines: z.array(
+    z.object({
+      id: z.string(),
+      plan_item_id: z.string(),
+      procedure: z.object({ id: z.string(), code: z.string(), name: z.string() }),
+      description: z.string(),
+      tooth: z.union([z.number().int(), z.null()]),
+      surfaces: z.array(z.enum(['M', 'D', 'O', 'I', 'V', 'L', 'P'])),
+      unit_price: z.string(),
+      quantity: z.number().int(),
+      discount_pct: z.string(),
+      discount_reason: z.union([z.string(), z.null()]),
+      discount_approved: z.boolean(),
+      subtotal: z.string(),
+    }),
+  ),
+  created_at: z.string().datetime({ offset: true }),
+})
+
 export const businessRuleExceptionSchema = z.object({
   rule: z.string(),
   errors: z.record(z.string(), z.array(z.string())),

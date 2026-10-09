@@ -1,5 +1,9 @@
 <?php
 
+use App\Modules\Treatment\Http\Controllers\BudgetController;
+use App\Modules\Treatment\Http\Controllers\BudgetDocumentController;
+use App\Modules\Treatment\Http\Controllers\BudgetIssueController;
+use App\Modules\Treatment\Http\Controllers\BudgetLineController;
 use App\Modules\Treatment\Http\Controllers\PlanItemController;
 use App\Modules\Treatment\Http\Controllers\ProcedureCatalogController;
 use App\Modules\Treatment\Http\Controllers\TreatmentPlanController;
@@ -43,5 +47,20 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         Route::post('/plan-items/{item}/discard', [PlanItemController::class, 'discard']);
         Route::get('/treatment-plans/{plan}/cancellation-preview', [TreatmentPlanController::class, 'cancellationPreview']);
         Route::post('/treatment-plans/{plan}/cancel', [TreatmentPlanController::class, 'cancel']);
+    });
+
+    // CUS-35, CUS-36: borrador, emisión, corrección y PDF del presupuesto (RF-115, RF-116, RF-118 a
+    // RF-121). El personal los gestiona; el tope de descuento por rol lo aplica BudgetService (RN-31).
+    // `/budgets/{budget}/price-diff` (RF-117) llega en MS-15.
+    Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
+        Route::post('/treatment-plans/{plan}/budgets', [BudgetController::class, 'store'])->middleware('idempotent');
+        Route::get('/patients/{patient}/budgets', [BudgetController::class, 'index']);
+        Route::get('/budgets/{budget}', [BudgetController::class, 'show']);
+        Route::patch('/budgets/{budget}/lines/{line}', [BudgetLineController::class, 'update'])->scopeBindings();
+        Route::delete('/budgets/{budget}', [BudgetController::class, 'destroy']);
+        Route::post('/budgets/{budget}/issue', [BudgetIssueController::class, 'store'])->middleware('idempotent');
+        Route::post('/budgets/{budget}/corrections', [BudgetController::class, 'correct'])->middleware('idempotent');
+        Route::get('/budgets/{budget}/pdf', [BudgetDocumentController::class, 'show']);
+        Route::post('/budgets/{budget}/pdf/regenerate', [BudgetDocumentController::class, 'regenerate']);
     });
 });

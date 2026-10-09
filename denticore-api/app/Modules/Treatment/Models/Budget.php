@@ -2,11 +2,15 @@
 
 namespace App\Modules\Treatment\Models;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
+use App\Modules\Treatment\Policies\BudgetPolicy;
 use App\Support\Database\HasUuid;
+use App\Support\Files\GeneratedDocument;
 use App\Support\Tenancy\BelongsToTenant;
 use Database\Factories\BudgetFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,11 +58,16 @@ use Illuminate\Support\Carbon;
  * @property string|null $decision_evidence_hmac
  * @property Carbon|null $replaced_at
  * @property Carbon|null $expired_at
+ * @property Carbon $created_at
  * @property-read TreatmentPlan $plan
  * @property-read Patient $patient
  * @property-read Collection<int, BudgetLine> $lines
+ * @property-read Budget|null $correctedBudget
+ * @property-read User|null $dentist
+ * @property-read GeneratedDocument|null $pdfDocument
  */
 #[UseFactory(BudgetFactory::class)]
+#[UsePolicy(BudgetPolicy::class)]
 class Budget extends Model
 {
     /** @use HasFactory<BudgetFactory> */
@@ -109,6 +118,41 @@ class Budget extends Model
      */
     public function lines(): HasMany
     {
-        return $this->hasMany(BudgetLine::class);
+        return $this->hasMany(BudgetLine::class)->orderBy('id');
+    }
+
+    /**
+     * Presupuesto emitido que este corrige (RF-119, SRS §11.9 FA-2).
+     *
+     * @return BelongsTo<Budget, $this>
+     */
+    public function correctedBudget(): BelongsTo
+    {
+        return $this->belongsTo(Budget::class, 'corrects_budget_id');
+    }
+
+    /**
+     * Odontólogo del plan, que figura con su COP en el PDF (RF-118, RN-75).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function dentist(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dentist_id');
+    }
+
+    /**
+     * PDF vigente del presupuesto emitido (DD-18); la regeneración apunta a uno nuevo.
+     *
+     * @return BelongsTo<GeneratedDocument, $this>
+     */
+    public function pdfDocument(): BelongsTo
+    {
+        return $this->belongsTo(GeneratedDocument::class, 'pdf_document_id');
+    }
+
+    public function auditPatientUuid(): ?string
+    {
+        return $this->patient->uuid;
     }
 }

@@ -18,6 +18,7 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
@@ -356,6 +357,54 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($dentist)->postJson($revokeEndpoint, ['reason' => 'Otra vez']), 'POST', '/informed-consents/{informedConsent}/revoke');
     $check($this->actingWithToken($dentist)->postJson('/api/v1/informed-consents/'.fake()->uuid().'/revoke', ['reason' => 'ajena']), 'POST', '/informed-consents/{informedConsent}/revoke');
     $check($this->actingWithToken($admin)->postJson("{$templates}/{$templateId}/deactivate"), 'POST', '/informed-consent-templates/{template}/deactivate');
+
+    // Presupuestos (CUS-35, CUS-36). El plan del contrato quedó cancelado más arriba.
+    $receptionist = User::factory()->for($tenant)->create(['role' => 'receptionist']);
+    [$budgetPlan, $budgetProcedure] = TenantContext::run($tenant, function () use ($tenant, $adult, $dentist): array {
+        $procedure = Procedure::factory()->create(['tenant_id' => $tenant->id, 'price' => '150.00']);
+        $plan = TreatmentPlan::factory()->create(['tenant_id' => $tenant->id, 'patient_id' => $adult->id, 'created_by' => $dentist->id, 'status' => 'propuesto']);
+        PlanItem::factory()->create(['tenant_id' => $tenant->id, 'treatment_plan_id' => $plan->id, 'procedure_id' => $procedure->id, 'tooth' => 16]);
+
+        return [$plan, $procedure];
+    });
+    $newBudget = fn (string $planPath, array $payload = []) => $this->actingWithToken($receptionist)
+        ->postJson("{$planPath}/budgets", $payload, ['Idempotency-Key' => (string) Str::uuid()]);
+    $draft = $newBudget("/api/v1/treatment-plans/{$budgetPlan->uuid}");
+    $check($draft, 'POST', '/treatment-plans/{plan}/budgets');
+    $check($newBudget("/api/v1/treatment-plans/{$budgetPlan->uuid}", ['plan_item_ids' => [fake()->uuid()]]), 'POST', '/treatment-plans/{plan}/budgets');
+    $check($newBudget($plan), 'POST', '/treatment-plans/{plan}/budgets');
+    $budget = '/api/v1/budgets/'.$draft->json('data.id');
+    $line = "{$budget}/lines/".$draft->json('data.lines.0.id');
+    $check($this->actingWithToken($receptionist)->patchJson($line, ['discount_pct' => 50, 'discount_reason' => 'Fuera del tope']), 'PATCH', '/budgets/{budget}/lines/{line}');
+    $check($this->actingWithToken($receptionist)->patchJson($line, ['discount_pct' => 5]), 'PATCH', '/budgets/{budget}/lines/{line}');
+    $check($this->actingWithToken($receptionist)->patchJson($line, ['discount_pct' => 5, 'discount_reason' => 'Convenio']), 'PATCH', '/budgets/{budget}/lines/{line}');
+    $check($this->actingWithToken($receptionist)->getJson("{$budget}/pdf"), 'GET', '/budgets/{budget}/pdf');
+    $check($this->actingWithToken($receptionist)->postJson("{$budget}/pdf/regenerate"), 'POST', '/budgets/{budget}/pdf/regenerate');
+    $issue = fn (string $budgetPath) => $this->actingWithToken($receptionist)
+        ->postJson("{$budgetPath}/issue", [], ['Idempotency-Key' => (string) Str::uuid()]);
+    $inactiveDraft = '/api/v1/budgets/'.$newBudget("/api/v1/treatment-plans/{$budgetPlan->uuid}")->json('data.id');
+    TenantContext::run($tenant, fn () => $budgetProcedure->forceFill(['is_active' => false])->save());
+    $check($issue($inactiveDraft), 'POST', '/budgets/{budget}/issue');
+    TenantContext::run($tenant, fn () => $budgetProcedure->forceFill(['is_active' => true])->save());
+    $check($issue($budget), 'POST', '/budgets/{budget}/issue');
+    $check($issue($budget), 'POST', '/budgets/{budget}/issue');
+    $check($this->actingWithToken($receptionist)->patchJson($line, ['discount_pct' => 0]), 'PATCH', '/budgets/{budget}/lines/{line}');
+    $check($this->actingWithToken($receptionist)->deleteJson($budget), 'DELETE', '/budgets/{budget}');
+    $corrections = fn (string $budgetPath) => $this->actingWithToken($receptionist)
+        ->postJson("{$budgetPath}/corrections", [], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($corrections($budget), 'POST', '/budgets/{budget}/corrections');
+    $check($corrections($inactiveDraft), 'POST', '/budgets/{budget}/corrections');
+    $check($this->actingWithToken($receptionist)->deleteJson($inactiveDraft), 'DELETE', '/budgets/{budget}');
+    $check($this->actingWithToken($admin)->getJson($budget), 'GET', '/budgets/{budget}');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/budgets/'.fake()->uuid()), 'GET', '/budgets/{budget}');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/patients/{$adult->uuid}/budgets"), 'GET', '/patients/{patient}/budgets');
+    $this->artisan('outbox:dispatch', ['--once' => true])->assertSuccessful();
+    $check($this->actingWithToken($receptionist)->getJson("{$budget}/pdf"), 'GET', '/budgets/{budget}/pdf');
+    $pdfDocument = TenantContext::run($tenant, fn () => DB::table('generated_documents')->where('kind', 'presupuesto')->orderBy('id')->first(['id', 'uuid']));
+    $check($this->actingWithToken($admin)->getJson("/api/v1/documents/{$pdfDocument->uuid}"), 'GET', '/documents/{document}');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/documents/'.fake()->uuid()), 'GET', '/documents/{document}');
+    TenantContext::run($tenant, fn () => DB::table('generated_documents')->where('id', $pdfDocument->id)->update(['status' => 'fallido']));
+    $check($this->actingWithToken($receptionist)->postJson("{$budget}/pdf/regenerate"), 'POST', '/budgets/{budget}/pdf/regenerate');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
