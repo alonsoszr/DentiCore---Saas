@@ -3,6 +3,8 @@ import { generalError } from '../../api/errors'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
 import { NotFoundPage } from '../SimplePages'
+import { PatientPlansPage } from '../treatment/PatientPlansPage'
+import { PendingFindingsPage } from '../treatment/PendingFindingsPage'
 import { ClinicalRecordPage } from './ClinicalRecordPage'
 import { ConsentPage } from './ConsentPage'
 import { MedicalHistoryPage } from './MedicalHistoryPage'
@@ -33,6 +35,8 @@ export function PatientDetailPage() {
   const tabs = [
     { to: base, label: 'Ficha', end: true },
     { to: `${base}/hc`, label: 'Historia clínica' },
+    { to: `${base}/planes`, label: 'Planes' },
+    ...(user?.role === 'dentist' ? [{ to: `${base}/pendientes`, label: 'Pendientes' }] : []),
     { to: `${base}/antecedentes`, label: 'Antecedentes' },
     { to: `${base}/consentimiento`, label: 'Consentimiento' },
     { to: `${base}/representantes`, label: 'Representantes' },
@@ -61,6 +65,8 @@ export function PatientDetailPage() {
       <Routes>
         <Route index element={<PatientRecord query={patientQuery} />} />
         <Route path="hc" element={<ClinicalRecordPage patient={patient} />} />
+        <Route path="planes" element={<PatientPlansPage patient={patient} />} />
+        <Route path="pendientes" element={<PendingFindingsPage patient={patient} />} />
         <Route path="antecedentes" element={<MedicalHistoryPage patient={patient} />} />
         <Route path="consentimiento" element={<ConsentPage patient={patient} />} />
         <Route path="representantes" element={<RepresentativesPage patient={patient} />} />

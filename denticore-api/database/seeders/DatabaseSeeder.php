@@ -76,5 +76,7 @@ class DatabaseSeeder extends Seeder
             $portalPatient->user_id = $users['patient']->id;
             $portalPatient->save();
         });
+        // Catálogo de procedimientos para planes y presupuestos (MS-03).
+        $this->call(DemoProcedureSeeder::class);
     }
 }

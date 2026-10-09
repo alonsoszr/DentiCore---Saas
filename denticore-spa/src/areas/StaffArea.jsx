@@ -10,6 +10,8 @@ import { AttentionPage } from '../pages/attentions/AttentionPage'
 import { PatientCreatePage } from '../pages/patients/PatientCreatePage'
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage'
 import { PatientsPage } from '../pages/patients/PatientsPage'
+import { CatalogPage } from '../pages/treatment/CatalogPage'
+import { PlanDetailPage } from '../pages/treatment/PlanDetailPage'
 
 /** Área del personal de la clínica: /c/:slug/app/* (DD-29). */
 export default function StaffArea() {
@@ -18,6 +20,7 @@ export default function StaffArea() {
 
   const navItems = [
     { to: appPath('/pacientes'), label: 'Pacientes', roles: STAFF_ROLES },
+    { to: appPath('/catalogo'), label: 'Catálogo', roles: ['clinic_admin'] },
     { to: appPath('/usuarios'), label: 'Usuarios', roles: ['clinic_admin'] },
     { to: appPath('/configuracion'), label: 'Configuración', roles: ['clinic_admin'] },
   ]
@@ -43,6 +46,15 @@ export default function StaffArea() {
             </RequireRole>
           }
         />
+        <Route
+          path="catalogo"
+          element={
+            <RequireRole allow={['clinic_admin']} forbiddenPath={forbiddenPath}>
+              <CatalogPage />
+            </RequireRole>
+          }
+        />
+        <Route path="planes/:uuid" element={<PlanDetailPage />} />
         <Route path="pacientes" element={<PatientsPage />} />
         <Route path="pacientes/nuevo" element={<PatientCreatePage />} />
         <Route path="pacientes/:uuid/*" element={<PatientDetailPage />} />

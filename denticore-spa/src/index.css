@@ -415,6 +415,18 @@
     border-color: var(--color-primary-pressed);
   }
 
+  .btn-danger {
+    background: var(--color-error);
+    border-color: var(--color-error);
+    color: var(--color-on-error);
+  }
+
+  .btn-danger:hover,
+  .btn-danger:active {
+    background: var(--color-on-error-container);
+    border-color: var(--color-on-error-container);
+  }
+
   .btn:disabled {
     background: var(--color-on-surface-variant);
     border-color: var(--color-on-surface-variant);
