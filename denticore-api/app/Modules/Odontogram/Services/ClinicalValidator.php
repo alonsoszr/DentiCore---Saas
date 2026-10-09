@@ -145,6 +145,36 @@ final class ClinicalValidator
     }
 
     /**
+     * Si la pieza cae dentro del tramo `$start`–`$end` (p. ej. un edéntulo total, NTS 188 §6.1.7):
+     * mismo arco y misma dentición, entre los extremos según su orden en la arcada.
+     */
+    public function spanContains(int $start, int $end, int $tooth): bool
+    {
+        $temporary = fn (int $piece): bool => intdiv($piece, 10) >= 5;
+
+        if ($this->isUpper($start) !== $this->isUpper($tooth) || $temporary($start) !== $temporary($tooth)) {
+            return false;
+        }
+
+        $from = min($this->archPosition($start), $this->archPosition($end));
+        $to = max($this->archPosition($start), $this->archPosition($end));
+        $position = $this->archPosition($tooth);
+
+        return $position >= $from && $position <= $to;
+    }
+
+    /**
+     * Posición de la pieza en su arcada, de derecha a izquierda del paciente: los cuadrantes
+     * derechos (1, 4, 5, 8) son negativos y los izquierdos (2, 3, 6, 7) positivos.
+     */
+    private function archPosition(int $tooth): int
+    {
+        $position = $tooth % 10;
+
+        return in_array(intdiv($tooth, 10), [1, 4, 5, 8], true) ? -$position : $position;
+    }
+
+    /**
      * @param  list<string>  $surfaces
      */
     private function surfacesError(int $tooth, array $surfaces, FindingCatalog $finding): ?string

@@ -343,6 +343,28 @@ export const patientResourceSchema = z.object({
   created_at: z.union([z.string().datetime({ offset: true }), z.null()]),
 })
 
+export const performedProcedureResourceSchema = z.object({
+  id: z.string(),
+  quantity: z.number().int(),
+  performed_at: z.string().datetime({ offset: true }),
+  observations: z.union([z.string(), z.null()]),
+  dentist: z.object({ id: z.string(), name: z.string(), cop: z.union([z.string(), z.null()]) }),
+  attention_id: z.string(),
+  odontogram_entry_id: z.union([z.string(), z.null()]),
+  informed_consent_id: z.union([z.string(), z.null()]),
+  plan_item: z.object({
+    id: z.string(),
+    status: z.enum(['propuesto', 'aceptado', 'realizado', 'descartado']),
+    quantity: z.number().int(),
+    performed_quantity: z.number().int(),
+  }),
+  plan: z.object({
+    id: z.string(),
+    status: z.enum(['borrador', 'propuesto', 'aceptado', 'en_ejecucion', 'completado', 'cancelado']),
+  }),
+  budget_id: z.union([z.string(), z.null()]),
+})
+
 export const planItemRequestSchema = z
   .object({
     procedure_id: z.string().optional(),

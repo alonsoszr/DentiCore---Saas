@@ -24,14 +24,25 @@ class OdontogramEntryService
     public function __construct(private ClinicalValidator $validator, private AuditLogger $audit) {}
 
     /**
+     * Con origen `procedimiento` (SDD §5.5 paso 7; RN-39) la entrada es siempre de evolución y
+     * referencia el procedimiento realizado; `$uuid` permite que el procedimiento, inmutable, guarde
+     * de antemano el uuid de su entrada.
+     *
      * @param  array{tooth: int, tooth_end?: int|null, surfaces?: list<string>|null, finding_code: string, state_code: string, note?: string|null}  $data
+     * @param  'manual'|'procedimiento'  $origin
      *
      * @throws BusinessRuleException
      * @throws ValidationException
      */
-    public function record(Attention $attention, array $data, User $author): OdontogramEntry
-    {
-        return DB::transaction(function () use ($attention, $data, $author): OdontogramEntry {
+    public function record(
+        Attention $attention,
+        array $data,
+        User $author,
+        string $origin = 'manual',
+        ?int $performedProcedureId = null,
+        ?string $uuid = null,
+    ): OdontogramEntry {
+        return DB::transaction(function () use ($attention, $data, $author, $origin, $performedProcedureId, $uuid): OdontogramEntry {
             $status = Attention::query()->whereKey($attention->id)->lockForUpdate()->value('status');
 
             if ($status !== 'abierta') {
@@ -42,17 +53,19 @@ class OdontogramEntryService
 
             // RN-20, RN-21: inicial mientras el odontograma inicial de esta atención siga abierto.
             $initial = InitialOdontogram::query()->where('patient_id', $attention->patient_id)->lockForUpdate()->first();
-            $isInitial = $initial !== null && $initial->status === 'abierto' && $initial->attention_id === $attention->id;
+            $isInitial = $origin !== 'procedimiento' && $initial !== null && $initial->status === 'abierto' && $initial->attention_id === $attention->id;
 
             $entry = new OdontogramEntry;
             $entry->forceFill([
+                ...($uuid === null ? [] : ['uuid' => $uuid]),
                 'patient_id' => $attention->patient_id,
                 'chain_patient_id' => $attention->patient_id,
                 'attention_id' => $attention->id,
                 'initial_odontogram_id' => $isInitial ? $initial->id : null,
                 'entry_type' => $isInitial ? 'inicial' : 'evolucion',
                 ...$this->findingColumns($data, $finding, $state),
-                'origin' => 'manual',
+                'origin' => $origin,
+                'performed_procedure_id' => $performedProcedureId,
                 'note' => $data['note'] ?? null,
                 'author_id' => $author->id,
                 'author_cop' => $author->cop_number,

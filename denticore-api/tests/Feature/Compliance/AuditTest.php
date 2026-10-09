@@ -160,7 +160,9 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
     $superAdmin = User::factory()->superAdmin()->create();
     $tenant = Tenant::factory()->plan('pro')->create(['slug' => 'clinica-hitos']);
     $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin', 'email' => 'ana@hitos.test', 'password' => 'Clave-Segura-2026', 'is_data_officer' => true]);
-    $receptionist = User::factory()->for($tenant)->create(['role' => 'receptionist', 'email' => 'rita@hitos.test', 'password' => 'Clave-Segura-2026']);
+    // Nombre fijo: restablece su contraseña más abajo y la política rechaza las que contienen
+    // palabras del nombre (un nombre aleatorio como «Eva» chocaría con «Nueva-Clave-2026»).
+    $receptionist = User::factory()->for($tenant)->create(['role' => 'receptionist', 'name' => 'Rita Huamán', 'email' => 'rita@hitos.test', 'password' => 'Clave-Segura-2026']);
 
     // tenant.suspended, tenant.reactivated y tenant.plan_changed (CUS-02, CUS-03)
     $platform = $this->actingWithToken($superAdmin);

@@ -39,15 +39,15 @@ class TreatmentPlanService
      *
      * @throws ValidationException
      */
-    public function create(Patient $patient, array $data, User $author): TreatmentPlan
+    public function create(Patient $patient, array $data, User $author, string $origin = 'manual'): TreatmentPlan
     {
-        return DB::transaction(function () use ($patient, $data, $author): TreatmentPlan {
+        return DB::transaction(function () use ($patient, $data, $author, $origin): TreatmentPlan {
             $plan = new TreatmentPlan;
             $plan->forceFill([
                 'patient_id' => $patient->id,
                 'title' => $data['title'],
                 'status' => 'borrador',
-                'origin' => 'manual',
+                'origin' => $origin,
                 'created_by' => $author->id,
             ])->save();
 
@@ -200,13 +200,7 @@ class TreatmentPlanService
             }
 
             $item->forceFill(['status' => 'descartado', 'discard_reason' => $reason])->save();
-
-            $finished = ! $plan->items()->whereNotIn('status', ['realizado', 'descartado'])->exists();
-
-            if ($plan->status === 'en_ejecucion' && $finished) {
-                $plan->completed_at = now();
-                $this->changeStatus($plan, 'completado');
-            }
+            $this->completeIfFinished($plan);
 
             return $item;
         });
@@ -239,6 +233,20 @@ class TreatmentPlanService
 
             return $this->changeStatus($plan, 'cancelado');
         });
+    }
+
+    /**
+     * Avance tras un procedimiento realizado (SRS §5.5.2; CUS-39 paso 5): `aceptado` →
+     * `en_ejecucion` con el primero y `completado` cuando todos los ítems están realizados o
+     * descartados (CA-39.2). El plan ya viene bloqueado por PerformedProcedureService.
+     */
+    public function recordProgress(TreatmentPlan $plan): TreatmentPlan
+    {
+        if ($plan->status === 'aceptado') {
+            $this->changeStatus($plan, 'en_ejecucion');
+        }
+
+        return $this->completeIfFinished($plan);
     }
 
     /**
@@ -378,6 +386,21 @@ class TreatmentPlanService
         if (! $plan->canTransitionTo($status)) {
             throw new BusinessRuleException('RF-114', "Transición no definida del plan: {$plan->status} → {$status}.", status: 409);
         }
+    }
+
+    /**
+     * CA-39.2: un plan en ejecución sin ítems pendientes se completa.
+     */
+    private function completeIfFinished(TreatmentPlan $plan): TreatmentPlan
+    {
+        $finished = ! $plan->items()->whereNotIn('status', ['realizado', 'descartado'])->exists();
+
+        if ($plan->status === 'en_ejecucion' && $finished) {
+            $plan->completed_at = now();
+            $this->changeStatus($plan, 'completado');
+        }
+
+        return $plan;
     }
 
     private function changeStatus(TreatmentPlan $plan, string $status): TreatmentPlan
