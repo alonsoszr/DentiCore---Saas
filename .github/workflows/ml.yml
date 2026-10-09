@@ -18,6 +18,10 @@ defaults:
   run:
     working-directory: denticore-ml
 
+env:
+  # Cuenta de Docker Hub para las descargas de imágenes (secretos del repositorio; opcional).
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
 jobs:
   # Checks requeridos de main: el workflow corre en todo PR y este trabajo decide si el PR
   # toca denticore-ml; si no, los demás trabajos se saltan y el trabajo final igual reporta.
@@ -80,6 +84,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+      # Docker Hub limita las descargas anónimas desde los runners compartidos (429 «toomanyrequests»);
+      # con la cuenta del proyecto el límite es mucho mayor. Sin los secretos, el paso se omite.
+      - name: Iniciar sesión en Docker Hub
+        if: env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - uses: docker/login-action@v3
         if: github.event_name == 'push'
         with:
