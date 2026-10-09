@@ -25,6 +25,7 @@ class InformedConsentTemplateService
     {
         return DB::transaction(function () use ($data, $user): InformedConsentTemplate {
             $procedures = $this->resolveProcedures($data['procedures']);
+            $this->ensureSingleActiveTemplate($data['procedures'], $procedures, null);
 
             $template = new InformedConsentTemplate([
                 'title' => $data['title'],
@@ -60,7 +61,13 @@ class InformedConsentTemplateService
             }
 
             if (array_key_exists('procedures', $data)) {
-                $this->syncProcedures($template, $this->resolveProcedures($data['procedures']));
+                $procedures = $this->resolveProcedures($data['procedures']);
+
+                if ($template->is_active) {
+                    $this->ensureSingleActiveTemplate($data['procedures'], $procedures, $template);
+                }
+
+                $this->syncProcedures($template, $procedures);
             }
 
             $template->save();
@@ -101,6 +108,42 @@ class InformedConsentTemplateService
         }
 
         return $procedures;
+    }
+
+    /**
+     * RF-073: un procedimiento tiene a lo más una plantilla activa; si no, la firma no sabría qué
+     * texto presentar. Bloquea los procedimientos para que dos altas simultáneas no lo eludan.
+     *
+     * @param  list<string>  $uuids  En el orden de la solicitud, para indicar `procedures.N`.
+     * @param  list<Procedure>  $procedures
+     *
+     * @throws ValidationException
+     */
+    private function ensureSingleActiveTemplate(array $uuids, array $procedures, ?InformedConsentTemplate $except): void
+    {
+        $ids = array_map(fn (Procedure $procedure) => $procedure->id, $procedures);
+        Procedure::query()->whereKey($ids)->lockForUpdate()->get();
+
+        $positions = array_flip($uuids);
+        $errors = [];
+
+        foreach ($procedures as $procedure) {
+            $other = InformedConsentTemplate::query()
+                ->where('is_active', true)
+                ->when($except !== null, fn ($query) => $query->whereKeyNot($except->id))
+                ->whereHas('procedures', fn ($query) => $query->whereKey($procedure->id))
+                ->first();
+
+            if ($other !== null) {
+                $errors['procedures.'.$positions[$procedure->uuid]] = "El procedimiento «{$procedure->name}» ya tiene la plantilla activa «{$other->title}»; desactívela primero.";
+            }
+        }
+
+        if ($errors !== []) {
+            ksort($errors);
+
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     private function storeVersion(InformedConsentTemplate $template, string $body, int $versionNumber, User $user): void

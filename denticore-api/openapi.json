@@ -2184,6 +2184,16 @@
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "description": "El \u00edtem no est\u00e1 pendiente: descartado, realizado o de un plan cancelado o completado (RF-073)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
                     }
                 }
             }

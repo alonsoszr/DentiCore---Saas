@@ -36,7 +36,7 @@ class InformedConsentTemplateController extends Controller
     /**
      * RF-072: crea la versión 1 y asocia los procedimientos.
      */
-    #[ProblemResponse(422, 'Un procedimiento no pertenece a la clínica')]
+    #[ProblemResponse(422, 'Un procedimiento no pertenece a la clínica o ya tiene otra plantilla activa (RF-073)')]
     public function store(Request $request): JsonResponse
     {
         Gate::authorize('create', InformedConsentTemplate::class);
@@ -58,7 +58,7 @@ class InformedConsentTemplateController extends Controller
      * RF-072: la versión solo cambia cuando cambia el cuerpo; título y procedimientos se
      * actualizan en la misma plantilla.
      */
-    #[ProblemResponse(422, 'Un procedimiento no pertenece a la clínica')]
+    #[ProblemResponse(422, 'Un procedimiento no pertenece a la clínica o ya tiene otra plantilla activa (RF-073)')]
     public function update(Request $request, InformedConsentTemplate $template): JsonResponse
     {
         Gate::authorize('update', $template);

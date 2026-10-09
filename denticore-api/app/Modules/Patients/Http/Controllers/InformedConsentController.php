@@ -27,6 +27,7 @@ class InformedConsentController extends Controller
      * RF-073: versión vigente de la plantilla activa del procedimiento completada con los datos
      * del paciente, el ítem y los riesgos/alternativas escritos por la recepción.
      */
+    #[ProblemResponse(409, 'El ítem no está pendiente: descartado, realizado o de un plan cancelado o completado (RF-073)')]
     #[ProblemResponse(422, 'El procedimiento no tiene una única plantilla activa (RF-073) o el odontólogo indicado no está activo')]
     public function preview(Request $request, PlanItem $item): JsonResponse
     {
@@ -70,6 +71,7 @@ class InformedConsentController extends Controller
      * (FE-2); en papel se adjunta el formulario firmado (FA-2). La recepción indica el
      * odontólogo que informa.
      */
+    #[ProblemResponse(409, 'El ítem no está pendiente: descartado, realizado o de un plan cancelado o completado (RF-073)')]
     #[ProblemResponse(422, 'Paciente menor sin representante legal vigente (RN-12)')]
     #[ProblemResponse(422, 'El procedimiento no tiene una única plantilla activa (RF-073)')]
     public function store(Request $request, PlanItem $item): JsonResponse

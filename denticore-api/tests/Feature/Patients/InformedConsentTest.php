@@ -319,12 +319,19 @@ it('does not alter signed consents when a template is deactivated', function () 
 
 it('rejects preview and signing without an active template or with several', function () {
     $f = icFixture();
-    $this->actingAsRole('dentist', $f['tenant']);
 
+    // La API ya no deja asociar dos plantillas activas al mismo procedimiento; la firma conserva
+    // la verificación como defensa (p. ej. datos anteriores a esa regla), simulada en el pivote.
     $this->actingAsRole('clinic_admin', $f['tenant']);
+    $otherProcedure = TenantContext::run($f['tenant'], fn () => Procedure::factory()->create(['tenant_id' => $f['tenant']->id])->uuid);
     $second = $this->postJson('/api/v1/informed-consent-templates', [
-        'title' => 'Segunda', 'body' => 'Otro texto', 'procedures' => [$f['procedure']->uuid],
-    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated()->json('data.id');
+        'title' => 'Segunda', 'body' => 'Otro texto', 'procedures' => [$otherProcedure],
+    ])->assertCreated()->json('data.id');
+    TenantContext::run($f['tenant'], fn () => DB::table('procedure_informed_consent_template')->insert([
+        'tenant_id' => $f['tenant']->id,
+        'procedure_id' => $f['procedure']->id,
+        'informed_consent_template_id' => DB::table('informed_consent_templates')->where('uuid', $second)->value('id'),
+    ]));
 
     $this->actingAsRole('dentist', $f['tenant']);
     $this->getJson("/api/v1/plan-items/{$f['item']->uuid}/informed-consents/preview")->assertUnprocessable()->assertJsonPath('rule', 'RF-073');
@@ -375,3 +382,48 @@ it('rejects templates with procedures outside the clinic', function () {
         ->assertJsonValidationErrors(['procedures.1'])
         ->assertJsonMissingValidationErrors(['procedures.0']);
 })->group('RF-072', 'RNF-101', 'CUS-82');
+
+it('keeps a single active template per procedure', function () {
+    $f = icFixture();
+    $this->actingAsRole('clinic_admin', $f['tenant']);
+    $body = 'El paciente {{paciente}} autoriza {{procedimiento}}.';
+
+    $this->postJson('/api/v1/informed-consent-templates', [
+        'title' => 'Duplicada', 'body' => $body, 'procedures' => [$f['procedure']->uuid],
+    ])->assertUnprocessable()->assertJsonValidationErrors(['procedures.0']);
+
+    $other = TenantContext::run($f['tenant'], fn () => Procedure::factory()->create([
+        'tenant_id' => $f['tenant']->id, 'requires_informed_consent' => true,
+    ])->uuid);
+    $second = $this->postJson('/api/v1/informed-consent-templates', [
+        'title' => 'Segunda', 'body' => $body, 'procedures' => [$other],
+    ])->assertCreated()->json('data.id');
+
+    // Editar la segunda para agregarle el procedimiento de la primera también se rechaza.
+    $this->putJson("/api/v1/informed-consent-templates/{$second}", ['procedures' => [$other, $f['procedure']->uuid]])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['procedures.1'])
+        ->assertJsonMissingValidationErrors(['procedures.0']);
+
+    // Desactivada la primera, el procedimiento queda libre.
+    $this->postJson("/api/v1/informed-consent-templates/{$f['template']}/deactivate")->assertOk();
+    $this->putJson("/api/v1/informed-consent-templates/{$second}", ['procedures' => [$other, $f['procedure']->uuid]])
+        ->assertOk();
+})->group('RF-073', 'RF-072', 'CUS-82');
+
+it('rejects preview and signing for an item that is not pending', function (string $case) {
+    $f = icFixture();
+    TenantContext::run($f['tenant'], fn () => $case === 'descartado'
+        ? DB::table('plan_items')->where('id', $f['item']->id)->update(['status' => 'descartado', 'discard_reason' => 'El paciente desistió'])
+        : DB::table('treatment_plans')->where('id', $f['item']->treatment_plan_id)
+            ->update(['status' => 'cancelado', 'cancel_reason' => 'Plan duplicado', 'cancelled_at' => now()]));
+    $this->actingAsRole('dentist', $f['tenant']);
+
+    $this->getJson("/api/v1/plan-items/{$f['item']->uuid}/informed-consents/preview")
+        ->assertConflict()
+        ->assertJsonPath('rule', 'RF-073');
+    icSign($f['item'])->assertConflict()->assertJsonPath('rule', 'RF-073');
+})->with([
+    'ítem descartado' => ['descartado'],
+    'plan cancelado' => ['cancelado'],
+])->group('RF-073', 'CUS-83');

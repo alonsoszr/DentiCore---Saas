@@ -48,6 +48,7 @@ class InformedConsentService
      */
     public function preview(PlanItem $item, User $actor, array $fills, ?string $informedByUuid = null): array
     {
+        $this->ensurePending($item);
         $template = $this->activeTemplateFor($item);
         $patient = $item->plan->patient;
         $informedBy = match (true) {
@@ -81,6 +82,7 @@ class InformedConsentService
      */
     public function sign(PlanItem $item, array $data, User $actor, ?string $ipAddress): InformedConsent
     {
+        $this->ensurePending($item);
         $template = $this->activeTemplateFor($item);
         $patient = $item->plan->patient;
         $representative = $this->representative($item);
@@ -162,6 +164,23 @@ class InformedConsentService
 
             return $consent;
         });
+    }
+
+    /**
+     * El consentimiento se firma para un procedimiento por realizar: ítem `propuesto` o `aceptado`
+     * de un plan vigente. Un ítem descartado o realizado, o un plan cancelado o completado, no lo
+     * requiere (SRS §5.5.2).
+     *
+     * @throws BusinessRuleException
+     */
+    private function ensurePending(PlanItem $item): void
+    {
+        $pending = in_array($item->status, ['propuesto', 'aceptado'], true)
+            && ! in_array($item->plan->status, ['cancelado', 'completado'], true);
+
+        if (! $pending) {
+            throw new BusinessRuleException('RF-073', 'El ítem no está pendiente: no requiere consentimiento informado.', status: 409);
+        }
     }
 
     /**
