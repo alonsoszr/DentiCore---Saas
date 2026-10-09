@@ -13,19 +13,17 @@ use Brick\Math\BigDecimal;
 final class BudgetCalculator
 {
     /**
-     * Tasa de IGV de la plataforma al 18 % (RN-30; DD-07 siembra `igv_rate` = 0.18).
-     */
-    private const IGV_RATE = '0.18';
-
-    /**
      * Calcula subtotales por línea y los importes del presupuesto en las dos modalidades de
      * `prices_include_igv`. `subtotal` y `discount_total` son previos al IGV: el parámetro
-     * `pricesIncludeIgv` solo decide cómo se desglosan base e IGV (RN-30).
+     * `pricesIncludeIgv` solo decide cómo se desglosan base e IGV (RN-30). `igvRate` es la tasa de
+     * la plataforma (`platform_settings.igv_rate`, 0.18 por RN-30) que el presupuesto copia al
+     * emitirse (§5.4.2 paso 5): cambiarla no requiere desplegar.
      *
      * @param  list<array{unit_price: Money|string|int, quantity: int, discount_pct: string|int}>  $lines
+     * @param  numeric-string  $igvRate
      * @return array{line_subtotals: list<Money>, subtotal: Money, discount_total: Money, base_amount: Money, igv_amount: Money, total: Money}
      */
-    public static function calculate(array $lines, bool $pricesIncludeIgv): array
+    public static function calculate(array $lines, bool $pricesIncludeIgv, string $igvRate = '0.18'): array
     {
         $lineSubtotals = [];
         $subtotal = Money::zero();
@@ -42,11 +40,11 @@ final class BudgetCalculator
 
         if ($pricesIncludeIgv) {
             $total = $net;
-            $base = $total->dividedBy(BigDecimal::one()->plus(self::IGV_RATE));
+            $base = $total->dividedBy(BigDecimal::one()->plus($igvRate));
             $igv = $total->minus($base);
         } else {
             $base = $net;
-            $igv = $net->multipliedBy(self::IGV_RATE);
+            $igv = $net->multipliedBy($igvRate);
             $total = $base->plus($igv);
         }
 

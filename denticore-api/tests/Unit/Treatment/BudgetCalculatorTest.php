@@ -85,7 +85,21 @@ it('computes total 294.00, base 249.15 and igv 44.85 with igv included', functio
         ->and((string) $result['igv_amount'])->toBe('44.85')
         ->and((string) $result['total'])->toBe('294.00')
         ->and($result['base_amount']->plus($result['igv_amount'])->equals($result['total']))->toBeTrue();
-})->group('RN-29', 'RN-30', 'RNF-001');
+})->group('T-081', 'CA-35.1', 'RN-29', 'RN-30', 'RNF-001');
+
+it('applies the platform IGV rate copied into the budget', function () {
+    $lines = [['unit_price' => '100.00', 'quantity' => 1, 'discount_pct' => '0']];
+
+    $excluded = BudgetCalculator::calculate($lines, pricesIncludeIgv: false, igvRate: '0.1000');
+    $included = BudgetCalculator::calculate($lines, pricesIncludeIgv: true, igvRate: '0.1000');
+
+    expect((string) $excluded['igv_amount'])->toBe('10.00')
+        ->and((string) $excluded['total'])->toBe('110.00')
+        ->and((string) $included['base_amount'])->toBe('90.91')
+        ->and((string) $included['igv_amount'])->toBe('9.09')
+        ->and((string) $included['total'])->toBe('100.00')
+        ->and((string) BudgetCalculator::calculate($lines, false)['total'])->toBe('118.00');
+})->group('RN-30', 'DD-07');
 
 it('matches the reference implementation in 10000 random budgets', function () {
     $random = new SeededAmounts;
@@ -123,4 +137,4 @@ it('matches the reference implementation in 10000 random budgets', function () {
             expect((string) $money)->toBe($format($expected['lineSubtotals'][$i]), $context);
         }
     }
-})->group('RN-29', 'RN-30', 'RNF-001');
+})->group('T-082', 'RN-29', 'RN-30', 'RN-44', 'RNF-001');
