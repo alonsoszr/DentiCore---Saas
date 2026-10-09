@@ -4,9 +4,6 @@ name: ml
 
 on:
   pull_request:
-    paths:
-      - 'denticore-ml/**'
-      - '.github/workflows/ml.yml'
   push:
     branches: [main]
     paths:
@@ -22,8 +19,35 @@ defaults:
     working-directory: denticore-ml
 
 jobs:
+  # Checks requeridos de main: el workflow corre en todo PR y este trabajo decide si el PR
+  # toca denticore-ml; si no, los demás trabajos se saltan y el trabajo final igual reporta.
+  changes:
+    name: Cambios en denticore-ml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.diff.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        working-directory: .
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BASE_SHA...$GITHUB_SHA" | grep -qE '^(denticore-ml/|\.github/workflows/ml\.yml$)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
   checks:
     name: Lint, tipos, pruebas y auditoría
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -72,3 +96,22 @@ jobs:
           tags: ${{ steps.name.outputs.image }}:${{ github.sha }}
           cache-from: type=gha,scope=ml
           cache-to: type=gha,mode=max,scope=ml
+
+  # Check requerido «ml» de la regla de main: pasa si los trabajos pasaron o se saltaron
+  # porque el PR no toca estas rutas; falla si alguno falló o se canceló.
+  gate:
+    name: ml
+    if: always()
+    needs: [changes, checks, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resultado del pipeline
+        working-directory: .
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultados: $RESULTS"
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*) exit 1 ;;
+          esac

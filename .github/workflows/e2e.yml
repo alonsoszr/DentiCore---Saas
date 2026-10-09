@@ -5,13 +5,6 @@ name: e2e
 
 on:
   pull_request:
-    paths:
-      - 'denticore-api/**'
-      - 'denticore-spa/**'
-      - 'docker-compose.yml'
-      - 'infra/**'
-      - 'denticore-ml/**'
-      - '.github/workflows/e2e.yml'
   push:
     branches: [main]
 
@@ -20,7 +13,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Checks requeridos de main: el workflow corre en todo PR y este trabajo decide si el PR
+  # toca el código o el entorno; si no, los demás trabajos se saltan y el trabajo final igual reporta.
+  changes:
+    name: Cambios en el código o el entorno
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.diff.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        working-directory: .
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BASE_SHA...$GITHUB_SHA" | grep -qE '^(denticore-api/|denticore-spa/|denticore-ml/|infra/|docker-compose\.yml$|\.github/workflows/e2e\.yml$)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
   e2e:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
