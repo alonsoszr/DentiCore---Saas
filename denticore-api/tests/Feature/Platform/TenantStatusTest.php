@@ -13,6 +13,7 @@ use App\Modules\Patients\Services\InformedConsentService;
 use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Treatment\Models\BudgetLine;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
@@ -90,6 +91,7 @@ it('applies the read-only rule to every registered staff route', function () {
     });
 
     $attention = null;
+    $budgetLine = null;
     $bindings = [
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'receptionist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
@@ -107,6 +109,16 @@ it('applies the read-only rule to every registered staff route', function () {
         '{tooth}' => fn () => '16',
         '{procedure}' => fn () => Procedure::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{plan}' => fn () => TreatmentPlan::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        // Presupuesto con una línea suya: la ruta de la línea usa scopeBindings.
+        '{budget}' => function () use ($tenant, &$budgetLine) {
+            $budgetLine = BudgetLine::factory()->create(['tenant_id' => $tenant->id]);
+
+            return TenantContext::run($tenant, fn () => $budgetLine->budget->uuid);
+        },
+        '{line}' => function () use (&$budgetLine) {
+            return $budgetLine->uuid;
+        },
+        '{document}' => fn () => (string) Str::uuid(),
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => function () use ($tenant, &$attention) {
             return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([

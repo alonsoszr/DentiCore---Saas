@@ -99,6 +99,18 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/plan-items/{item}/discard', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/treatment-plans/{plan}/cancellation-preview', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/cancel', 'cus' => 'CUS-40', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    // CUS-35, CUS-36: el personal gestiona y consulta los presupuestos (BudgetPolicy); el tope de
+    // descuento por rol (RN-31) lo aplica el servicio. El portal (PA) llega en MS-06.
+    ['method' => 'POST', 'uri' => 'api/v1/treatment-plans/{plan}/budgets', 'cus' => 'CUS-35', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/budgets', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/budgets/{budget}', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/budgets/{budget}/lines/{line}', 'cus' => 'CUS-35', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'DELETE', 'uri' => 'api/v1/budgets/{budget}', 'cus' => 'CUS-35', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/budgets/{budget}/issue', 'cus' => 'CUS-35', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/budgets/{budget}/corrections', 'cus' => 'CUS-35', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/budgets/{budget}/pdf', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/budgets/{budget}/pdf/regenerate', 'cus' => 'CUS-35', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/documents/{document}', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'patient']],
     // M03 — Consentimiento informado de procedimientos (SDD §2.5, §4.3.3; CUS-82, CUS-83).
     ['method' => 'GET', 'uri' => 'api/v1/informed-consent-templates', 'cus' => 'CUS-82', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/informed-consent-templates', 'cus' => 'CUS-82', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
