@@ -11,6 +11,9 @@ use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Treatment\Models\PlanItem;
+use App\Modules\Treatment\Models\Procedure;
+use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +66,9 @@ it('applies the read-only rule to every registered staff route', function () {
         },
         // Diagnóstico de la misma atención: el binding anidado lo resuelve antes de la regla RN-07.
         '{tooth}' => fn () => '16',
+        '{procedure}' => fn () => Procedure::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{plan}' => fn () => TreatmentPlan::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{item}' => fn () => PlanItem::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => function () use ($tenant, &$attention) {
             return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([

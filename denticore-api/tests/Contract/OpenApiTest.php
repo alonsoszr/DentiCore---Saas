@@ -10,6 +10,8 @@ use App\Modules\Identity\Services\InvitationService;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Treatment\Models\PlanItem;
+use App\Modules\Treatment\Models\Procedure;
 use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\UploadedFile;
@@ -32,6 +34,8 @@ it('keeps openapi.json in sync with the code', function () {
 
 it('matches every API response against the OpenAPI 3.1 document', function () {
     OpenApiContract::$covered = [];
+    // El recorrido hace más de 60 solicitudes por usuario (throttle:api); el límite real se prueba aparte.
+    config(['auth.api_requests_per_minute' => 1000]);
     $check = fn ($response, string $method, string $path) => OpenApiContract::assertMatches($response, $method, $path);
 
     $superAdmin = User::factory()->superAdmin()->create(['email' => 'sa@denticore.test']);
@@ -248,6 +252,69 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     ]), 'POST', '/attentions/{attention}/addenda');
     $check($this->actingWithToken($dentist)->postJson($addenda, []), 'POST', '/attentions/{attention}/addenda');
     $check($this->actingWithToken($admin)->getJson("/api/v1/attentions/{$attentionId}"), 'GET', '/attentions/{attention}');
+
+    // Catálogo de procedimientos (CUS-32)
+    $check($this->actingWithToken($admin)->getJson('/api/v1/procedures'), 'GET', '/procedures');
+    $created = $this->actingWithToken($admin)->postJson('/api/v1/procedures', [
+        'code' => 'RES-01', 'name' => 'Restauración con resina', 'category' => 'Operatoria', 'price' => '150.00',
+        'requires_tooth' => true, 'requires_surface' => true, 'resulting_finding_code' => 'RESTAURACION', 'resulting_state_code' => 'R_BUENO',
+    ]);
+    $check($created, 'POST', '/procedures');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/procedures', ['code' => 'RES-01']), 'POST', '/procedures');
+    $procedureId = $created->json('data.id');
+    $check($this->actingWithToken($admin)->patchJson("/api/v1/procedures/{$procedureId}", ['price' => '180.50']), 'PATCH', '/procedures/{procedure}');
+    $check($this->actingWithToken($admin)->patchJson("/api/v1/procedures/{$procedureId}", ['price' => '-1']), 'PATCH', '/procedures/{procedure}');
+    $used = PlanItem::factory()->create(['tenant_id' => $tenant->id]);
+    $usedId = TenantContext::run($tenant, fn () => Procedure::query()->whereKey($used->procedure_id)->value('uuid'));
+    $check($this->actingWithToken($admin)->deleteJson("/api/v1/procedures/{$usedId}"), 'DELETE', '/procedures/{procedure}');
+    $check($this->actingWithToken($admin)->deleteJson("/api/v1/procedures/{$procedureId}"), 'DELETE', '/procedures/{procedure}');
+    $check($this->actingWithToken($admin)->deleteJson('/api/v1/procedures/'.fake()->uuid()), 'DELETE', '/procedures/{procedure}');
+
+    // Plan de tratamiento, pendientes de decisión y no tratar (CUS-33, CUS-34, CUS-40). El hallazgo
+    // rojo vigente del adulto es el reemplazo en la pieza 37.
+    $pending = $this->actingWithToken($dentist)->getJson("/api/v1/patients/{$adult->uuid}/pending-findings");
+    $check($pending, 'GET', '/patients/{patient}/pending-findings');
+    $findingId = $pending->json('data.0.id');
+    $planProcedure = Procedure::factory()->create(['tenant_id' => $tenant->id, 'requires_surface' => false])->uuid;
+    $plans = "/api/v1/patients/{$adult->uuid}/treatment-plans";
+    $createdPlan = $this->actingWithToken($dentist)->postJson($plans, ['title' => 'Plan de contrato', 'items' => [
+        ['procedure_id' => $planProcedure, 'tooth' => 37, 'finding_ids' => [$findingId]],
+    ]], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($createdPlan, 'POST', '/patients/{patient}/treatment-plans');
+    $check($this->actingWithToken($dentist)->postJson($plans, ['title' => 'Sin pieza', 'items' => [['procedure_id' => $planProcedure]]], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/treatment-plans');
+    $check($this->actingWithToken($admin)->getJson($plans), 'GET', '/patients/{patient}/treatment-plans');
+    $plan = '/api/v1/treatment-plans/'.$createdPlan->json('data.id');
+    $planItem = '/api/v1/plan-items/'.$createdPlan->json('data.items.0.id');
+    $check($this->actingWithToken($admin)->getJson($plan), 'GET', '/treatment-plans/{plan}');
+    $check($this->actingWithToken($dentist)->patchJson($plan, ['title' => 'Plan de contrato corregido']), 'PATCH', '/treatment-plans/{plan}');
+    $check($this->actingWithToken($dentist)->patchJson($plan, ['title' => str_repeat('a', 151)]), 'PATCH', '/treatment-plans/{plan}');
+    $added = $this->actingWithToken($dentist)->postJson("{$plan}/items", ['items' => [['procedure_id' => $planProcedure, 'tooth' => 16]]]);
+    $check($added, 'POST', '/treatment-plans/{plan}/items');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/items", ['items' => [['procedure_id' => $planProcedure, 'tooth' => 19]]]), 'POST', '/treatment-plans/{plan}/items');
+    $secondItem = '/api/v1/plan-items/'.$added->json('data.items.1.id');
+    $check($this->actingWithToken($dentist)->patchJson($secondItem, ['quantity' => 2, 'session_number' => 2]), 'PATCH', '/plan-items/{item}');
+    $check($this->actingWithToken($dentist)->patchJson($secondItem, ['tooth' => 19]), 'PATCH', '/plan-items/{item}');
+    $check($this->actingWithToken($dentist)->deleteJson($secondItem), 'DELETE', '/plan-items/{item}');
+    $noTreat = "/api/v1/odontogram-entries/{$findingId}/no-treat";
+    $check($this->actingWithToken($dentist)->postJson($noTreat, ['reason' => 'corto']), 'POST', '/odontogram-entries/{entry}/no-treat');
+    $check($this->actingWithToken($dentist)->postJson($noTreat, ['reason' => 'Ya figura en el plan']), 'POST', '/odontogram-entries/{entry}/no-treat');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/propose"), 'POST', '/treatment-plans/{plan}/propose');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/propose"), 'POST', '/treatment-plans/{plan}/propose');
+    $check($this->actingWithToken($dentist)->patchJson($plan, ['title' => 'Plan propuesto']), 'PATCH', '/treatment-plans/{plan}');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/reopen"), 'POST', '/treatment-plans/{plan}/reopen');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/reopen"), 'POST', '/treatment-plans/{plan}/reopen');
+    $check($this->actingWithToken($admin)->postJson("{$planItem}/discard", []), 'POST', '/plan-items/{item}/discard');
+    $check($this->actingWithToken($admin)->postJson("{$planItem}/discard", ['reason' => 'El paciente desistió']), 'POST', '/plan-items/{item}/discard');
+    $check($this->actingWithToken($admin)->postJson("{$planItem}/discard", ['reason' => 'Otra vez']), 'POST', '/plan-items/{item}/discard');
+    $check($this->actingWithToken($dentist)->postJson($noTreat, ['reason' => 'El paciente no desea tratarlo']), 'POST', '/odontogram-entries/{entry}/no-treat');
+    $check($this->actingWithToken($dentist)->postJson("{$plan}/propose"), 'POST', '/treatment-plans/{plan}/propose');
+    $check($this->actingWithToken($dentist)->patchJson($planItem, ['quantity' => 3]), 'PATCH', '/plan-items/{item}');
+    $check($this->actingWithToken($admin)->getJson("{$plan}/cancellation-preview"), 'GET', '/treatment-plans/{plan}/cancellation-preview');
+    $check($this->actingWithToken($admin)->postJson("{$plan}/cancel", []), 'POST', '/treatment-plans/{plan}/cancel');
+    $check($this->actingWithToken($admin)->postJson("{$plan}/cancel", ['reason' => 'Plan de prueba del contrato']), 'POST', '/treatment-plans/{plan}/cancel');
+    $check($this->actingWithToken($admin)->postJson("{$plan}/cancel", ['reason' => 'Segunda cancelación']), 'POST', '/treatment-plans/{plan}/cancel');
+    $check($this->actingWithToken($admin)->getJson("{$plan}/cancellation-preview"), 'GET', '/treatment-plans/{plan}/cancellation-preview');
+    $check($this->actingWithToken($dentist)->deleteJson($planItem), 'DELETE', '/plan-items/{item}');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

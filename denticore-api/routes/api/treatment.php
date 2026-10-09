@@ -1,0 +1,47 @@
+<?php
+
+use App\Modules\Treatment\Http\Controllers\PlanItemController;
+use App\Modules\Treatment\Http\Controllers\ProcedureCatalogController;
+use App\Modules\Treatment\Http\Controllers\TreatmentPlanController;
+use Illuminate\Support\Facades\Route;
+
+// M05 — Catálogo, plan de tratamiento, presupuesto y procedimientos (SDD §4.3.5). STAFF (SDD §4.2).
+// Las rutas llegan con sus tareas: catálogo (TASK-055), plan (TASK-056), presupuesto (TASK-058,
+// TASK-059) y procedimiento realizado (TASK-061).
+
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant'])->group(function () {
+    // CUS-32: catálogo de procedimientos (RF-107, RF-109). El personal lo consulta; solo el
+    // Administrador de Clínica lo modifica.
+    Route::get('/procedures', [ProcedureCatalogController::class, 'index'])
+        ->middleware('role:clinic_admin,dentist,receptionist');
+    Route::middleware('role:clinic_admin')->group(function () {
+        Route::post('/procedures', [ProcedureCatalogController::class, 'store']);
+        Route::patch('/procedures/{procedure}', [ProcedureCatalogController::class, 'update']);
+        Route::delete('/procedures/{procedure}', [ProcedureCatalogController::class, 'destroy']);
+    });
+
+    // CUS-33: plan de tratamiento (RF-110, RF-111, RF-114, RF-130). El personal consulta los planes
+    // con su avance; el odontólogo los elabora y los presenta.
+    Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
+        Route::get('/patients/{patient}/treatment-plans', [TreatmentPlanController::class, 'index']);
+        Route::get('/treatment-plans/{plan}', [TreatmentPlanController::class, 'show']);
+    });
+    Route::post('/patients/{patient}/treatment-plans', [TreatmentPlanController::class, 'store'])
+        ->middleware(['role:dentist', 'cop', 'consent:atencion', 'idempotent']);
+    Route::post('/treatment-plans/{plan}/items', [PlanItemController::class, 'store'])
+        ->middleware(['role:dentist', 'cop']);
+    Route::middleware('role:dentist')->group(function () {
+        Route::patch('/treatment-plans/{plan}', [TreatmentPlanController::class, 'update']);
+        Route::patch('/plan-items/{item}', [PlanItemController::class, 'update']);
+        Route::delete('/plan-items/{item}', [PlanItemController::class, 'destroy']);
+        Route::post('/treatment-plans/{plan}/propose', [TreatmentPlanController::class, 'propose']);
+        Route::post('/treatment-plans/{plan}/reopen', [TreatmentPlanController::class, 'reopen']);
+    });
+
+    // CUS-40: descartar ítems y cancelar planes con motivo (RF-114, RF-129).
+    Route::middleware('role:clinic_admin,dentist')->group(function () {
+        Route::post('/plan-items/{item}/discard', [PlanItemController::class, 'discard']);
+        Route::get('/treatment-plans/{plan}/cancellation-preview', [TreatmentPlanController::class, 'cancellationPreview']);
+        Route::post('/treatment-plans/{plan}/cancel', [TreatmentPlanController::class, 'cancel']);
+    });
+});
