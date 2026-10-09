@@ -10,7 +10,8 @@ use Illuminate\Http\Request;
 /**
  * Presupuesto (CUS-35, CUS-36; RF-115, RF-116, RF-118, RF-121): número, estado de SRS §5.5.3,
  * importes como texto decimal (RNF-046), vigencia, odontólogo con COP, líneas con su descuento y
- * estado del PDF. Un borrador no tiene número ni vencimiento.
+ * estado del PDF. Un borrador no tiene número ni vencimiento; uno decidido muestra la evidencia
+ * de la decisión (CA-37.3, RF-122).
  *
  * @mixin Budget
  */
@@ -19,7 +20,7 @@ class BudgetResource extends ApiResource
     /**
      * Relaciones que usa el recurso.
      */
-    public const RELATIONS = ['plan', 'patient', 'correctedBudget', 'dentist', 'pdfDocument', 'lines.planItem', 'lines.procedure'];
+    public const RELATIONS = ['plan', 'patient', 'correctedBudget', 'dentist', 'pdfDocument', 'decisionBy', 'lines.planItem', 'lines.procedure'];
 
     /**
      * @return array<string, mixed>
@@ -53,6 +54,24 @@ class BudgetResource extends ApiResource
                 /** @var 'pendiente'|'generando'|'listo'|'fallido' */
                 'status' => $this->pdfDocument->status,
             ],
+            'decision' => $this->decided_at === null ? null : [
+                /** @var 'portal'|'presencial'|'enlace' */
+                'channel' => $this->decision_channel,
+                'by' => $this->decisionBy === null ? null : [
+                    'id' => $this->decisionBy->uuid,
+                    'name' => $this->decisionBy->name,
+                ],
+                /** @var 'titular'|'representante' */
+                'signer' => $this->decision_signer,
+                'decided_at' => $this->decided_at,
+                'ip' => $this->decision_ip,
+                /** @var 'precio'|'segunda_opinion'|'momento_no_oportuno'|'otro'|null */
+                'rejection_reason' => $this->rejection_reason,
+                'rejection_detail' => $this->rejection_detail,
+                'signed_file' => $this->signed_file_id !== null,
+            ],
+            'replaced_at' => $this->replaced_at,
+            'expired_at' => $this->expired_at,
             'lines' => $this->lines->map(fn (BudgetLine $line) => [
                 'id' => $line->uuid,
                 'plan_item_id' => $line->planItem->uuid,

@@ -406,6 +406,15 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     TenantContext::run($tenant, fn () => DB::table('generated_documents')->where('id', $pdfDocument->id)->update(['status' => 'fallido']));
     $check($this->actingWithToken($receptionist)->postJson("{$budget}/pdf/regenerate"), 'POST', '/budgets/{budget}/pdf/regenerate');
 
+    // Decisión presencial sobre el presupuesto emitido (CUS-37).
+    $adultDocument = TenantContext::run($tenant, fn () => Patient::query()->whereKey($adult->id)->sole()->document_number);
+    $decide = fn (array $payload) => $this->actingWithToken($receptionist)->post("{$budget}/decision", [
+        'decision' => 'aceptado', 'signer' => 'titular', 'signer_document_number' => $adultDocument, ...$payload,
+    ], ['Accept' => 'application/json', 'Idempotency-Key' => (string) Str::uuid()]);
+    $check($decide(['signer_document_number' => '00000000']), 'POST', '/budgets/{budget}/decision');
+    $check($decide([]), 'POST', '/budgets/{budget}/decision');
+    $check($decide([]), 'POST', '/budgets/{budget}/decision');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');

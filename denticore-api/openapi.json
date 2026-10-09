@@ -1214,6 +1214,151 @@
                 }
             }
         },
+        "/budgets/{budget}/decision": {
+            "post": {
+                "operationId": "budgetDecision.store",
+                "tags": [
+                    "BudgetDecision"
+                ],
+                "parameters": [
+                    {
+                        "name": "budget",
+                        "in": "path",
+                        "required": true,
+                        "description": "The budget UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "decision": {
+                                        "type": "string",
+                                        "enum": [
+                                            "aceptado",
+                                            "rechazado"
+                                        ]
+                                    },
+                                    "signer": {
+                                        "type": "string",
+                                        "enum": [
+                                            "titular",
+                                            "representante"
+                                        ]
+                                    },
+                                    "signer_document_number": {
+                                        "type": "string",
+                                        "maxLength": 12
+                                    },
+                                    "rejection_reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "precio",
+                                            "segunda_opinion",
+                                            "momento_no_oportuno",
+                                            "otro",
+                                            null
+                                        ]
+                                    },
+                                    "rejection_detail": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "signed_file": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 10240 kilobytes."
+                                    }
+                                },
+                                "required": [
+                                    "decision",
+                                    "signer",
+                                    "signer_document_number"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`BudgetResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/BudgetResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/budgets/{budget}/pdf": {
             "get": {
                 "operationId": "budgetDocument.show",
@@ -8959,6 +9104,106 @@
                             "status"
                         ]
                     },
+                    "decision": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "channel": {
+                                "type": "string",
+                                "enum": [
+                                    "portal",
+                                    "presencial",
+                                    "enlace"
+                                ]
+                            },
+                            "by": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "name"
+                                ]
+                            },
+                            "signer": {
+                                "type": "string",
+                                "enum": [
+                                    "titular",
+                                    "representante"
+                                ]
+                            },
+                            "decided_at": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "format": "date-time"
+                            },
+                            "ip": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "rejection_reason": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "enum": [
+                                    "precio",
+                                    "segunda_opinion",
+                                    "momento_no_oportuno",
+                                    "otro",
+                                    null
+                                ]
+                            },
+                            "rejection_detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "signed_file": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "channel",
+                            "by",
+                            "signer",
+                            "decided_at",
+                            "ip",
+                            "rejection_reason",
+                            "rejection_detail",
+                            "signed_file"
+                        ]
+                    },
+                    "replaced_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "expired_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
                     "lines": {
                         "type": "array",
                         "items": {
@@ -9076,6 +9321,9 @@
                     "terms",
                     "dentist",
                     "pdf",
+                    "decision",
+                    "replaced_at",
+                    "expired_at",
                     "lines",
                     "created_at"
                 ],

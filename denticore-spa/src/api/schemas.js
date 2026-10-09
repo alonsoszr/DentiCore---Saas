@@ -125,6 +125,27 @@ export const budgetResourceSchema = z.object({
   terms: z.union([z.string(), z.null()]),
   dentist: z.union([z.object({ id: z.string(), name: z.string(), cop: z.union([z.string(), z.null()]) }), z.null()]),
   pdf: z.union([z.object({ status: z.enum(['pendiente', 'generando', 'listo', 'fallido']) }), z.null()]),
+  decision: z.union([
+    z.object({
+      channel: z.enum(['portal', 'presencial', 'enlace']),
+      by: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+      signer: z.enum(['titular', 'representante']),
+      decided_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+      ip: z.union([z.string(), z.null()]),
+      rejection_reason: z.union([
+        z.literal('precio'),
+        z.literal('segunda_opinion'),
+        z.literal('momento_no_oportuno'),
+        z.literal('otro'),
+        z.literal(null),
+      ]),
+      rejection_detail: z.union([z.string(), z.null()]),
+      signed_file: z.boolean(),
+    }),
+    z.null(),
+  ]),
+  replaced_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  expired_at: z.union([z.string().datetime({ offset: true }), z.null()]),
   lines: z.array(
     z.object({
       id: z.string(),

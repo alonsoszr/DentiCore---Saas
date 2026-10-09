@@ -29,3 +29,7 @@ Schedule::command('representations:end-at-majority')->hourlyAt(5)->onOneServer()
 // Cierre de las atenciones y los odontogramas iniciales pendientes (SDD §1.9; CUS-27, RF-096): a
 // las 23:59 de cada clínica. Corre cada 5 minutos para cubrir cualquier zona horaria; es idempotente.
 Schedule::command('attentions:auto-close')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
+
+// Vencimiento de los presupuestos emitidos (SDD §1.9, §5.4.4; CUS-38, RF-124): a las 23:59 de cada
+// clínica, a lo más 5 minutos después (RNF-020). Corre cada 5 minutos; es idempotente.
+Schedule::command('budgets:expire')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
