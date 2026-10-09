@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Patients\Http\Controllers\ConsentController;
+use App\Modules\Patients\Http\Controllers\InformedConsentController;
+use App\Modules\Patients\Http\Controllers\InformedConsentTemplateController;
 use App\Modules\Patients\Http\Controllers\LegalRepresentativeController;
 use App\Modules\Patients\Http\Controllers\MedicalHistoryController;
 use App\Modules\Patients\Http\Controllers\PatientController;
@@ -41,5 +43,22 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     Route::middleware('role:clinic_admin,receptionist')->group(function () {
         Route::post('/patients/{patient}/representatives', [LegalRepresentativeController::class, 'store']);
         Route::post('/patients/{patient}/representatives/{representative}/end', [LegalRepresentativeController::class, 'end']);
+    });
+
+    // CUS-82: plantillas de consentimiento informado (RF-072; SDD §4.3.3). STAFF consulta, solo
+    // el administrador las gestiona (SDD §4.2).
+    Route::get('/informed-consent-templates', [InformedConsentTemplateController::class, 'index'])
+        ->middleware('role:clinic_admin,dentist,receptionist');
+    Route::middleware('role:clinic_admin')->group(function () {
+        Route::post('/informed-consent-templates', [InformedConsentTemplateController::class, 'store']);
+        Route::put('/informed-consent-templates/{template}', [InformedConsentTemplateController::class, 'update']);
+        Route::post('/informed-consent-templates/{template}/deactivate', [InformedConsentTemplateController::class, 'deactivate']);
+    });
+
+    // CUS-83: consentimiento informado de un ítem del plan (RF-073, RF-074, RN-12, RN-76; SDD §4.3.3).
+    Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
+        Route::get('/plan-items/{item}/informed-consents/preview', [InformedConsentController::class, 'preview']);
+        Route::post('/plan-items/{item}/informed-consents', [InformedConsentController::class, 'store'])->middleware('idempotent');
+        Route::post('/informed-consents/{informedConsent}/revoke', [InformedConsentController::class, 'revoke']);
     });
 });

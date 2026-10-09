@@ -157,6 +157,30 @@ export const findingNoTreatDecisionResourceSchema = z.object({
   created_at: z.string().datetime({ offset: true }),
 })
 
+export const informedConsentResourceSchema = z.object({
+  id: z.string(),
+  template_version: z.number().int(),
+  signer: z.string(),
+  representative_id: z.union([z.string(), z.null()]),
+  channel: z.string(),
+  text_sha256: z.string(),
+  signed_at: z.string().datetime({ offset: true }),
+  status: z.string(),
+  used_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  revoked_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  revocation_reason: z.union([z.string(), z.null()]),
+  informed_by: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+})
+
+export const informedConsentTemplateResourceSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  is_active: z.boolean(),
+  current_version: z.union([z.number().int(), z.null()]),
+  body: z.union([z.string(), z.null()]),
+  procedures: z.array(z.string()),
+})
+
 export const legalRepresentativeResourceSchema = z.object({
   id: z.string(),
   document_type: z.string(),

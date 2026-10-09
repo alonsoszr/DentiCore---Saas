@@ -4,6 +4,7 @@ namespace App\Modules\Treatment\Models;
 
 use App\Modules\Odontogram\Models\FindingCatalog;
 use App\Modules\Odontogram\Models\FindingState;
+use App\Modules\Patients\Models\InformedConsentTemplate;
 use App\Modules\Treatment\Policies\ProcedurePolicy;
 use App\Support\Database\HasUuid;
 use App\Support\Tenancy\BelongsToTenant;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * Procedimiento del catálogo de la clínica (SDD §2.8 `procedure_catalog`; RF-107, RF-109, RN-26,
@@ -75,5 +77,21 @@ class Procedure extends Model
     public function resultingFindingState(): BelongsTo
     {
         return $this->belongsTo(FindingState::class, 'resulting_finding_state_id');
+    }
+
+    /**
+     * Plantillas de consentimiento informado asociadas a este procedimiento (SDD §2.5
+     * `procedure_informed_consent_template`; CUS-82).
+     *
+     * @return BelongsToMany<InformedConsentTemplate, $this>
+     */
+    public function informedConsentTemplates(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            InformedConsentTemplate::class,
+            'procedure_informed_consent_template',
+            'procedure_id',
+            'informed_consent_template_id',
+        )->withPivot('tenant_id');
     }
 }

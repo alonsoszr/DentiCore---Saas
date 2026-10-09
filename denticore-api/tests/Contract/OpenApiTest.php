@@ -12,9 +12,11 @@ use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Notification;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
+use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -315,6 +317,45 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson("{$plan}/cancel", ['reason' => 'Segunda cancelación']), 'POST', '/treatment-plans/{plan}/cancel');
     $check($this->actingWithToken($admin)->getJson("{$plan}/cancellation-preview"), 'GET', '/treatment-plans/{plan}/cancellation-preview');
     $check($this->actingWithToken($dentist)->deleteJson($planItem), 'DELETE', '/plan-items/{item}');
+
+    // Consentimientos informados de procedimientos (CUS-82, CUS-83)
+    // El contrato ya acumula cientos de solicitudes del mismo usuario; se desactiva el throttle
+    // (DD-19) para que este bloque no termine en 429 (no se ejerce ninguna aserción de límite aquí).
+    $this->withoutMiddleware(ThrottleRequests::class);
+    $consentProcedure = TenantContext::run($tenant, fn () => Procedure::factory()->create(['tenant_id' => $tenant->id, 'requires_informed_consent' => true]));
+    $consentItem = TenantContext::run($tenant, function () use ($tenant, $adult, $dentist, $consentProcedure): PlanItem {
+        $consentPlan = TreatmentPlan::factory()->create([
+            'tenant_id' => $tenant->id, 'patient_id' => $adult->id, 'created_by' => $dentist->id,
+        ]);
+
+        return PlanItem::factory()->create([
+            'tenant_id' => $tenant->id, 'treatment_plan_id' => $consentPlan->id, 'procedure_id' => $consentProcedure->id, 'tooth' => 16,
+        ]);
+    });
+    $templates = '/api/v1/informed-consent-templates';
+    $createdTemplate = $this->actingWithToken($admin)->postJson($templates, [
+        'title' => 'Consentimiento de extracción',
+        'body' => 'El paciente {{paciente}} autoriza {{procedimiento}} en {{pieza}}. Riesgos: {{riesgos}}. Alternativas: {{alternativas}}. Informó: {{odontologo}}.',
+        'procedures' => [$consentProcedure->uuid],
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($createdTemplate, 'POST', '/informed-consent-templates');
+    $check($this->actingWithToken($admin)->postJson($templates, [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/informed-consent-templates');
+    $templateId = $createdTemplate->json('data.id');
+    $check($this->actingWithToken($dentist)->getJson($templates), 'GET', '/informed-consent-templates');
+    $check($this->actingWithToken($admin)->putJson("{$templates}/{$templateId}", ['title' => 'CI de extraccion']), 'PUT', '/informed-consent-templates/{template}');
+    $check($this->actingWithToken($admin)->putJson("{$templates}/{$templateId}", ['body' => 'Nuevo cuerpo {{paciente}}']), 'PUT', '/informed-consent-templates/{template}');
+    $itemConsents = "/api/v1/plan-items/{$consentItem->uuid}/informed-consents";
+    $check($this->actingWithToken($dentist)->getJson("{$itemConsents}/preview?riesgos=Riesgo en aclaración"), 'GET', '/plan-items/{item}/informed-consents/preview');
+    $signedConsent = $this->actingWithToken($dentist)->postJson($itemConsents, [
+        'channel' => 'dispositivo', 'confirmation_document_number' => (string) $adult->document_number, 'riesgos' => 'Sangrado leve', 'alternativas' => 'No tratar',
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($signedConsent, 'POST', '/plan-items/{item}/informed-consents');
+    $check($this->actingWithToken($dentist)->postJson($itemConsents, [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/plan-items/{item}/informed-consents');
+    $revokeEndpoint = '/api/v1/informed-consents/'.$signedConsent->json('data.id').'/revoke';
+    $check($this->actingWithToken($dentist)->postJson($revokeEndpoint, ['reason' => 'Decisión del paciente']), 'POST', '/informed-consents/{informedConsent}/revoke');
+    $check($this->actingWithToken($dentist)->postJson($revokeEndpoint, ['reason' => 'Otra vez']), 'POST', '/informed-consents/{informedConsent}/revoke');
+    $check($this->actingWithToken($dentist)->postJson('/api/v1/informed-consents/'.fake()->uuid().'/revoke', ['reason' => 'ajena']), 'POST', '/informed-consents/{informedConsent}/revoke');
+    $check($this->actingWithToken($admin)->postJson("{$templates}/{$templateId}/deactivate"), 'POST', '/informed-consent-templates/{template}/deactivate');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

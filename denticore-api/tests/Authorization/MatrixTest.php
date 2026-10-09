@@ -44,6 +44,8 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         // Representación inexistente: basta con un uuid; el rol se rechaza antes de buscarla.
         '{representative}' => fn () => (string) Str::uuid(),
         '{consent}' => fn () => (string) Str::uuid(),
+        '{template}' => fn () => (string) Str::uuid(),
+        '{informedConsent}' => fn () => (string) Str::uuid(),
         '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
         // Diagnóstico inexistente: el rol o el estado de la clínica se rechazan antes de buscarlo.
         '{tooth}' => fn () => '16',
@@ -54,7 +56,7 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{diagnosis}' => fn () => (string) Str::uuid(),
     ];
 
-    $path = preg_replace_callback('/\{[a-z_]+\}/', fn ($match) => $bindings[$match[0]](), $uri);
+    $path = preg_replace_callback('/\{[a-z_]+\}/i', fn ($match) => $bindings[$match[0]](), $uri);
 
     $status = $this->json($method, '/'.$path)->status();
 
