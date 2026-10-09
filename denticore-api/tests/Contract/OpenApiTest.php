@@ -415,6 +415,23 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($decide([]), 'POST', '/budgets/{budget}/decision');
     $check($decide([]), 'POST', '/budgets/{budget}/decision');
 
+    // Procedimiento realizado y de urgencia (CUS-39), en una atención nueva del adulto.
+    $openAttention = $this->actingWithToken($dentist)->postJson("/api/v1/patients/{$adult->uuid}/attentions", [], ['Idempotency-Key' => (string) Str::uuid()])->json('data.id');
+    $acceptedItem = TenantContext::run($tenant, fn () => PlanItem::query()->where('treatment_plan_id', $budgetPlan->id)->sole()->uuid);
+    $perform = fn (array $payload) => $this->actingWithToken($dentist)->postJson("/api/v1/plan-items/{$acceptedItem}/performed-procedures", [
+        'attention_id' => $openAttention, 'quantity' => 1, ...$payload,
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($perform(['quantity' => 5]), 'POST', '/plan-items/{item}/performed-procedures');
+    $check($perform(['observations' => 'Sin complicaciones']), 'POST', '/plan-items/{item}/performed-procedures');
+    $check($perform([]), 'POST', '/plan-items/{item}/performed-procedures');
+    $urgent = fn (string $attentionUuid, array $payload) => $this->actingWithToken($dentist)->postJson("/api/v1/attentions/{$attentionUuid}/urgent-procedures", [
+        'procedure_id' => $budgetProcedure->uuid, 'tooth' => 26, 'quantity' => 1,
+        'signer' => 'titular', 'signer_document_number' => $adultDocument, ...$payload,
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+    $check($urgent($openAttention, ['signer_document_number' => '00000000']), 'POST', '/attentions/{attention}/urgent-procedures');
+    $check($urgent($openAttention, []), 'POST', '/attentions/{attention}/urgent-procedures');
+    $check($urgent($attentionId, []), 'POST', '/attentions/{attention}/urgent-procedures');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');

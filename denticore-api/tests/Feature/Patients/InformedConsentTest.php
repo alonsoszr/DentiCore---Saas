@@ -8,6 +8,7 @@
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\InformedConsent;
 use App\Modules\Patients\Models\Patient;
+use App\Modules\Patients\Services\ConsentService;
 use App\Modules\Patients\Services\LegalRepresentativeService;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Treatment\Models\PlanItem;
@@ -427,3 +428,56 @@ it('rejects preview and signing for an item that is not pending', function (stri
     'ítem descartado' => ['descartado'],
     'plan cancelado' => ['cancelado'],
 ])->group('RF-073', 'CUS-83');
+
+/**
+ * Plan e ítem aceptados (como tras CUS-37) y atención abierta por el odontólogo del escenario, con
+ * el consentimiento de datos del paciente para que la ruta del procedimiento lo admita.
+ *
+ * @param  array{tenant: Tenant, dentist: User, patient: Patient, item: PlanItem}  $f
+ */
+function icOpenAttentionForAcceptedItem(array $f): string
+{
+    TenantContext::run($f['tenant'], function () use ($f) {
+        app(ConsentService::class)->grant($f['patient'], [
+            'channel' => 'presencial', 'confirmation_document_number' => '45678912',
+        ], User::factory()->for($f['tenant'])->create(['role' => 'receptionist']), '127.0.0.1');
+        DB::table('treatment_plans')->where('id', $f['item']->treatment_plan_id)->update(['status' => 'aceptado']);
+        DB::table('plan_items')->where('id', $f['item']->id)->update(['status' => 'aceptado']);
+    });
+
+    test()->actingWithToken($f['dentist']);
+
+    return test()->postJson("/api/v1/patients/{$f['patient']->uuid}/attentions", [], ['Idempotency-Key' => (string) Str::uuid()])
+        ->assertCreated()->json('data.id');
+}
+
+function icPerform(PlanItem $item, string $attention): TestResponse
+{
+    return test()->postJson("/api/v1/plan-items/{$item->uuid}/performed-procedures", [
+        'attention_id' => $attention, 'quantity' => 1,
+    ], ['Idempotency-Key' => (string) Str::uuid()]);
+}
+
+it('rejects performing a consent requiring procedure without a signed consent', function () {
+    $f = icFixture();
+    $attention = icOpenAttentionForAcceptedItem($f);
+
+    icPerform($f['item'], $attention)->assertUnprocessable()
+        ->assertJsonPath('rule', 'RN-76')
+        ->assertJsonPath('detail', 'Registre el consentimiento informado antes del procedimiento.');
+
+    // RF-074: tras revocar el consentimiento, el registro del procedimiento también es 422.
+    $revoked = icSign($f['item'])->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/informed-consents/{$revoked}/revoke", ['reason' => 'El paciente cambió de opinión'])->assertOk();
+    icPerform($f['item'], $attention)->assertUnprocessable()->assertJsonPath('rule', 'RN-76');
+
+    $signed = icSign($f['item'])->assertCreated()->json('data.id');
+    $performed = icPerform($f['item'], $attention)->assertCreated()->assertJsonPath('data.informed_consent_id', $signed);
+
+    TenantContext::run($f['tenant'], function () use ($signed, $performed) {
+        $consent = InformedConsent::query()->where('uuid', $signed)->sole();
+        expect($consent->status)->toBe('utilizado')
+            ->and($consent->used_at)->not->toBeNull()
+            ->and(DB::table('performed_procedures')->where('uuid', $performed->json('data.id'))->value('informed_consent_id'))->toBe($consent->id);
+    });
+})->group('T-045', 'RN-76', 'RF-127', 'RF-074');

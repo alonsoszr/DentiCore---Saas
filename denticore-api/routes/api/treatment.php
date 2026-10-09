@@ -5,9 +5,11 @@ use App\Modules\Treatment\Http\Controllers\BudgetDecisionController;
 use App\Modules\Treatment\Http\Controllers\BudgetDocumentController;
 use App\Modules\Treatment\Http\Controllers\BudgetIssueController;
 use App\Modules\Treatment\Http\Controllers\BudgetLineController;
+use App\Modules\Treatment\Http\Controllers\PerformedProcedureController;
 use App\Modules\Treatment\Http\Controllers\PlanItemController;
 use App\Modules\Treatment\Http\Controllers\ProcedureCatalogController;
 use App\Modules\Treatment\Http\Controllers\TreatmentPlanController;
+use App\Modules\Treatment\Http\Controllers\UrgentProcedureController;
 use Illuminate\Support\Facades\Route;
 
 // M05 — Catálogo, plan de tratamiento, presupuesto y procedimientos (SDD §4.3.5). STAFF (SDD §4.2).
@@ -69,4 +71,11 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     // el Administrador de Clínica; el portal y el enlace con OTP llegan en MS-06.
     Route::post('/budgets/{budget}/decision', [BudgetDecisionController::class, 'store'])
         ->middleware(['role:clinic_admin,receptionist', 'idempotent']);
+
+    // CUS-39: procedimiento realizado y de urgencia (RF-126 a RF-128, RN-38, RN-39, RN-76). El
+    // odontólogo lo registra en su atención abierta del paciente.
+    Route::middleware(['role:dentist', 'cop', 'consent:atencion', 'idempotent'])->group(function () {
+        Route::post('/plan-items/{item}/performed-procedures', [PerformedProcedureController::class, 'store']);
+        Route::post('/attentions/{attention}/urgent-procedures', [UrgentProcedureController::class, 'store']);
+    });
 });

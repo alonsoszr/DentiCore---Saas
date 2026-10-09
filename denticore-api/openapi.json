@@ -5567,6 +5567,118 @@
                 }
             }
         },
+        "/plan-items/{item}/performed-procedures": {
+            "post": {
+                "operationId": "performedProcedure.store",
+                "tags": [
+                    "PerformedProcedure"
+                ],
+                "parameters": [
+                    {
+                        "name": "item",
+                        "in": "path",
+                        "required": true,
+                        "description": "The item UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "attention_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 32
+                                    },
+                                    "observations": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 1000
+                                    }
+                                },
+                                "required": [
+                                    "attention_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`PerformedProcedureResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PerformedProcedureResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/treatment-plans/{plan}/items": {
             "post": {
                 "operationId": "planItem.store",
@@ -8067,6 +8179,164 @@
                 }
             }
         },
+        "/attentions/{attention}/urgent-procedures": {
+            "post": {
+                "operationId": "urgentProcedure.store",
+                "tags": [
+                    "UrgentProcedure"
+                ],
+                "parameters": [
+                    {
+                        "name": "attention",
+                        "in": "path",
+                        "required": true,
+                        "description": "The attention UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "procedure_id": {
+                                        "type": "string"
+                                    },
+                                    "tooth": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
+                                    },
+                                    "surfaces": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 1
+                                        },
+                                        "maxItems": 7
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 32
+                                    },
+                                    "session_number": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "minimum": 1,
+                                        "maximum": 32767
+                                    },
+                                    "observations": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 1000
+                                    },
+                                    "finding_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        },
+                                        "uniqueItems": true
+                                    },
+                                    "signer": {
+                                        "type": "string",
+                                        "enum": [
+                                            "titular",
+                                            "representante"
+                                        ]
+                                    },
+                                    "signer_document_number": {
+                                        "type": "string",
+                                        "maxLength": 12
+                                    }
+                                },
+                                "required": [
+                                    "procedure_id",
+                                    "signer",
+                                    "signer_document_number"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`PerformedProcedureResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PerformedProcedureResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "operationId": "user.index",
@@ -10215,6 +10485,136 @@
                     "created_at"
                 ],
                 "title": "PatientResource"
+            },
+            "PerformedProcedureResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "performed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "observations": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "dentist": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "cop": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "cop"
+                        ]
+                    },
+                    "attention_id": {
+                        "type": "string"
+                    },
+                    "odontogram_entry_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "informed_consent_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "plan_item": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "propuesto",
+                                    "aceptado",
+                                    "realizado",
+                                    "descartado"
+                                ]
+                            },
+                            "quantity": {
+                                "type": "integer"
+                            },
+                            "performed_quantity": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "status",
+                            "quantity",
+                            "performed_quantity"
+                        ]
+                    },
+                    "plan": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "borrador",
+                                    "propuesto",
+                                    "aceptado",
+                                    "en_ejecucion",
+                                    "completado",
+                                    "cancelado"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "status"
+                        ]
+                    },
+                    "budget_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "quantity",
+                    "performed_at",
+                    "observations",
+                    "dentist",
+                    "attention_id",
+                    "odontogram_entry_id",
+                    "informed_consent_id",
+                    "plan_item",
+                    "plan",
+                    "budget_id"
+                ],
+                "title": "PerformedProcedureResource"
             },
             "PlanItemRequest": {
                 "type": "object",

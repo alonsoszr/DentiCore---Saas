@@ -3,6 +3,7 @@
 namespace App\Modules\Treatment\Models;
 
 use App\Modules\Odontogram\Models\OdontogramEntry;
+use App\Modules\Patients\Models\Patient;
 use App\Modules\Treatment\Policies\PlanItemPolicy;
 use App\Support\Database\HasUuid;
 use App\Support\Tenancy\BelongsToTenant;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 /**
  * Ítem del plan de tratamiento (SDD §2.8 `plan_items`; RF-110, RN-26, RN-27, CA-39.4; estados de
@@ -39,6 +42,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read TreatmentPlan $plan
  * @property-read Procedure $procedure
  * @property-read Collection<int, OdontogramEntry> $findings
+ * @property-read Patient $patient
+ * @property-read Collection<int, PerformedProcedure> $performedProcedures
  */
 #[UseFactory(PlanItemFactory::class)]
 #[UsePolicy(PlanItemPolicy::class)]
@@ -90,6 +95,26 @@ class PlanItem extends Model
     public function procedure(): BelongsTo
     {
         return $this->belongsTo(Procedure::class);
+    }
+
+    /**
+     * Paciente del plan; lo usa el middleware `consent:atencion` en las rutas del ítem (RN-10).
+     *
+     * @return HasOneThrough<Patient, TreatmentPlan, $this>
+     */
+    public function patient(): HasOneThrough
+    {
+        return $this->hasOneThrough(Patient::class, TreatmentPlan::class, 'id', 'id', 'treatment_plan_id', 'patient_id');
+    }
+
+    /**
+     * Procedimientos realizados sobre el ítem (RN-38).
+     *
+     * @return HasMany<PerformedProcedure, $this>
+     */
+    public function performedProcedures(): HasMany
+    {
+        return $this->hasMany(PerformedProcedure::class);
     }
 
     /**
