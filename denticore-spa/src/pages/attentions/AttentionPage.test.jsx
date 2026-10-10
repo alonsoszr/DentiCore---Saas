@@ -71,6 +71,8 @@ function api(attention = openAttention, writes = {}) {
     if (key === 'GET /patients/p-1/odontogram')
       return { data: { data: { at: null, default_dentition: 'permanente', entries: [] } } }
     if (key === 'GET /patients/p-1/teeth/36/history') return { data: { data: [entry] } }
+    if (key === 'GET /patients/p-1/treatment-plans') return { data: { data: [] } }
+    if (key === 'GET /procedures') return { data: { data: [] } }
     if (key === 'GET /cie10') {
       return { data: { data: [{ code: 'K02.1', description: 'Caries de la dentina', is_dental: true }] } }
     }

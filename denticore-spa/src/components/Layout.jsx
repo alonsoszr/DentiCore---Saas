@@ -30,7 +30,7 @@ export function Layout({ items }) {
           {items
             .filter((item) => !item.roles || item.roles.includes(user.role))
             .map((item) => (
-              <NavLink key={item.to} to={item.to}>
+              <NavLink key={item.to} to={item.to} end={item.end}>
                 {item.label}
               </NavLink>
             ))}

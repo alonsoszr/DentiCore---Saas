@@ -12,6 +12,7 @@ import { PatientHeader } from '../patients/PatientHeader'
 import { usePatient } from '../patients/usePatient'
 import { ItemFields } from './ItemFields'
 import { ItemsEditor } from './ItemsEditor'
+import { PlanBudgets } from './PlanBudgets'
 import {
   EMPTY_ITEM,
   FINAL_PLAN_STATUSES,
@@ -182,6 +183,12 @@ export function PlanDetailPage() {
   const canDiscard = (item) =>
     CANCEL_ROLES.includes(user?.role) && !isFinal && !isDraft && ['propuesto', 'aceptado'].includes(item.status)
   const procedureList = procedures.data ?? []
+  // Firma de consentimientos: ítems pendientes cuyo procedimiento lo exige (RN-76).
+  const needsConsent = data.items.some(
+    (item) =>
+      ['propuesto', 'aceptado'].includes(item.status) &&
+      procedureList.find((procedure) => procedure.id === item.procedure.id)?.requires_informed_consent,
+  )
   const actionError = generalError(transition.error) ?? generalError(preview.error)
 
   return (
@@ -465,6 +472,8 @@ export function PlanDetailPage() {
           </div>
         )}
       </div>
+
+      {!isDraft && <PlanBudgets plan={data} needsConsent={needsConsent} />}
 
       {removing && (
         <ConfirmDialog

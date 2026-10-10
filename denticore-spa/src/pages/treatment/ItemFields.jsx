@@ -16,10 +16,18 @@ function knownTooth(tooth) {
 
 /**
  * Campos de un ítem del plan (RF-110, RN-26): procedimiento activo del catálogo, pieza, superficies,
- * cantidad (1–32), sesión y observaciones. Las superficies ofrecidas son las de la pieza (RN-18);
+ * cantidad (1–32), sesión (si `withSession`) y observaciones. Las superficies ofrecidas son las de la pieza (RN-18);
  * la API valida lo que exige el procedimiento y devuelve el error junto a cada campo.
  */
-export function ItemFields({ idPrefix, value, onChange, procedures, errors = {}, lockProcedure = false }) {
+export function ItemFields({
+  idPrefix,
+  value,
+  onChange,
+  procedures,
+  errors = {},
+  lockProcedure = false,
+  withSession = true,
+}) {
   const tooth = Number(value.tooth)
   const toothKnown = value.tooth !== '' && knownTooth(tooth)
   const procedure = procedures.find((item) => item.id === value.procedure_id)
@@ -76,16 +84,18 @@ export function ItemFields({ idPrefix, value, onChange, procedures, errors = {},
           onChange={set('quantity')}
           error={errors.quantity}
         />
-        <Field
-          label="Sesión (opcional)"
-          name={`${idPrefix}-session`}
-          type="number"
-          inputMode="numeric"
-          min="1"
-          value={value.session_number}
-          onChange={set('session_number')}
-          error={errors.session_number}
-        />
+        {withSession && (
+          <Field
+            label="Sesión (opcional)"
+            name={`${idPrefix}-session`}
+            type="number"
+            inputMode="numeric"
+            min="1"
+            value={value.session_number}
+            onChange={set('session_number')}
+            error={errors.session_number}
+          />
+        )}
       </div>
       {toothKnown && (
         <fieldset className="m-0 border-0 p-0">
