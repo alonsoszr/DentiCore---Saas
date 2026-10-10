@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '../../api/client'
 import { useClinic } from '../../auth/useClinic'
@@ -30,4 +31,13 @@ export function usePlan(planId) {
     queryKey: ['treatment-plan', slug, planId],
     queryFn: async () => (await apiClient.get(`/treatment-plans/${planId}`)).data.data,
   })
+}
+
+/** Lleva el foco al primer control de un formulario en línea al abrirlo (DESIGN.md › Focus). */
+export function useFocusOnMount() {
+  const ref = useRef(null)
+  useEffect(() => {
+    ref.current?.querySelector('input, select, textarea')?.focus()
+  }, [])
+  return ref
 }

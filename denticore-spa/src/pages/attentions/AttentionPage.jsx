@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
@@ -11,6 +11,7 @@ import { Field } from '../../components/Field'
 import { formatDateTime } from '../../ui/format'
 import { PatientHeader } from '../patients/PatientHeader'
 import { usePatient } from '../patients/usePatient'
+import { ProceduresPanel } from '../treatment/ProceduresPanel'
 import { Cie10Picker } from './Cie10Picker'
 import { DiagnosesList, DiagnosesPanel } from './DiagnosesPanel'
 import { FindingsWorkspace } from './FindingsWorkspace'
@@ -148,7 +149,8 @@ function AddendumForm({ attention, queryKey }) {
  * Atención odontológica (/c/:slug/app/atenciones/:uuid; CUS-22, CUS-23, CUS-26, CUS-80, CUS-81).
  * La cabecera del paciente con sus alergias encabeza la pantalla, antes de cualquier registro
  * clínico (RNF-146, RNF-149). Con la atención abierta, el odontólogo a cargo registra la nota,
- * los diagnósticos y los hallazgos y la cierra; cerrada, queda en solo lectura con adendas.
+ * los diagnósticos, los hallazgos y los procedimientos (CUS-39) y la cierra; cerrada, queda en
+ * solo lectura con adendas.
  */
 export function AttentionPage() {
   const { uuid } = useParams()
@@ -165,6 +167,12 @@ export function AttentionPage() {
   const attention = attentionQuery.data
   const patientQuery = usePatient(attention?.patient_id)
   const patient = patientQuery.data
+  const toProcedures = location.pathname.endsWith('/procedimientos')
+
+  // /atenciones/:uuid/procedimientos (CUS-39) abre la misma atención en su sección de procedimientos.
+  useEffect(() => {
+    if (toProcedures && patient) document.getElementById('procedimientos')?.scrollIntoView()
+  }, [toProcedures, patient])
 
   if (attentionQuery.isLoading || (attention && patientQuery.isLoading))
     return <div className="card empty">Cargando…</div>
@@ -211,6 +219,7 @@ export function AttentionPage() {
           <NotePanel key={attention.id} attention={attention} queryKey={queryKey} />
           <DiagnosesPanel attention={attention} queryKey={queryKey} />
           <FindingsWorkspace attention={attention} patient={patient} />
+          <ProceduresPanel attention={attention} patient={patient} />
           <CloseAttention attention={attention} queryKey={queryKey} />
         </>
       ) : (

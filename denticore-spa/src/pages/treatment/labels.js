@@ -90,3 +90,36 @@ export function itemsFromFindings(findings = []) {
     findingLabel: finding.label,
   }))
 }
+
+export const BUDGET_STATUS = {
+  borrador: 'Borrador',
+  emitido: 'Emitido',
+  aceptado: 'Aceptado',
+  rechazado: 'Rechazado',
+  vencido: 'Vencido',
+  reemplazado: 'Reemplazado',
+}
+
+/** Motivos de rechazo del presupuesto (SRS §11.10 FA-1). */
+export const REJECTION_REASONS = {
+  precio: 'Precio',
+  segunda_opinion: 'Segunda opinión',
+  momento_no_oportuno: 'Momento no oportuno',
+  otro: 'Otro',
+}
+
+export const SIGNERS = { titular: 'El titular', representante: 'Su representante legal' }
+
+export const DECISION_CHANNELS = {
+  presencial: 'Presencial',
+  portal: 'Portal del paciente',
+  enlace: 'Enlace compartido',
+}
+
+/** Roles que gestionan presupuestos (CUS-35) y que registran la decisión presencial (CUS-37). */
+export const BUDGET_ROLES = ['clinic_admin', 'dentist', 'receptionist']
+export const DECISION_ROLES = ['clinic_admin', 'receptionist']
+
+export function budgetBadge(status) {
+  return ['rechazado', 'vencido', 'reemplazado', 'borrador'].includes(status) ? 'badge badge-muted' : 'badge'
+}

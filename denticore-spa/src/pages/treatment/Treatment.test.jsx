@@ -84,6 +84,7 @@ function planApi(handler) {
   return mockApi((config) => {
     if (config.url === '/patients/p-1') return { data: { data: PATIENT_RECORD } }
     if (config.url === '/procedures') return { data: { data: [PROCEDURE] } }
+    if (config.url === '/patients/p-1/budgets') return { data: { data: [] } }
     return handler(config)
   })
 }
