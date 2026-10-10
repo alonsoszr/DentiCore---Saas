@@ -224,7 +224,7 @@ class BudgetDecisionService
                 'number' => $budget->number,
                 'total' => $budget->total,
             ], links: [
-                'budget' => rtrim((string) config('app.spa_url'), '/')."/app/presupuestos/{$budget->uuid}",
+                'budget' => rtrim((string) config('app.spa_url'), '/').'/c/'.TenantContext::tenantOrFail()->slug."/app/presupuestos/{$budget->uuid}",
             ], dedupeKey: "presupuesto_aceptado:{$budget->uuid}:{$recipient->uuid}");
         }
     }

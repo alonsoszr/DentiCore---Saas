@@ -163,9 +163,14 @@ it('notifies the dentist of the plan and the reception in the app on acceptance'
 
     decideBudget($budget)->assertOk();
 
-    $recipients = TenantContext::run($tenant, fn () => Notification::query()
-        ->where('event', 'presupuesto_aceptado')->where('channel', 'in_app')->pluck('recipient_user_id')->all());
-    expect($recipients)->toEqualCanonicalizing([$dentist->id, $receptionist->id]);
+    $notifications = TenantContext::run($tenant, fn () => Notification::query()
+        ->where('event', 'presupuesto_aceptado')->where('channel', 'in_app')->get());
+    expect($notifications->pluck('recipient_user_id')->all())->toEqualCanonicalizing([$dentist->id, $receptionist->id]);
+
+    // El enlace abre el presupuesto en el área del personal de su clínica (/c/:slug/app/*).
+    foreach ($notifications as $notification) {
+        expect($notification->payload['links']['budget'])->toBe(config('app.spa_url')."/c/{$tenant->slug}/app/presupuestos/{$budget}");
+    }
 })->group('RF-122', 'CUS-37');
 
 it('rejects a budget with an optional reason and keeps the plan proposed', function () {
