@@ -2,7 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Odontogram\Models\FindingCatalog;
+use App\Modules\Patients\Models\InformedConsentTemplate;
+use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Treatment\Models\Procedure;
 use App\Support\Tenancy\TenantContext;
@@ -12,7 +15,8 @@ use RuntimeException;
 /**
  * Catálogo de procedimientos de demostración de la «Clínica Demo» (solo entorno local; datos
  * sintéticos, RES-08): una restauración y una extracción con hallazgo resultante NTS 188 y una
- * profilaxis sin pieza. Es idempotente: se puede correr sobre una base ya sembrada con
+ * profilaxis sin pieza, y la plantilla de consentimiento informado de la extracción (CUS-82), que
+ * lo exige. Es idempotente: se puede correr sobre una base ya sembrada con
  * `php artisan db:seed --class=DemoProcedureSeeder`.
  */
 class DemoProcedureSeeder extends Seeder
@@ -28,7 +32,15 @@ class DemoProcedureSeeder extends Seeder
         'PRF-01' => ['Profilaxis', 'Prevención', '80.00', false, false, false, null, null],
     ];
 
-    public function run(): void
+    /** Texto sintético con los campos que completa InformedConsentRenderer (RF-072). */
+    private const EXTRACTION_TEMPLATE = <<<'TEXT'
+        Yo, {{paciente}}, autorizo al odontólogo {{odontologo}} a realizar el procedimiento {{procedimiento}} en la pieza {{pieza}}.
+        Se me informaron los riesgos: {{riesgos}}.
+        Se me informaron las alternativas: {{alternativas}}.
+        Puedo revocar este consentimiento antes de que se realice el procedimiento.
+        TEXT;
+
+    public function run(InformedConsentTemplateService $templates): void
     {
         if (! app()->environment('local')) {
             throw new RuntimeException('Los datos de demostración solo se cargan en entorno local.');
@@ -40,7 +52,7 @@ class DemoProcedureSeeder extends Seeder
             return;
         }
 
-        TenantContext::run($clinic, function () use ($clinic): void {
+        TenantContext::run($clinic, function () use ($clinic, $templates): void {
             foreach (self::PROCEDURES as $code => [$name, $category, $price, $tooth, $surface, $consent, $findingCode, $stateCode]) {
                 $finding = $findingCode === null ? null : FindingCatalog::query()->where('code', $findingCode)->first();
 
@@ -58,6 +70,29 @@ class DemoProcedureSeeder extends Seeder
                     'is_active' => true,
                 ])->save();
             }
+
+            $this->seedExtractionTemplate($clinic, $templates);
         });
+    }
+
+    /** Plantilla activa de EXO-01: sin ella su firma respondería 422 (RF-073). */
+    private function seedExtractionTemplate(Tenant $clinic, InformedConsentTemplateService $templates): void
+    {
+        $extraction = Procedure::query()->where('code', 'EXO-01')->firstOrFail();
+        $hasTemplate = InformedConsentTemplate::query()
+            ->where('is_active', true)
+            ->whereHas('procedures', fn ($query) => $query->whereKey($extraction->id))
+            ->exists();
+        $admin = User::query()->where('tenant_id', $clinic->id)->where('role', 'clinic_admin')->first();
+
+        if ($hasTemplate || $admin === null) {
+            return;
+        }
+
+        $templates->create([
+            'title' => 'Extracción dental',
+            'body' => self::EXTRACTION_TEMPLATE,
+            'procedures' => [$extraction->uuid],
+        ], $admin);
     }
 }
