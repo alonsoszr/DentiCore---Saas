@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Scheduling\Http\Controllers\AppointmentConfirmationController;
+use App\Modules\Scheduling\Http\Controllers\AppointmentController;
 use App\Modules\Scheduling\Http\Controllers\AppointmentTypeController;
 use App\Modules\Scheduling\Http\Controllers\AvailabilityController;
 use App\Modules\Scheduling\Http\Controllers\ScheduleBlockController;
@@ -37,4 +39,16 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     // CUS-46: disponibilidad (RF-146).
     Route::get('/availability', [AvailabilityController::class, 'index'])
         ->middleware('role:clinic_admin,dentist,receptionist');
+
+    // CUS-47 a CUS-49: reserva, reprogramación, cancelación y confirmación (RF-147, RF-149, RF-150).
+    Route::middleware('role:clinic_admin,receptionist')->group(function () {
+        Route::post('/appointments', [AppointmentController::class, 'store'])->middleware('idempotent');
+        Route::post('/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->middleware('idempotent');
+        Route::post('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel']);
+        Route::post('/appointments/{appointment}/confirm', [AppointmentConfirmationController::class, 'store']);
+    });
 });
+
+// CUS-49: confirmación por el enlace del correo, sin sesión (PUB). El token resuelve la clínica.
+Route::post('/public/appointment-confirmations/{token}', [AppointmentConfirmationController::class, 'confirmByLink'])
+    ->middleware(['throttle:public', 'tenant.token:confirmacion_cita', 'tenant.writable']);

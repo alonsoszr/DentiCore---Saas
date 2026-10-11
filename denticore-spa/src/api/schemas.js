@@ -11,6 +11,25 @@ export const affectedAppointmentResourceSchema = z.object({
   type: z.object({ id: z.string(), name: z.string() }),
 })
 
+export const appointmentResourceSchema = z.object({
+  id: z.string(),
+  patient: z.object({ id: z.string(), name: z.string() }),
+  dentist: z.object({ id: z.string(), name: z.string() }),
+  type: z.object({ id: z.string(), name: z.string(), color: z.string() }),
+  starts_at: z.string(),
+  ends_at: z.string(),
+  status: z.enum(['programada', 'confirmada', 'en_atencion', 'atendida', 'cancelada', 'inasistencia']),
+  origin: z.enum(['clinica', 'portal']),
+  confirmed_at: z.union([z.string(), z.null()]),
+  confirmation_channel: z.union([z.literal('enlace'), z.literal('portal'), z.literal('telefono'), z.literal(null)]),
+  reconfirmation_pending: z.boolean(),
+  checked_in_at: z.union([z.string(), z.null()]),
+  cancelled_at: z.union([z.string(), z.null()]),
+  cancel_reason: z.union([z.literal('paciente'), z.literal('clinica'), z.literal('otro'), z.literal(null)]),
+  cancel_detail: z.union([z.string(), z.null()]),
+  created_at: z.union([z.string(), z.null()]),
+})
+
 export const appointmentTypeRequestSchema = z
   .object({
     name: z.string().max(80),

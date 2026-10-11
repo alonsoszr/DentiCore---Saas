@@ -10,6 +10,7 @@ use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\AppointmentType;
 use App\Modules\Scheduling\Models\ScheduleBlock;
 use App\Modules\Treatment\Models\Budget;
@@ -64,6 +65,7 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{dentist}' => fn () => User::factory()->for($tenant)->create(['role' => 'dentist'])->uuid,
         '{block}' => fn () => ScheduleBlock::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{type}' => fn () => AppointmentType::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{appointment}' => fn () => Appointment::factory()->create(['tenant_id' => $tenant->id])->uuid,
     ];
 
     $path = preg_replace_callback('/\{[a-z_]+\}/i', fn ($match) => $bindings[$match[0]](), $uri);

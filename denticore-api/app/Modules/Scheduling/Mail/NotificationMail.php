@@ -48,6 +48,9 @@ class NotificationMail extends Mailable
             NotificationEvent::ClinicaSuspendida => 'La clínica fue suspendida',
             NotificationEvent::ClinicaReactivada => 'La clínica fue reactivada',
             NotificationEvent::ConsentimientoConstancia => 'Constancia de tu consentimiento',
+            NotificationEvent::CitaCreada => 'Tu cita fue reservada',
+            NotificationEvent::CitaModificada => 'Tu cita cambió de horario',
+            NotificationEvent::CitaCancelada => 'Tu cita fue cancelada',
             default => 'Aviso de DentiCore',
         };
     }

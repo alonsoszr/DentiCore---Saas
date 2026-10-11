@@ -9,14 +9,18 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\InvitationService;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\Notification;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Support\Files\FileStorage;
 use App\Support\Tenancy\TenantContext;
+use App\Support\Tokens\OneTimeTokenService;
+use App\Support\Tokens\TokenPurpose;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -465,6 +469,36 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
         'appointment_type_id' => $typeCreated->json('data.id'), 'from' => $today, 'to' => now('America/Lima')->addDays(6)->toDateString(),
     ])), 'GET', '/availability');
     $check($this->actingWithToken($admin)->getJson('/api/v1/availability?duration_min=12'), 'GET', '/availability');
+
+    // Citas (TASK-067): reserva, reprogramación, confirmación, cancelación y enlace público.
+    $nextMonday = now('America/Lima')->next('Monday')->toDateString();
+    $bookAt = fn (string $time) => $this->actingWithToken($admin)->postJson('/api/v1/appointments', [
+        'patient_id' => $patient->uuid, 'dentist_id' => $scheduleDentist->uuid,
+        'appointment_type_id' => $typeCreated->json('data.id'), 'starts_at' => Carbon::parse("{$nextMonday} {$time}", 'America/Lima')->toIso8601String(),
+    ], $idempotent());
+    $booked = $bookAt('09:00');
+    $check($booked, 'POST', '/appointments');
+    $check($bookAt('09:15'), 'POST', '/appointments');
+    $check($bookAt('12:45'), 'POST', '/appointments');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/appointments', [], $idempotent()), 'POST', '/appointments');
+    $appointmentPath = '/api/v1/appointments/'.$booked->json('data.id');
+    $check($this->actingWithToken($admin)->postJson("{$appointmentPath}/reschedule", [
+        'starts_at' => Carbon::parse("{$nextMonday} 10:00", 'America/Lima')->toIso8601String(),
+    ], $idempotent()), 'POST', '/appointments/{appointment}/reschedule');
+    $check($this->actingWithToken($admin)->postJson("{$appointmentPath}/reschedule", [
+        'starts_at' => Carbon::parse("{$nextMonday} 18:00", 'America/Lima')->toIso8601String(),
+    ], $idempotent()), 'POST', '/appointments/{appointment}/reschedule');
+    $check($this->actingWithToken($admin)->postJson("{$appointmentPath}/confirm"), 'POST', '/appointments/{appointment}/confirm');
+    $check($this->actingWithToken($admin)->postJson("{$appointmentPath}/cancel", []), 'POST', '/appointments/{appointment}/cancel');
+    $check($this->actingWithToken($admin)->postJson("{$appointmentPath}/cancel", ['cancel_reason' => 'paciente']), 'POST', '/appointments/{appointment}/cancel');
+    $check($this->actingWithToken($admin)->postJson("{$appointmentPath}/cancel", ['cancel_reason' => 'paciente']), 'POST', '/appointments/{appointment}/cancel');
+    $check($this->actingWithToken($admin)->postJson("{$appointmentPath}/confirm"), 'POST', '/appointments/{appointment}/confirm');
+    $linkedId = $bookAt('11:00')->json('data.id');
+    $linked = TenantContext::run($tenant, fn () => Appointment::query()->where('uuid', $linkedId)->sole());
+    $linkToken = TenantContext::run($tenant, fn () => app(OneTimeTokenService::class)->issue($linked, TokenPurpose::AppointmentConfirmation, $linked->starts_at)['token']);
+    app('auth')->forgetGuards();
+    $check($this->postJson("/api/v1/public/appointment-confirmations/{$linkToken}"), 'POST', '/public/appointment-confirmations/{token}');
+    $check($this->postJson("/api/v1/public/appointment-confirmations/{$linkToken}"), 'POST', '/public/appointment-confirmations/{token}');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

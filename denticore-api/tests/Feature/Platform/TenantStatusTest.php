@@ -12,6 +12,7 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\InformedConsentService;
 use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\AppointmentType;
 use App\Modules\Scheduling\Models\Notification;
 use App\Modules\Scheduling\Models\ScheduleBlock;
@@ -21,6 +22,8 @@ use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantContext;
+use App\Support\Tokens\OneTimeTokenService;
+use App\Support\Tokens\TokenPurpose;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -124,6 +127,11 @@ it('applies the read-only rule to every registered staff route', function () {
         '{dentist}' => fn () => User::factory()->for($tenant)->create(['role' => 'dentist'])->uuid,
         '{block}' => fn () => ScheduleBlock::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{type}' => fn () => AppointmentType::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{appointment}' => fn () => Appointment::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        // Enlace de confirmación vigente de una cita de la clínica suspendida (ruta pública, RN-07).
+        '{token}' => fn () => TenantContext::run($tenant, fn () => app(OneTimeTokenService::class)->issue(
+            Appointment::factory()->create(['tenant_id' => $tenant->id]), TokenPurpose::AppointmentConfirmation, now()->addDay(),
+        )['token']),
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => function () use ($tenant, &$attention) {
             return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([
