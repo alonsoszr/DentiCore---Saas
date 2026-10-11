@@ -137,6 +137,8 @@ return [
     ['method' => 'GET', 'uri' => 'api/v1/appointment-types', 'cus' => 'CUS-45', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/appointment-types', 'cus' => 'CUS-45', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'PATCH', 'uri' => 'api/v1/appointment-types/{type}', 'cus' => 'CUS-45', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    // CUS-46: el personal consulta la disponibilidad (el portal llega con MS-06).
+    ['method' => 'GET', 'uri' => 'api/v1/availability', 'cus' => 'CUS-46', 'denied' => ['super_admin', 'patient']],
 
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],

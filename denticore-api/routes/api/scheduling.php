@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Scheduling\Http\Controllers\AppointmentTypeController;
+use App\Modules\Scheduling\Http\Controllers\AvailabilityController;
 use App\Modules\Scheduling\Http\Controllers\ScheduleBlockController;
 use App\Modules\Scheduling\Http\Controllers\WorkScheduleController;
 use Illuminate\Support\Facades\Route;
@@ -32,4 +33,8 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         Route::post('/appointment-types', [AppointmentTypeController::class, 'store']);
         Route::patch('/appointment-types/{type}', [AppointmentTypeController::class, 'update']);
     });
+
+    // CUS-46: disponibilidad (RF-146).
+    Route::get('/availability', [AvailabilityController::class, 'index'])
+        ->middleware('role:clinic_admin,dentist,receptionist');
 });
