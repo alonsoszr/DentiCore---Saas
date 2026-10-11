@@ -12,7 +12,9 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\InformedConsentService;
 use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\AppointmentType;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Scheduling\Models\ScheduleBlock;
 use App\Modules\Treatment\Models\BudgetLine;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
@@ -119,6 +121,9 @@ it('applies the read-only rule to every registered staff route', function () {
             return $budgetLine->uuid;
         },
         '{document}' => fn () => (string) Str::uuid(),
+        '{dentist}' => fn () => User::factory()->for($tenant)->create(['role' => 'dentist'])->uuid,
+        '{block}' => fn () => ScheduleBlock::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{type}' => fn () => AppointmentType::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{diagnosis}' => function () use ($tenant, &$attention) {
             return TenantContext::run($tenant, fn () => $attention->diagnoses()->forceCreate([
