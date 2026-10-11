@@ -2,10 +2,12 @@
 
 namespace App\Modules\Scheduling\Services;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Scheduling\Models\Appointment;
 use App\Support\Http\BusinessRuleException;
 use App\Support\Tenancy\TenantContext;
 use App\Support\Time\ClinicClock;
+use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -16,6 +18,8 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class AffectedAppointments
 {
+    public function __construct(private AppointmentService $appointments) {}
+
     /**
      * Citas activas que se cruzan con `[$startsAt, $endsAt)`, de un odontólogo o de toda la clínica.
      *
@@ -68,6 +72,65 @@ class AffectedAppointments
                 return true;
             })
             ->values();
+    }
+
+    /**
+     * RN-82: una decisión por cada cita afectada (reprogramar con su nuevo inicio, o cancelar) y
+     * ninguna para citas que el cambio no afecta. Se valida antes de escribir nada.
+     *
+     * @param  Collection<int, Appointment>  $appointments
+     * @param  list<array{appointment_id: string, action: string, new_starts_at?: string|null}>  $decisions
+     * @return list<array{appointment: Appointment, action: string, new_starts_at: CarbonImmutable|null}>
+     *
+     * @throws BusinessRuleException
+     */
+    public function resolve(Collection $appointments, array $decisions): array
+    {
+        $byUuid = collect($decisions)->keyBy('appointment_id');
+        $affected = $appointments->keyBy('uuid');
+        $errors = [];
+
+        foreach ($byUuid as $uuid => $decision) {
+            if (! $affected->has($uuid)) {
+                $errors["decisions.{$uuid}"] = ['La cita no está afectada por este cambio.'];
+            } elseif ($decision['action'] === 'reprogramar' && empty($decision['new_starts_at'])) {
+                $errors["decisions.{$uuid}"] = ['Indique el nuevo inicio de la cita.'];
+            }
+        }
+
+        if ($errors !== []) {
+            throw new BusinessRuleException('RN-82', 'Revise las decisiones sobre las citas afectadas.', $errors);
+        }
+
+        $this->ensureNone($appointments->reject(fn (Appointment $appointment) => $byUuid->has($appointment->uuid))->values());
+
+        return $appointments->map(fn (Appointment $appointment) => [
+            'appointment' => $appointment,
+            'action' => $byUuid[$appointment->uuid]['action'],
+            'new_starts_at' => empty($byUuid[$appointment->uuid]['new_starts_at'])
+                ? null
+                : CarbonImmutable::parse($byUuid[$appointment->uuid]['new_starts_at']),
+        ])->values()->all();
+    }
+
+    /**
+     * Aplica las decisiones ya validadas con AppointmentService, dentro de la transacción del
+     * bloqueo o del horario: si una reprogramación choca (409), no queda nada aplicado. Cada
+     * paciente con la finalidad (b) recibe `cita_modificada` o `cita_cancelada`.
+     *
+     * @param  list<array{appointment: Appointment, action: string, new_starts_at: CarbonImmutable|null}>  $resolved
+     *
+     * @throws BusinessRuleException
+     */
+    public function apply(array $resolved, User $actor, string $cancelDetail): void
+    {
+        foreach ($resolved as $decision) {
+            if ($decision['action'] === 'cancelar') {
+                $this->appointments->cancel($decision['appointment'], 'clinica', $cancelDetail, $actor);
+            } elseif ($decision['new_starts_at'] !== null) {
+                $this->appointments->reschedule($decision['appointment'], $decision['new_starts_at']);
+            }
+        }
     }
 
     /**

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Bloqueos de agenda (CUS-44; RF-143, RF-144, RN-47, RN-82): de un odontólogo o de toda la
  * clínica. Antes de crearlo se consulta su impacto; un bloqueo sobre citas activas exige una
- * decisión por cita (la aplicación de las decisiones llega con TASK-068).
+ * decisión por cita, que se aplica en la misma transacción (§5.7).
  */
 class ScheduleBlockService
 {
@@ -32,14 +32,18 @@ class ScheduleBlockService
     }
 
     /**
+     * El bloqueo se guarda antes de aplicar las decisiones, para que cada reprogramación se
+     * valide también contra él (RN-47).
+     *
      * @param  array{dentist: User|null, starts_at: string, ends_at: string, kind: string, reason: string}  $data
+     * @param  list<array{appointment_id: string, action: string, new_starts_at?: string|null}>  $decisions
      *
      * @throws BusinessRuleException
      */
-    public function create(array $data, User $actor): ScheduleBlock
+    public function create(array $data, User $actor, array $decisions = []): ScheduleBlock
     {
-        return DB::transaction(function () use ($data, $actor): ScheduleBlock {
-            $this->affected->ensureNone($this->impact($data));
+        return DB::transaction(function () use ($data, $actor, $decisions): ScheduleBlock {
+            $resolved = $this->affected->resolve($this->impact($data), $decisions);
 
             $block = (new ScheduleBlock)->forceFill([
                 'tenant_id' => TenantContext::id(),
@@ -50,6 +54,8 @@ class ScheduleBlockService
                 'created_by' => $actor->id,
             ]);
             $block->save();
+
+            $this->affected->apply($resolved, $actor, 'Bloqueo de agenda: '.trim($data['reason']));
 
             return $block->load(['dentist', 'creator']);
         });

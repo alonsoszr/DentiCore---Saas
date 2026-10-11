@@ -41,14 +41,16 @@ class WorkScheduleService
     /**
      * Reemplaza el horario desde `valid_from`: las franjas anteriores terminan el día previo y las
      * que empezaban después se eliminan. Franjas solapadas del mismo día → 422 (RF-142). Las citas
-     * activas que el nuevo horario deja fuera exigen una decisión por cita (RN-82, TASK-068).
+     * activas que el nuevo horario deja fuera exigen una decisión por cita (RN-82), que se aplica
+     * en la misma transacción después de guardar el horario nuevo.
      *
      * @param  array{valid_from: string, slots: list<array{weekday: int, start_time: string, end_time: string}>}  $data
+     * @param  list<array{appointment_id: string, action: string, new_starts_at?: string|null}>  $decisions
      * @return Collection<int, WorkSchedule>
      *
      * @throws BusinessRuleException|ValidationException
      */
-    public function replace(User $dentist, array $data): Collection
+    public function replace(User $dentist, array $data, User $actor, array $decisions = []): Collection
     {
         $slots = array_map(fn (array $slot) => [
             'weekday' => (int) $slot['weekday'],
@@ -60,13 +62,13 @@ class WorkScheduleService
         $clock = ClinicClock::for(TenantContext::tenantOrFail());
         $validFrom = $data['valid_from'];
 
-        return DB::transaction(function () use ($dentist, $slots, $validFrom, $clock): Collection {
+        return DB::transaction(function () use ($dentist, $slots, $validFrom, $clock, $actor, $decisions): Collection {
             // Serializa los cambios de horario del mismo odontólogo.
             User::query()->whereKey($dentist->id)->lockForUpdate()->first();
 
             $from = $clock->startOfLocalDay($validFrom);
             $now = $clock->now();
-            $this->affected->ensureNone($this->affected->outsideSlots($dentist->id, $from->greaterThan($now) ? $from : $now, $slots));
+            $resolved = $this->affected->resolve($this->affected->outsideSlots($dentist->id, $from->greaterThan($now) ? $from : $now, $slots), $decisions);
 
             $previousDay = Carbon::parse($validFrom)->subDay()->toDateString();
             WorkSchedule::query()->where('dentist_id', $dentist->id)->where('valid_from', '>=', $validFrom)->delete();
@@ -90,6 +92,8 @@ class WorkScheduleService
 
                 throw $exception;
             }
+
+            $this->affected->apply($resolved, $actor, 'Cambio del horario laboral del odontólogo');
 
             return $this->current($dentist);
         });

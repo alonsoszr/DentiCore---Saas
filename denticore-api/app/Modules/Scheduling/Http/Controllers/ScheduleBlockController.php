@@ -11,6 +11,7 @@ use App\Modules\Scheduling\Services\Dentists;
 use App\Modules\Scheduling\Services\ScheduleBlockService;
 use App\Support\Http\Controller;
 use App\Support\Http\ProblemResponse;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -59,6 +60,7 @@ class ScheduleBlockController extends Controller
         return AffectedAppointmentResource::collection($this->blocks->impact($data));
     }
 
+    #[ProblemResponse(409, 'Una reprogramación decidida choca con otra cita: no se aplicó nada (RN-46, RN-74)')]
     #[ProblemResponse(422, 'Citas activas afectadas sin una decisión por cita (RN-82)')]
     public function store(ScheduleBlockRequest $request): JsonResponse
     {
@@ -67,11 +69,19 @@ class ScheduleBlockController extends Controller
 
         /** @var User $actor */
         $actor = $request->user();
+        /** @var list<array{appointment_id: string, action: string, new_starts_at?: string|null}> $decisions */
+        $decisions = $request->validated('decisions', []);
+
+        // CUS-48: el odontólogo no reprograma ni cancela citas; las decide el administrador.
+        if ($decisions !== [] && $actor->role !== 'clinic_admin') {
+            throw new AuthorizationException('Solo el Administrador de Clínica decide sobre las citas afectadas.');
+        }
+
         $block = $this->blocks->create([
             ...$data,
             'kind' => $request->string('kind')->toString(),
             'reason' => $request->string('reason')->toString(),
-        ], $actor);
+        ], $actor, $decisions);
 
         return ScheduleBlockResource::make($block)->response()->setStatusCode(201);
     }

@@ -33,6 +33,9 @@ class ScheduleBlockRequest extends FormRequest
             'kind' => [$creating ? 'required' : 'sometimes', Rule::in(ScheduleBlock::KINDS)],
             'reason' => [$creating ? 'required' : 'sometimes', 'string', 'min:3', 'max:200'],
             'decisions' => ['sometimes', 'array'],
+            'decisions.*.appointment_id' => ['required', 'uuid', 'distinct'],
+            'decisions.*.action' => ['required', Rule::in(['reprogramar', 'cancelar'])],
+            'decisions.*.new_starts_at' => ['required_if:decisions.*.action,reprogramar', 'nullable', 'date'],
         ];
     }
 
@@ -47,6 +50,8 @@ class ScheduleBlockRequest extends FormRequest
             'ends_at' => 'fin',
             'kind' => 'tipo de bloqueo',
             'reason' => 'motivo',
+            'decisions.*.action' => 'decisión',
+            'decisions.*.new_starts_at' => 'nuevo inicio',
         ];
     }
 }
