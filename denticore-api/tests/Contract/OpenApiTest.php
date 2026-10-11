@@ -461,6 +461,10 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->patchJson('/api/v1/appointment-types/'.$typeCreated->json('data.id'), ['portal_visible' => true]), 'PATCH', '/appointment-types/{type}');
     $check($this->actingWithToken($admin)->patchJson('/api/v1/appointment-types/'.$typeCreated->json('data.id'), ['color' => 'azul']), 'PATCH', '/appointment-types/{type}');
     $check($this->actingWithToken($admin)->getJson('/api/v1/appointment-types'), 'GET', '/appointment-types');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/availability?'.http_build_query([
+        'appointment_type_id' => $typeCreated->json('data.id'), 'from' => $today, 'to' => now('America/Lima')->addDays(6)->toDateString(),
+    ])), 'GET', '/availability');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/availability?duration_min=12'), 'GET', '/availability');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
