@@ -10,6 +10,518 @@
         }
     ],
     "paths": {
+        "/appointments": {
+            "post": {
+                "operationId": "appointment.store",
+                "summary": "CUS-47: `duration_min` ajusta la duraci\u00f3n del tipo (FA-2)",
+                "tags": [
+                    "Appointment"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "dentist_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "appointment_type_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "starts_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "duration_min": {
+                                        "type": "integer",
+                                        "minimum": 10,
+                                        "maximum": 240
+                                    }
+                                },
+                                "required": [
+                                    "patient_id",
+                                    "dentist_id",
+                                    "appointment_type_id",
+                                    "starts_at"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`AppointmentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AppointmentResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/appointments/{appointment}/reschedule": {
+            "post": {
+                "operationId": "appointment.reschedule",
+                "summary": "RF-149: nuevo inicio; la duraci\u00f3n se conserva salvo que se indique otra",
+                "tags": [
+                    "Appointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "appointment",
+                        "in": "path",
+                        "required": true,
+                        "description": "The appointment UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "starts_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "duration_min": {
+                                        "type": "integer",
+                                        "minimum": 10,
+                                        "maximum": 240
+                                    }
+                                },
+                                "required": [
+                                    "starts_at"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`AppointmentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AppointmentResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/appointments/{appointment}/cancel": {
+            "post": {
+                "operationId": "appointment.cancel",
+                "summary": "RF-149: cancelaci\u00f3n con motivo (paciente, cl\u00ednica u otro) y detalle opcional",
+                "tags": [
+                    "Appointment"
+                ],
+                "parameters": [
+                    {
+                        "name": "appointment",
+                        "in": "path",
+                        "required": true,
+                        "description": "The appointment UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "cancel_reason": {
+                                        "type": "string",
+                                        "enum": [
+                                            "paciente",
+                                            "clinica",
+                                            "otro"
+                                        ]
+                                    },
+                                    "cancel_detail": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 300
+                                    }
+                                },
+                                "required": [
+                                    "cancel_reason"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`AppointmentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AppointmentResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La cita no est\u00e1 programada ni confirmada",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/appointments/{appointment}/confirm": {
+            "post": {
+                "operationId": "appointmentConfirmation.store",
+                "tags": [
+                    "AppointmentConfirmation"
+                ],
+                "parameters": [
+                    {
+                        "name": "appointment",
+                        "in": "path",
+                        "required": true,
+                        "description": "The appointment UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`AppointmentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/AppointmentResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La cita no est\u00e1 programada ni confirmada",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/appointment-confirmations/{token}": {
+            "post": {
+                "operationId": "appointmentConfirmation.confirmByLink",
+                "summary": "El token resuelve la cl\u00ednica (`tenant.token`); vencido, usado o inexistente \u2192 404 (RNF-112).\nDevuelve solo lo necesario para mostrar la cita confirmada, sin datos del paciente",
+                "tags": [
+                    "AppointmentConfirmation"
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "starts_at": {
+                                                    "type": "string"
+                                                },
+                                                "ends_at": {
+                                                    "type": "string"
+                                                },
+                                                "timezone": {
+                                                    "type": "string"
+                                                },
+                                                "dentist": {
+                                                    "type": "string"
+                                                },
+                                                "type": {
+                                                    "type": "string"
+                                                },
+                                                "clinic": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "starts_at",
+                                                "ends_at",
+                                                "timezone",
+                                                "dentist",
+                                                "type",
+                                                "clinic"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La cita ya no est\u00e1 programada ni confirmada",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/appointment-types": {
             "get": {
                 "operationId": "appointmentType.index",
@@ -9848,6 +10360,163 @@
                     "type"
                 ],
                 "title": "AffectedAppointmentResource"
+            },
+            "AppointmentResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "patient": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "dentist": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "type": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "color": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "color"
+                        ]
+                    },
+                    "starts_at": {
+                        "type": "string"
+                    },
+                    "ends_at": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "programada",
+                            "confirmada",
+                            "en_atencion",
+                            "atendida",
+                            "cancelada",
+                            "inasistencia"
+                        ]
+                    },
+                    "origin": {
+                        "type": "string",
+                        "enum": [
+                            "clinica",
+                            "portal"
+                        ]
+                    },
+                    "confirmed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "confirmation_channel": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "enlace",
+                            "portal",
+                            "telefono",
+                            null
+                        ]
+                    },
+                    "reconfirmation_pending": {
+                        "type": "boolean"
+                    },
+                    "checked_in_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cancelled_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cancel_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "paciente",
+                            "clinica",
+                            "otro",
+                            null
+                        ]
+                    },
+                    "cancel_detail": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "patient",
+                    "dentist",
+                    "type",
+                    "starts_at",
+                    "ends_at",
+                    "status",
+                    "origin",
+                    "confirmed_at",
+                    "confirmation_channel",
+                    "reconfirmation_pending",
+                    "checked_in_at",
+                    "cancelled_at",
+                    "cancel_reason",
+                    "cancel_detail",
+                    "created_at"
+                ],
+                "title": "AppointmentResource"
             },
             "AppointmentTypeRequest": {
                 "type": "object",

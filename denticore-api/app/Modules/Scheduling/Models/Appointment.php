@@ -38,6 +38,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $cancel_detail
  * @property Carbon|null $no_show_marked_at
  * @property int $created_by
+ * @property Carbon|null $created_at
  * @property-read Patient $patient
  * @property-read User $dentist
  * @property-read AppointmentType $type
