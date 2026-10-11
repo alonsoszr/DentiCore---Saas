@@ -27,6 +27,7 @@ use Illuminate\Support\Carbon;
  * @property int $tenant_id
  * @property int $patient_id
  * @property int $dentist_id
+ * @property int|null $appointment_id
  * @property string $status
  * @property bool $is_first_attention
  * @property Carbon $opened_at
