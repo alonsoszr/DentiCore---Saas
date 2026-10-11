@@ -4,7 +4,9 @@ use App\Modules\Scheduling\Http\Controllers\AppointmentConfirmationController;
 use App\Modules\Scheduling\Http\Controllers\AppointmentController;
 use App\Modules\Scheduling\Http\Controllers\AppointmentTypeController;
 use App\Modules\Scheduling\Http\Controllers\AvailabilityController;
+use App\Modules\Scheduling\Http\Controllers\CheckInController;
 use App\Modules\Scheduling\Http\Controllers\ScheduleBlockController;
+use App\Modules\Scheduling\Http\Controllers\WaitingRoomController;
 use App\Modules\Scheduling\Http\Controllers\WorkScheduleController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +41,17 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     // CUS-46: disponibilidad (RF-146).
     Route::get('/availability', [AvailabilityController::class, 'index'])
         ->middleware('role:clinic_admin,dentist,receptionist');
+
+    // CUS-77: agenda y sala de espera (RF-153). El odontólogo lee todas las agendas.
+    Route::middleware('role:clinic_admin,dentist,receptionist')->group(function () {
+        Route::get('/appointments', [AppointmentController::class, 'index']);
+        Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
+        Route::get('/waiting-room', [WaitingRoomController::class, 'index']);
+    });
+
+    // CUS-50, CUS-25: check-in, que abre la atención (RF-151, RF-067).
+    Route::post('/appointments/{appointment}/check-in', [CheckInController::class, 'store'])
+        ->middleware(['role:clinic_admin,receptionist', 'idempotent']);
 
     // CUS-47 a CUS-49: reserva, reprogramación, cancelación y confirmación (RF-147, RF-149, RF-150).
     Route::middleware('role:clinic_admin,receptionist')->group(function () {

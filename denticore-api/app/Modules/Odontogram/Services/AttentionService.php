@@ -10,6 +10,7 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\ConsentGate;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Enums\NotificationEvent;
+use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Services\NotificationService;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
@@ -20,8 +21,9 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Ciclo de vida de la atención (SDD §5.2; CUS-25, CUS-26, CUS-27; RF-082, RF-094, RF-096,
- * RN-20, RN-77, RN-78). La vinculación con la cita (`en_atencion`, `atendida`) llega con la
- * agenda (TASK-064) y los mensajes de control periódico y encuesta con sus módulos.
+ * RN-20, RN-77, RN-78). Abierta desde el check-in queda vinculada a su cita (CUS-50), que pasa a
+ * `atendida` al cerrarse la atención. Los mensajes de control periódico y encuesta llegan con sus
+ * módulos.
  */
 class AttentionService
 {
@@ -35,12 +37,13 @@ class AttentionService
     /**
      * CUS-25: abre la atención del odontólogo. No exige consentimiento (abrirla no es un dato
      * clínico); si falta o está desactualizado, devuelve el aviso para la respuesta (RN-10, RN-15).
+     * Desde el check-in (CUS-50) la atención queda vinculada a su cita.
      *
      * @return array{attention: Attention, consent_warning: array{rule: string, detail: string}|null}
      *
      * @throws BusinessRuleException
      */
-    public function open(Patient $patient, User $dentist): array
+    public function open(Patient $patient, User $dentist, ?Appointment $appointment = null): array
     {
         match ($patient->archive_status) {
             'bloqueado' => throw new BusinessRuleException('RF-184', 'La ficha del paciente está bloqueada: no admite nuevas atenciones.'),
@@ -48,7 +51,7 @@ class AttentionService
             default => null,
         };
 
-        $attention = DB::transaction(function () use ($patient, $dentist): Attention {
+        $attention = DB::transaction(function () use ($patient, $dentist, $appointment): Attention {
             // Serializa las aperturas del paciente: la 2.ª atención abierta y el odontograma
             // inicial se deciden sin carreras (índices únicos como respaldo).
             Patient::query()->whereKey($patient->id)->lockForUpdate()->first();
@@ -73,6 +76,7 @@ class AttentionService
                 'is_first_attention' => $isFirst,
                 'closed_by_system' => false,
                 'opened_at' => now(),
+                'appointment_id' => $appointment?->id,
             ])->save();
 
             if ($isFirst) {
@@ -171,6 +175,7 @@ class AttentionService
                 'closed_by_system' => true,
             ])->save();
             $this->closeInitialOdontogram($attention, 'cierre_automatico');
+            $this->finishAppointment($attention);
 
             $this->notifications->notifyInApp(
                 NotificationEvent::AtencionCierreIncompleto,
@@ -269,7 +274,24 @@ class AttentionService
         if ($initialClosedBy !== null) {
             $this->closeInitialOdontogram($attention, $initialClosedBy);
         }
+        $this->finishAppointment($attention);
         Patient::query()->whereKey($attention->patient_id)->update(['last_attention_at' => $now]);
+    }
+
+    /**
+     * SDD §5.2 paso 6 (SRS §5.5.4): al cerrar la atención, su cita `en_atencion` pasa a `atendida`.
+     * También con el cierre automático incompleto: la atención terminó.
+     */
+    private function finishAppointment(Attention $attention): void
+    {
+        if ($attention->appointment_id === null) {
+            return;
+        }
+
+        Appointment::query()
+            ->whereKey($attention->appointment_id)
+            ->where('status', 'en_atencion')
+            ->update(['status' => 'atendida', 'updated_at' => now()]);
     }
 
     private function closeInitialOdontogram(Attention $attention, string $closedBy): void

@@ -139,6 +139,12 @@ return [
     ['method' => 'PATCH', 'uri' => 'api/v1/appointment-types/{type}', 'cus' => 'CUS-45', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     // CUS-46: el personal consulta la disponibilidad (el portal llega con MS-06).
     ['method' => 'GET', 'uri' => 'api/v1/availability', 'cus' => 'CUS-46', 'denied' => ['super_admin', 'patient']],
+    // CUS-77: el personal consulta la agenda y la sala de espera.
+    ['method' => 'GET', 'uri' => 'api/v1/appointments', 'cus' => 'CUS-77', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/appointments/{appointment}', 'cus' => 'CUS-77', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/waiting-room', 'cus' => 'CUS-77', 'denied' => ['super_admin', 'patient']],
+    // CUS-50: el check-in lo registran la recepción y el administrador; abre la atención (CUS-25).
+    ['method' => 'POST', 'uri' => 'api/v1/appointments/{appointment}/check-in', 'cus' => 'CUS-50', 'denied' => ['super_admin', 'dentist', 'patient']],
     // CUS-47 a CUS-49: la recepción y el administrador gestionan las citas (el portal llega con MS-06).
     ['method' => 'POST', 'uri' => 'api/v1/appointments', 'cus' => 'CUS-47', 'denied' => ['super_admin', 'dentist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/appointments/{appointment}/reschedule', 'cus' => 'CUS-48', 'denied' => ['super_admin', 'dentist', 'patient']],

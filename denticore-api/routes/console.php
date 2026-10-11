@@ -33,3 +33,7 @@ Schedule::command('attentions:auto-close')->everyFiveMinutes()->onOneServer()->w
 // Vencimiento de los presupuestos emitidos (SDD §1.9, §5.4.4; CUS-38, RF-124): a las 23:59 de cada
 // clínica, a lo más 5 minutos después (RNF-020). Corre cada 5 minutos; es idempotente.
 Schedule::command('budgets:expire')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
+
+// Inasistencias (SDD §1.9, §5.7; CUS-51, RN-51): citas sin check-in 30 minutos después de su fin, a
+// lo más 5 minutos más tarde (RNF-020). Corre cada 5 minutos; es idempotente.
+Schedule::command('appointments:mark-no-shows')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
