@@ -2,6 +2,7 @@
 
 namespace App\Modules\Scheduling\Http\Controllers;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Scheduling\Http\Requests\WorkScheduleRequest;
 use App\Modules\Scheduling\Http\Resources\WorkScheduleResource;
 use App\Modules\Scheduling\Services\Dentists;
@@ -27,14 +28,19 @@ class WorkScheduleController extends Controller
     }
 
     /**
-     * RF-142: reemplaza el horario desde `valid_from`.
+     * RF-142: reemplaza el horario desde `valid_from`. `decisions` reprograma o cancela cada cita
+     * activa que el horario nuevo deja fuera (RF-144, RN-82).
      */
     #[ProblemResponse(422, 'Franjas solapadas del mismo día (RF-142) o citas activas afectadas sin una decisión por cita (RN-82)')]
     public function replace(WorkScheduleRequest $request, string $dentist): AnonymousResourceCollection
     {
-        /** @var array{valid_from: string, slots: list<array{weekday: int, start_time: string, end_time: string}>} $data */
+        /** @var array{valid_from: string, slots: list<array{weekday: int, start_time: string, end_time: string}>, decisions?: list<array{appointment_id: string, action: string, new_starts_at?: string|null}>} $data */
         $data = $request->validated();
+        /** @var User $actor */
+        $actor = $request->user();
 
-        return WorkScheduleResource::collection($this->schedules->replace($this->dentists->find($dentist), $data));
+        return WorkScheduleResource::collection(
+            $this->schedules->replace($this->dentists->find($dentist), $data, $actor, $data['decisions'] ?? []),
+        );
     }
 }

@@ -526,7 +526,16 @@ export const scheduleBlockRequestSchema = z
     ends_at: z.string().datetime({ offset: true }),
     kind: z.enum(['vacaciones', 'capacitacion', 'feriado', 'cierre', 'otro']),
     reason: z.string().min(3).max(200),
-    decisions: z.array(z.string()).optional(),
+    decisions: z
+      .array(
+        z.object({
+          appointment_id: z.string().uuid(),
+          action: z.enum(['reprogramar', 'cancelar']),
+          new_starts_at: z.union([z.string().datetime({ offset: true }), z.null()]).optional(),
+        }),
+      )
+      .refine((arr) => arr.every((item, i) => arr.indexOf(item) == i), 'All items must be unique!')
+      .optional(),
   })
   .describe(
     'Bloqueo de agenda y su impacto (CUS-44; RF-143, RF-144): odontólogo (o toda la clínica si no se\nindica), inicio y fin; al crearlo, además el tipo y el motivo.',
@@ -815,7 +824,16 @@ export const workScheduleRequestSchema = z
     slots: z
       .array(z.object({ weekday: z.number().int().gte(1).lte(7), start_time: z.string(), end_time: z.string() }))
       .max(50),
-    decisions: z.array(z.string()).optional(),
+    decisions: z
+      .array(
+        z.object({
+          appointment_id: z.string().uuid(),
+          action: z.enum(['reprogramar', 'cancelar']),
+          new_starts_at: z.union([z.string().datetime({ offset: true }), z.null()]).optional(),
+        }),
+      )
+      .refine((arr) => arr.every((item, i) => arr.indexOf(item) == i), 'All items must be unique!')
+      .optional(),
   })
   .describe(
     'Reemplazo del horario laboral de un odontólogo desde una fecha (CUS-44; RF-142): franjas por día\nISO (1 = lunes) con hora de inicio y fin. Una lista vacía deja al odontólogo sin horario.',

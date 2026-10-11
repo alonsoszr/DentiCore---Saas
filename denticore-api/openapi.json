@@ -10169,7 +10169,7 @@
             },
             "put": {
                 "operationId": "workSchedule.replace",
-                "summary": "RF-142: reemplaza el horario desde `valid_from`",
+                "summary": "RF-142: reemplaza el horario desde `valid_from`. `decisions` reprograma o cancela cada cita\nactiva que el horario nuevo deja fuera (RF-144, RN-82)",
                 "tags": [
                     "WorkSchedule"
                 ],
@@ -12683,8 +12683,33 @@
                     "decisions": {
                         "type": "array",
                         "items": {
-                            "type": "string"
-                        }
+                            "type": "object",
+                            "properties": {
+                                "appointment_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "action": {
+                                    "type": "string",
+                                    "enum": [
+                                        "reprogramar",
+                                        "cancelar"
+                                    ]
+                                },
+                                "new_starts_at": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "date-time"
+                                }
+                            },
+                            "required": [
+                                "appointment_id",
+                                "action"
+                            ]
+                        },
+                        "uniqueItems": true
                     }
                 },
                 "required": [
@@ -13611,8 +13636,33 @@
                     "decisions": {
                         "type": "array",
                         "items": {
-                            "type": "string"
-                        }
+                            "type": "object",
+                            "properties": {
+                                "appointment_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "action": {
+                                    "type": "string",
+                                    "enum": [
+                                        "reprogramar",
+                                        "cancelar"
+                                    ]
+                                },
+                                "new_starts_at": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "date-time"
+                                }
+                            },
+                            "required": [
+                                "appointment_id",
+                                "action"
+                            ]
+                        },
+                        "uniqueItems": true
                     }
                 },
                 "required": [
