@@ -11,9 +11,12 @@ use App\Modules\Scheduling\Services\AppointmentService;
 use App\Modules\Scheduling\Services\Dentists;
 use App\Support\Http\Controller;
 use App\Support\Http\ProblemResponse;
+use App\Support\Tenancy\TenantContext;
+use App\Support\Time\ClinicClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -25,6 +28,47 @@ use Illuminate\Validation\ValidationException;
 class AppointmentController extends Controller
 {
     public function __construct(private AppointmentService $appointments, private Dentists $dentists) {}
+
+    /**
+     * CUS-77, RF-153: citas entre dos fechas locales de la clínica (hoy por defecto, hasta 31 días),
+     * para las vistas de día, semana y lista; se filtran por odontólogo, paciente o estado.
+     */
+    #[ProblemResponse(422, 'Rango de fechas inválido o de más de 31 días')]
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $clock = ClinicClock::for(TenantContext::tenantOrFail());
+        $today = $clock->localDate($clock->now());
+        $data = $request->validate([
+            'from' => ['sometimes', 'date_format:Y-m-d'],
+            'to' => ['sometimes', 'date_format:Y-m-d', 'after_or_equal:from'],
+            'dentist_id' => ['sometimes', 'uuid'],
+            'patient_id' => ['sometimes', 'uuid'],
+            'status' => ['sometimes', Rule::in(['programada', 'confirmada', 'en_atencion', 'atendida', 'cancelada', 'inasistencia'])],
+        ], [], ['from' => 'desde', 'to' => 'hasta', 'dentist_id' => 'odontólogo', 'patient_id' => 'paciente', 'status' => 'estado']);
+        $from = $data['from'] ?? $today;
+        $to = $data['to'] ?? $from;
+
+        if (CarbonImmutable::parse($from)->diffInDays(CarbonImmutable::parse($to)) >= 31) {
+            throw ValidationException::withMessages(['to' => 'Consulte como máximo 31 días a la vez.']);
+        }
+
+        return AppointmentResource::collection(
+            Appointment::query()
+                ->with(['patient', 'dentist', 'type'])
+                ->where('starts_at', '>=', $clock->startOfLocalDay($from))
+                ->where('starts_at', '<', $clock->startOfLocalDay($to)->addDay())
+                ->when(isset($data['dentist_id']), fn ($query) => $query->whereHas('dentist', fn ($dentist) => $dentist->where('uuid', $data['dentist_id'])))
+                ->when(isset($data['patient_id']), fn ($query) => $query->whereHas('patient', fn ($patient) => $patient->where('uuid', $data['patient_id'])))
+                ->when(isset($data['status']), fn ($query) => $query->where('status', $data['status']))
+                ->orderBy('starts_at')
+                ->get(),
+        );
+    }
+
+    public function show(Appointment $appointment): AppointmentResource
+    {
+        return AppointmentResource::make($appointment->load(['patient', 'dentist', 'type']));
+    }
 
     /**
      * CUS-47: `duration_min` ajusta la duración del tipo (FA-2).

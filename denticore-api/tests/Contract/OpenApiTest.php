@@ -500,6 +500,21 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->postJson("/api/v1/public/appointment-confirmations/{$linkToken}"), 'POST', '/public/appointment-confirmations/{token}');
     $check($this->postJson("/api/v1/public/appointment-confirmations/{$linkToken}"), 'POST', '/public/appointment-confirmations/{token}');
 
+    // Agenda, check-in y sala de espera (TASK-069).
+    $check($this->actingWithToken($admin)->getJson("/api/v1/appointments?from={$today}&to={$nextMonday}"), 'GET', '/appointments');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/appointments?status=otro'), 'GET', '/appointments');
+    $check($this->actingWithToken($admin)->getJson("/api/v1/appointments/{$linkedId}"), 'GET', '/appointments/{appointment}');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/appointments/'.fake()->uuid()), 'GET', '/appointments/{appointment}');
+    $soon = Appointment::factory()->create([
+        'tenant_id' => $tenant->id, 'dentist_id' => $scheduleDentist->id,
+        'patient_id' => Patient::factory()->for($tenant)->create()->id,
+        'starts_at' => now()->addMinutes(30)->startOfMinute(), 'ends_at' => now()->addMinutes(60)->startOfMinute(),
+    ]);
+    $check($this->actingWithToken($admin)->postJson("/api/v1/appointments/{$linkedId}/check-in", [], $idempotent()), 'POST', '/appointments/{appointment}/check-in');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/appointments/{$soon->uuid}/check-in", [], $idempotent()), 'POST', '/appointments/{appointment}/check-in');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/appointments/{$soon->uuid}/check-in", [], $idempotent()), 'POST', '/appointments/{appointment}/check-in');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/waiting-room'), 'GET', '/waiting-room');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');

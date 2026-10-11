@@ -139,11 +139,14 @@ it('requires a decision for every affected appointment and only for them', funct
 
 it('does not let a dentist decide on the affected appointments', function () {
     ['tenant' => $tenant, 'dentist' => $dentist, 'second' => $second] = decisionsScenario();
-    $this->actingAs($dentist);
+    $this->actingWithToken($dentist);
 
     $this->postJson('/api/v1/schedule-blocks', morningBlock($dentist, ['decisions' => [
         ['appointment_id' => $second->uuid, 'action' => 'cancelar'],
-    ]]), ['Idempotency-Key' => (string) Str::uuid()])->assertForbidden();
+    ]]), ['Idempotency-Key' => (string) Str::uuid()])
+        // AuthorizationException (no el 2FA ni el rol): el odontólogo sí puede crear el bloqueo.
+        ->assertForbidden()
+        ->assertJsonPath('detail', 'No tiene permiso para realizar esta acción.');
 })->group('CUS-48', 'RF-004');
 
 it('cancels the appointments left out by a reduced work schedule', function () {
