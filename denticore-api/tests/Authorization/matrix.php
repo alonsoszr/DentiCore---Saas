@@ -125,6 +125,19 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/plan-items/{item}/informed-consents', 'cus' => 'CUS-83', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/informed-consents/{informedConsent}/revoke', 'cus' => 'CUS-83', 'denied' => ['super_admin', 'patient']],
 
+    // M06 — Agenda (SDD §4.3.8). CUS-44: el personal consulta; el horario solo lo cambia CA y los
+    // bloqueos CA y OD (el OD solo los propios, ScheduleBlockPolicy).
+    ['method' => 'GET', 'uri' => 'api/v1/dentists/{dentist}/work-schedules', 'cus' => 'CUS-44', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'PUT', 'uri' => 'api/v1/dentists/{dentist}/work-schedules', 'cus' => 'CUS-44', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/schedule-blocks', 'cus' => 'CUS-44', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/schedule-blocks/impact', 'cus' => 'CUS-44', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/schedule-blocks', 'cus' => 'CUS-44', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    ['method' => 'DELETE', 'uri' => 'api/v1/schedule-blocks/{block}', 'cus' => 'CUS-44', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    // CUS-45: solo CA gestiona los tipos de cita.
+    ['method' => 'GET', 'uri' => 'api/v1/appointment-types', 'cus' => 'CUS-45', 'denied' => ['super_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/appointment-types', 'cus' => 'CUS-45', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/appointment-types/{type}', 'cus' => 'CUS-45', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],
 ];

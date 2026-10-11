@@ -432,6 +432,36 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($urgent($openAttention, []), 'POST', '/attentions/{attention}/urgent-procedures');
     $check($urgent($attentionId, []), 'POST', '/attentions/{attention}/urgent-procedures');
 
+    // Agenda (TASK-065): horario, bloqueos y tipos de cita.
+    $idempotent = fn () => ['Idempotency-Key' => (string) Str::uuid()];
+    $scheduleDentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+    $schedulePath = "/api/v1/dentists/{$scheduleDentist->uuid}/work-schedules";
+    $today = now('America/Lima')->toDateString();
+    $check($this->actingWithToken($admin)->putJson($schedulePath, ['valid_from' => $today, 'slots' => [
+        ['weekday' => 1, 'start_time' => '09:00', 'end_time' => '13:00'],
+    ]], $idempotent()), 'PUT', '/dentists/{dentist}/work-schedules');
+    $check($this->actingWithToken($admin)->putJson($schedulePath, ['valid_from' => $today, 'slots' => [
+        ['weekday' => 1, 'start_time' => '09:00', 'end_time' => '13:00'], ['weekday' => 1, 'start_time' => '12:00', 'end_time' => '14:00'],
+    ]], $idempotent()), 'PUT', '/dentists/{dentist}/work-schedules');
+    $check($this->actingWithToken($admin)->getJson($schedulePath), 'GET', '/dentists/{dentist}/work-schedules');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/dentists/'.fake()->uuid().'/work-schedules'), 'GET', '/dentists/{dentist}/work-schedules');
+    $blockStart = now()->addDays(10)->startOfHour();
+    $blockPayload = ['dentist_id' => $scheduleDentist->uuid, 'starts_at' => $blockStart->toIso8601String(), 'ends_at' => $blockStart->copy()->addHours(2)->toIso8601String()];
+    $check($this->actingWithToken($admin)->postJson('/api/v1/schedule-blocks/impact', $blockPayload), 'POST', '/schedule-blocks/impact');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/schedule-blocks/impact', []), 'POST', '/schedule-blocks/impact');
+    $blockCreated = $this->actingWithToken($admin)->postJson('/api/v1/schedule-blocks', [...$blockPayload, 'kind' => 'capacitacion', 'reason' => 'Curso'], $idempotent());
+    $check($blockCreated, 'POST', '/schedule-blocks');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/schedule-blocks', $blockPayload, $idempotent()), 'POST', '/schedule-blocks');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/schedule-blocks'), 'GET', '/schedule-blocks');
+    $check($this->actingWithToken($admin)->deleteJson('/api/v1/schedule-blocks/'.$blockCreated->json('data.id')), 'DELETE', '/schedule-blocks/{block}');
+    $check($this->actingWithToken($admin)->deleteJson('/api/v1/schedule-blocks/'.fake()->uuid()), 'DELETE', '/schedule-blocks/{block}');
+    $typeCreated = $this->actingWithToken($admin)->postJson('/api/v1/appointment-types', ['name' => 'Control', 'default_duration_min' => 30, 'color' => '#1D4ED8']);
+    $check($typeCreated, 'POST', '/appointment-types');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/appointment-types', ['name' => 'Control', 'default_duration_min' => 12]), 'POST', '/appointment-types');
+    $check($this->actingWithToken($admin)->patchJson('/api/v1/appointment-types/'.$typeCreated->json('data.id'), ['portal_visible' => true]), 'PATCH', '/appointment-types/{type}');
+    $check($this->actingWithToken($admin)->patchJson('/api/v1/appointment-types/'.$typeCreated->json('data.id'), ['color' => 'azul']), 'PATCH', '/appointment-types/{type}');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/appointment-types'), 'GET', '/appointment-types');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');

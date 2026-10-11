@@ -1,6 +1,37 @@
 // Archivo generado por scripts/gen-api.mjs desde denticore-api/openapi.json. No editar a mano.
 import { z } from 'zod'
 
+export const affectedAppointmentResourceSchema = z.object({
+  id: z.string(),
+  starts_at: z.string(),
+  ends_at: z.string(),
+  status: z.enum(['programada', 'confirmada', 'en_atencion']),
+  patient: z.object({ id: z.string(), name: z.string() }),
+  dentist: z.object({ id: z.string(), name: z.string() }),
+  type: z.object({ id: z.string(), name: z.string() }),
+})
+
+export const appointmentTypeRequestSchema = z
+  .object({
+    name: z.string().max(80),
+    default_duration_min: z.number().int().gte(10).lte(240),
+    color: z.string().regex(new RegExp('^#[0-9A-Fa-f]{6}$')),
+    portal_visible: z.boolean().optional(),
+    is_active: z.boolean().optional(),
+  })
+  .describe(
+    'Alta y edición de un tipo de cita (CUS-45; RF-145, RN-47): nombre único en la clínica, duración\nde 10 a 240 min en múltiplos de 5, color `#RRGGBB` y visibilidad en el portal. En la edición los\ncampos son opcionales.',
+  )
+
+export const appointmentTypeResourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  default_duration_min: z.number().int(),
+  color: z.string(),
+  portal_visible: z.boolean(),
+  is_active: z.boolean(),
+})
+
 export const attentionAddendumResourceSchema = z.object({
   id: z.string(),
   text: z.string(),
@@ -469,6 +500,29 @@ export const procedureResourceSchema = z.object({
   is_active: z.boolean(),
 })
 
+export const scheduleBlockRequestSchema = z
+  .object({
+    dentist_id: z.union([z.string().uuid(), z.null()]).optional(),
+    starts_at: z.string().datetime({ offset: true }),
+    ends_at: z.string().datetime({ offset: true }),
+    kind: z.enum(['vacaciones', 'capacitacion', 'feriado', 'cierre', 'otro']),
+    reason: z.string().min(3).max(200),
+    decisions: z.array(z.string()).optional(),
+  })
+  .describe(
+    'Bloqueo de agenda y su impacto (CUS-44; RF-143, RF-144): odontólogo (o toda la clínica si no se\nindica), inicio y fin; al crearlo, además el tipo y el motivo.',
+  )
+
+export const scheduleBlockResourceSchema = z.object({
+  id: z.string(),
+  dentist: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+  starts_at: z.string(),
+  ends_at: z.string(),
+  kind: z.enum(['vacaciones', 'capacitacion', 'feriado', 'cierre', 'otro']),
+  reason: z.string(),
+  created_by: z.object({ id: z.string(), name: z.string() }),
+})
+
 export const storePatientRequestSchema = z
   .object({
     document_type: z.enum(['dni', 'ce', 'pasaporte', 'cpp']),
@@ -734,4 +788,25 @@ export const userResourceSchema = z.object({
     ])
     .optional(),
   patient_uuid: z.union([z.string(), z.null()]).optional(),
+})
+
+export const workScheduleRequestSchema = z
+  .object({
+    valid_from: z.string().date(),
+    slots: z
+      .array(z.object({ weekday: z.number().int().gte(1).lte(7), start_time: z.string(), end_time: z.string() }))
+      .max(50),
+    decisions: z.array(z.string()).optional(),
+  })
+  .describe(
+    'Reemplazo del horario laboral de un odontólogo desde una fecha (CUS-44; RF-142): franjas por día\nISO (1 = lunes) con hora de inicio y fin. Una lista vacía deja al odontólogo sin horario.',
+  )
+
+export const workScheduleResourceSchema = z.object({
+  id: z.string(),
+  weekday: z.number().int(),
+  start_time: z.string(),
+  end_time: z.string(),
+  valid_from: z.string(),
+  valid_until: z.union([z.string(), z.null()]),
 })
