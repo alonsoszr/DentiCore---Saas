@@ -4,9 +4,9 @@ namespace App\Providers;
 
 use App\Modules\Identity\Services\InactivityPolicy;
 use App\Modules\Patients\Services\ConsentGate;
-use App\Modules\Risk\Services\MlSettings;
 use App\Modules\Patients\Services\PatientSearchRepository;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Risk\Services\MlSettings;
 use App\Support\Encryption\BlindIndex;
 use App\Support\Encryption\KeyRing;
 use App\Support\Encryption\TenantEncryption;
