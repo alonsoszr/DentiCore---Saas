@@ -114,3 +114,13 @@ it('covers the use cases of MS-03 in AUTH_MATRIX', function () {
         expect($covered)->toContain($cus);
     }
 })->group('T-019', 'RN-06', 'RF-004');
+
+it('covers the use cases of MS-04 in AUTH_MATRIX', function () {
+    $covered = collect(authMatrix())->pluck('cus')->unique();
+
+    // CUS-51 y CUS-52 son procesos programados sin ruta (appointments:mark-no-shows y
+    // appointments:send-reminders).
+    foreach (['CUS-44', 'CUS-45', 'CUS-46', 'CUS-47', 'CUS-48', 'CUS-49', 'CUS-50', 'CUS-53', 'CUS-77'] as $cus) {
+        expect($covered)->toContain($cus);
+    }
+})->group('T-019', 'RN-06', 'RF-004');

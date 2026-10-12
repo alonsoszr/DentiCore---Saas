@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Aislamiento de las rutas, jobs, PDF y búsquedas de MS-01 a MS-03 (TASK-042, TASK-063; SDD §1.6,
+ * Aislamiento de las rutas, jobs, PDF y búsquedas de MS-01 a MS-04 (TASK-042, TASK-063, TASK-073; SDD §1.6,
  * §6.3; RN-01, RN-03, RF-003, RNF-101). T-015 y T-016.
  */
 
@@ -17,6 +17,14 @@ use App\Modules\Patients\Services\InformedConsentService;
 use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Patients\Services\LegalRepresentativeService;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Enums\NotificationEvent;
+use App\Modules\Scheduling\Jobs\MarkNoShowsJob;
+use App\Modules\Scheduling\Jobs\SendRemindersJob;
+use App\Modules\Scheduling\Models\Appointment;
+use App\Modules\Scheduling\Models\AppointmentType;
+use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Scheduling\Models\ScheduleBlock;
+use App\Modules\Scheduling\Services\NotificationService;
 use App\Modules\Treatment\Jobs\ExpireBudgetsJob;
 use App\Modules\Treatment\Models\Budget;
 use App\Modules\Treatment\Models\PlanItem;
@@ -25,6 +33,8 @@ use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Modules\Treatment\Services\BudgetIssuer;
 use App\Modules\Treatment\Services\BudgetService;
 use App\Support\Tenancy\TenantContext;
+use App\Support\Tokens\OneTimeTokenService;
+use App\Support\Tokens\TokenPurpose;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -121,17 +131,26 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
         '{entry}' => $foreignEntry->uuid,
         '{diagnosis}' => $foreignDiagnosis->uuid,
         '{tooth}' => '16',
+        // Agenda y bandeja (MS-04): odontólogo, bloqueo, tipo y cita de la otra clínica, y un aviso de
+        // otro usuario.
+        '{dentist}' => User::factory()->for($other)->create(['role' => 'dentist'])->uuid,
+        '{block}' => ScheduleBlock::factory()->create(['tenant_id' => $other->id])->uuid,
+        '{type}' => AppointmentType::factory()->create(['tenant_id' => $other->id])->uuid,
+        '{appointment}' => Appointment::factory()->create(['tenant_id' => $other->id])->uuid,
+        '{notification}' => TenantContext::run($other, fn () => app(NotificationService::class)->notifyInApp(
+            NotificationEvent::PresupuestoAceptado, User::factory()->for($other)->create(['role' => 'receptionist']), ['number' => 'P-000001'],
+        ))->uuid,
     ];
 
     // Toda ruta de la clínica que recibe el uuid de un registro (RF-003).
     $routes = collect(Route::getRoutes()->getRoutes())
         ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/')
-            && preg_match('/\{(patient|representative|consent|user|attention|entry|procedure|plan|item|budget|line|document|template|informedConsent)\}/', $route->uri()) === 1)
+            && preg_match('/\{(patient|representative|consent|user|attention|entry|procedure|plan|item|budget|line|document|template|informedConsent|dentist|block|type|appointment|notification)\}/', $route->uri()) === 1)
         ->flatMap(fn ($route) => collect($route->methods())->reject(fn ($method) => $method === 'HEAD')
             ->map(fn ($method) => [$method, $route->uri()]))
         ->values();
 
-    expect($routes->count())->toBeGreaterThanOrEqual(63);
+    expect($routes->count())->toBeGreaterThanOrEqual(73);
 
     foreach ($routes as [$method, $uri]) {
         $path = '/'.strtr($uri, $bindings);
@@ -212,3 +231,49 @@ it('expires budgets only for the clinic of the job', function () {
     expect(TenantContext::run($own, fn () => $mine->fresh()->status))->toBe('vencido')
         ->and(TenantContext::run($other, fn () => $theirs->fresh()->status))->toBe('emitido');
 })->group('T-016', 'RF-124', 'RNF-101');
+
+it('confirms by link only the appointment of the clinic of the token', function () {
+    [$own, $other] = Tenant::factory()->count(2)->create();
+    $mine = Appointment::factory()->create(['tenant_id' => $own->id, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addMinutes(30)]);
+    $theirs = Appointment::factory()->create(['tenant_id' => $other->id, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addMinutes(30)]);
+    $token = TenantContext::run($other, fn () => app(OneTimeTokenService::class)->issue($theirs, TokenPurpose::AppointmentConfirmation, $theirs->starts_at)['token']);
+    // Un token de otro propósito no confirma ninguna cita.
+    $reset = TenantContext::run($own, fn () => app(OneTimeTokenService::class)->issue(User::factory()->for($own)->create(), TokenPurpose::PasswordReset, now()->addHour())['token']);
+
+    $this->postJson("/api/v1/public/appointment-confirmations/{$reset}")->assertNotFound();
+    $this->postJson("/api/v1/public/appointment-confirmations/{$token}")->assertOk();
+
+    expect(TenantContext::run($other, fn () => $theirs->fresh()->status))->toBe('confirmada')
+        ->and(TenantContext::run($own, fn () => $mine->fresh()->status))->toBe('programada');
+})->group('T-015', 'RF-150', 'RNF-101');
+
+it('marks no-shows only for the clinic of the job', function () {
+    [$own, $other] = Tenant::factory()->count(2)->create();
+    $past = ['starts_at' => now()->subHours(2), 'ends_at' => now()->subHours(2)->addMinutes(30)];
+    $mine = Appointment::factory()->create(['tenant_id' => $own->id, ...$past]);
+    $theirs = Appointment::factory()->create(['tenant_id' => $other->id, ...$past]);
+
+    dispatch_sync(new MarkNoShowsJob($own->id));
+
+    expect(TenantContext::run($own, fn () => $mine->fresh()->status))->toBe('inasistencia')
+        ->and(TenantContext::run($other, fn () => $theirs->fresh()->status))->toBe('programada');
+})->group('T-016', 'RN-51', 'RNF-101');
+
+it('sends reminders only for the clinic of the job', function () {
+    [$own, $other] = Tenant::factory()->count(2)->create();
+    $tomorrow = ['starts_at' => now()->addHours(23)->addMinutes(45), 'ends_at' => now()->addHours(24)->addMinutes(15)];
+    $patient = fn (Tenant $tenant) => TenantContext::run($tenant, function () use ($tenant) {
+        $patient = Patient::factory()->for($tenant)->create(['birth_date' => '1990-01-31', 'email' => Str::random(8).'@example.test']);
+        app(ConsentService::class)->grant($patient, [
+            'channel' => 'presencial', 'confirmation_document_number' => $patient->document_number, 'purpose_notifications' => true,
+        ], User::factory()->for($tenant)->create(['role' => 'receptionist']), '127.0.0.1');
+
+        return $patient;
+    });
+    Appointment::factory()->create(['tenant_id' => $own->id, 'patient_id' => $patient($own)->id, ...$tomorrow]);
+    Appointment::factory()->create(['tenant_id' => $other->id, 'patient_id' => $patient($other)->id, ...$tomorrow]);
+
+    dispatch_sync(new SendRemindersJob($own->id));
+
+    expect(Notification::query()->where('event', 'cita_recordatorio')->pluck('tenant_id')->all())->toBe([$own->id]);
+})->group('T-016', 'RN-52', 'RNF-101');
