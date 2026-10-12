@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Aislamiento de las rutas, jobs, PDF y búsquedas de MS-01 a MS-04 (TASK-042, TASK-063, TASK-073; SDD §1.6,
+ * Aislamiento de las rutas, jobs, PDF y búsquedas de MS-01 a MS-05 (TASK-042, TASK-063, TASK-073; SDD §1.6,
  * §6.3; RN-01, RN-03, RF-003, RNF-101). T-015 y T-016.
  */
 
@@ -17,6 +17,10 @@ use App\Modules\Patients\Services\InformedConsentService;
 use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Patients\Services\LegalRepresentativeService;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Risk\Jobs\ExpirePredictionsJob;
+use App\Modules\Risk\Models\RiskAlert;
+use App\Modules\Risk\Models\RiskPrediction;
+use App\Modules\Risk\Models\RiskVariableSet;
 use App\Modules\Scheduling\Enums\NotificationEvent;
 use App\Modules\Scheduling\Jobs\MarkNoShowsJob;
 use App\Modules\Scheduling\Jobs\SendRemindersJob;
@@ -137,6 +141,10 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
         '{block}' => ScheduleBlock::factory()->create(['tenant_id' => $other->id])->uuid,
         '{type}' => AppointmentType::factory()->create(['tenant_id' => $other->id])->uuid,
         '{appointment}' => Appointment::factory()->create(['tenant_id' => $other->id])->uuid,
+        // Riesgo de caries (MS-05): registro de variables, predicción y alerta de la otra clínica.
+        '{set}' => RiskVariableSet::factory()->create(['tenant_id' => $other->id])->uuid,
+        '{prediction}' => RiskPrediction::factory()->create(['tenant_id' => $other->id])->uuid,
+        '{alert}' => RiskAlert::factory()->create(['tenant_id' => $other->id])->uuid,
         '{notification}' => TenantContext::run($other, fn () => app(NotificationService::class)->notifyInApp(
             NotificationEvent::PresupuestoAceptado, User::factory()->for($other)->create(['role' => 'receptionist']), ['number' => 'P-000001'],
         ))->uuid,
@@ -145,7 +153,7 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
     // Toda ruta de la clínica que recibe el uuid de un registro (RF-003).
     $routes = collect(Route::getRoutes()->getRoutes())
         ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/')
-            && preg_match('/\{(patient|representative|consent|user|attention|entry|procedure|plan|item|budget|line|document|template|informedConsent|dentist|block|type|appointment|notification)\}/', $route->uri()) === 1)
+            && preg_match('/\{(patient|representative|consent|user|attention|entry|procedure|plan|item|budget|line|document|template|informedConsent|dentist|block|type|appointment|notification|set|prediction|alert)\}/', $route->uri()) === 1)
         ->flatMap(fn ($route) => collect($route->methods())->reject(fn ($method) => $method === 'HEAD')
             ->map(fn ($method) => [$method, $route->uri()]))
         ->values();
@@ -246,6 +254,18 @@ it('confirms by link only the appointment of the clinic of the token', function 
     expect(TenantContext::run($other, fn () => $theirs->fresh()->status))->toBe('confirmada')
         ->and(TenantContext::run($own, fn () => $mine->fresh()->status))->toBe('programada');
 })->group('T-015', 'RF-150', 'RNF-101');
+
+it('expires risk predictions only for the clinic of the job', function () {
+    [$own, $other] = Tenant::factory()->count(2)->create();
+    $old = ['predicted_at' => now()->subMonths(13)];
+    $mine = RiskPrediction::factory()->create(['tenant_id' => $own->id, ...$old]);
+    $theirs = RiskPrediction::factory()->create(['tenant_id' => $other->id, ...$old]);
+
+    dispatch_sync(new ExpirePredictionsJob($own->id));
+
+    expect(TenantContext::run($own, fn () => $mine->fresh()->status))->toBe('vencida')
+        ->and(TenantContext::run($other, fn () => $theirs->fresh()->status))->toBe('vigente');
+})->group('T-016', 'RN-60', 'RNF-101');
 
 it('marks no-shows only for the clinic of the job', function () {
     [$own, $other] = Tenant::factory()->count(2)->create();
