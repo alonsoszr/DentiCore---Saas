@@ -80,5 +80,7 @@ class DatabaseSeeder extends Seeder
         $this->call(DemoProcedureSeeder::class);
         // Tipos de cita y horario del odontólogo de demostración (MS-04).
         $this->call(DemoSchedulingSeeder::class);
+        // Paciente con variables de riesgo completas y la finalidad (d) (MS-05).
+        $this->call(DemoRiskSeeder::class);
     }
 }

@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { RequireRole } from '../auth/RequireRole'
 import { STAFF_ROLES } from '../auth/roles'
+import { hasFeature } from '../auth/features'
+import { RequireFeature } from '../auth/guards'
+import { useAuth } from '../auth/useAuth'
 import { useClinic } from '../auth/useClinic'
 import { Layout } from '../components/Layout'
 import { ClinicSettingsPage } from '../pages/ClinicSettingsPage'
@@ -10,6 +13,7 @@ import { AttentionPage } from '../pages/attentions/AttentionPage'
 import { PatientCreatePage } from '../pages/patients/PatientCreatePage'
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage'
 import { PatientsPage } from '../pages/patients/PatientsPage'
+import { AlertsPage } from '../pages/risk/AlertsPage'
 import { AgendaPage } from '../pages/scheduling/AgendaPage'
 import { AppointmentDetailPage } from '../pages/scheduling/AppointmentDetailPage'
 import { AppointmentNewPage } from '../pages/scheduling/AppointmentNewPage'
@@ -25,12 +29,15 @@ import { PlanDetailPage } from '../pages/treatment/PlanDetailPage'
 /** Área del personal de la clínica: /c/:slug/app/* (DD-29). */
 export default function StaffArea() {
   const { appPath } = useClinic()
+  const { user } = useAuth()
   const forbiddenPath = appPath('/sin-acceso')
 
   const navItems = [
     { to: appPath('/agenda'), label: 'Agenda', roles: STAFF_ROLES, end: true },
     { to: appPath('/pacientes'), label: 'Pacientes', roles: STAFF_ROLES },
     { to: appPath('/agenda/horarios'), label: 'Horarios', roles: ['clinic_admin', 'dentist'] },
+    // CUS-58: bandeja de alertas de riesgo alto del odontólogo, solo con un plan que incluye riesgo.
+    ...(hasFeature(user, 'risk') ? [{ to: appPath('/alertas'), label: 'Alertas', roles: ['dentist'] }] : []),
     { to: appPath('/agenda/tipos'), label: 'Tipos de cita', roles: ['clinic_admin'] },
     { to: appPath('/catalogo'), label: 'Catálogo', roles: ['clinic_admin'] },
     { to: appPath('/usuarios'), label: 'Usuarios', roles: ['clinic_admin'] },
@@ -105,6 +112,16 @@ export default function StaffArea() {
         <Route path="planes/:uuid/presupuesto" element={<BudgetNewPage />} />
         <Route path="planes/:uuid/consentimientos" element={<PlanConsentsPage />} />
         <Route path="presupuestos/:uuid" element={<BudgetDetailPage />} />
+        <Route
+          path="alertas"
+          element={
+            <RequireRole allow={['dentist']} forbiddenPath={forbiddenPath}>
+              <RequireFeature feature="risk" fallbackPath={appPath('/pacientes')}>
+                <AlertsPage />
+              </RequireFeature>
+            </RequireRole>
+          }
+        />
         <Route path="pacientes" element={<PatientsPage />} />
         <Route path="pacientes/nuevo" element={<PatientCreatePage />} />
         <Route path="pacientes/:uuid/*" element={<PatientDetailPage />} />

@@ -82,6 +82,12 @@ jobs:
           php artisan key:generate
           php artisan migrate --database=pgsql_migrator --force
           php artisan db:seed --force
+          # Modelo de riesgo 1.0.0 (MS-05): el contenedor ml arranca sin artefactos; se entrena con la
+          # semilla fija, se sube al bucket de MinIO (que crea minio-setup; DI-18) y Laravel lo registra y
+          # activa (RN-84, supuesto S-09).
+          docker compose -f ../docker-compose.yml run --rm minio-setup
+          docker compose -f ../docker-compose.yml exec -T ml python -m denticore_ml.training --version 1.0.0 --out models --commit "$GITHUB_SHA" --upload
+          php artisan risk:register-model 1.0.0 --activate
           php artisan serve --port=8000 > ../api.log 2>&1 &
           # Correos de invitación (outbox → cola → Mailpit), como el worker de producción.
           php artisan outbox:dispatch > ../outbox.log 2>&1 &
@@ -104,7 +110,15 @@ jobs:
 
       - name: Playwright
         working-directory: denticore-spa
-        run: npm run e2e
+        run: npm run e2e -- --grep-invert @motor-detenido
+
+      # TASK-083 (criterio 2) y RT-01: con el motor ML detenido la atención continúa y la pantalla
+      # muestra «Predicción no disponible» (RN-64, CA-55.3).
+      - name: Playwright con el motor ML detenido
+        working-directory: denticore-spa
+        run: |
+          docker compose -f ../docker-compose.yml stop ml
+          npm run e2e -- --grep @motor-detenido
 
       - uses: actions/upload-artifact@v4
         if: always()
