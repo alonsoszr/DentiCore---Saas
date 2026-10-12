@@ -858,15 +858,20 @@
     gap: 4px;
   }
 
-  .tabs a {
+  .tabs a,
+  .tabs button {
     @apply text-label-md;
     padding: 8px 12px;
+    border: 0;
     border-radius: var(--radius);
+    background: none;
     color: var(--color-on-surface-variant);
     text-decoration: none;
+    cursor: pointer;
   }
 
-  .tabs a.active {
+  .tabs a.active,
+  .tabs button.active {
     background: var(--color-secondary-container);
     color: var(--color-on-secondary-container);
   }

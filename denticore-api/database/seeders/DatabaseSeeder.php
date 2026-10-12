@@ -78,5 +78,7 @@ class DatabaseSeeder extends Seeder
         });
         // Catálogo de procedimientos para planes y presupuestos (MS-03).
         $this->call(DemoProcedureSeeder::class);
+        // Tipos de cita y horario del odontólogo de demostración (MS-04).
+        $this->call(DemoSchedulingSeeder::class);
     }
 }
