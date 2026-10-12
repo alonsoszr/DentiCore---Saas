@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
  * Predicción de riesgo de caries con su explicación (SDD §4.3.9, §5.8.3; CUS-56; RN-62, RN-63,
  * RF-168). Visibilidad por rol (§3.5): el Administrador de Clínica ve nivel, confianza, explicación
  * global y leyendas; solo el odontólogo recibe la probabilidad, las 3 contribuciones a favor y en
- * contra y la explicación individual. `low_confidence` marca una confianza menor que 0,60.
+ * contra y la explicación individual. `low_confidence` marca una confianza menor que 0,60. Las
+ * contribuciones a favor y en contra omiten las variables sin valor (CPOD/ceod fuera de la
+ * dentición y la estructura familiar de un adulto, DI-20): no aplican al paciente.
  *
  * @mixin RiskPrediction
  */
@@ -30,6 +32,7 @@ class RiskPredictionResource extends ApiResource
         $user = $request->user();
         $isDentist = $user instanceof User && $user->role === 'dentist';
         $individual = collect($this->explanation_individual);
+        $applicable = $individual->filter(fn (array $item) => $item['value'] !== null);
 
         return [
             /** @var 'vigente'|'reemplazada'|'vencida' */
@@ -52,10 +55,10 @@ class RiskPredictionResource extends ApiResource
             'alert_id' => $this->alert?->uuid,
             'probability' => $this->when($isDentist, fn () => $this->probability),
             /** @var list<array{feature: string, label: string, value: string, shap: string}> */
-            'top_increasing' => $this->when($isDentist, fn () => $individual->filter(fn (array $item) => $item['shap'] > 0)
+            'top_increasing' => $this->when($isDentist, fn () => $applicable->filter(fn (array $item) => $item['shap'] > 0)
                 ->sortByDesc('shap')->take(3)->map(fn (array $item) => $this->contribution($item))->values()->all()),
             /** @var list<array{feature: string, label: string, value: string, shap: string}> */
-            'top_decreasing' => $this->when($isDentist, fn () => $individual->filter(fn (array $item) => $item['shap'] < 0)
+            'top_decreasing' => $this->when($isDentist, fn () => $applicable->filter(fn (array $item) => $item['shap'] < 0)
                 ->sortBy('shap')->take(3)->map(fn (array $item) => $this->contribution($item))->values()->all()),
             /** @var list<array{feature: string, label: string, value: string, shap: string}> */
             'explanation_individual' => $this->when($isDentist, fn () => $individual->map(fn (array $item) => $this->contribution($item))->values()->all()),

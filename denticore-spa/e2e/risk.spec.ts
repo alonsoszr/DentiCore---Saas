@@ -85,6 +85,8 @@ test('captures the variables by role, computes a high risk and acknowledges its 
   await dentist.getByRole('link', { name: 'Ir al cálculo' }).click()
   await dentist.getByRole('button', { name: 'Calcular riesgo' }).click()
   await expect(dentist.getByText('Riesgo alto')).toBeVisible()
+  // DESIGN.md › Status palette: el nivel alto usa `risk-high` (#B91C1C), no el color base del badge.
+  await expect(dentist.locator('.badge-risk-alto')).toHaveCSS('color', 'rgb(185, 28, 28)')
   await expect(dentist.getByText('Probabilidad calibrada')).toBeVisible()
   await expect(dentist.getByText('Factores que aumentan el riesgo')).toBeVisible()
   await expect(dentist.getByText('Herramienta de apoyo; no constituye diagnóstico')).toBeVisible()

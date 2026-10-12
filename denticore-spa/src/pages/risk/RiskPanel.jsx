@@ -9,7 +9,8 @@ import { Alert } from '../../components/Alert'
 import { Spinner } from '../../ui/icons'
 import { missingLabel } from './labels'
 import { RiskCard, RiskUnavailableCard } from './RiskCard'
-import { useCurrentPrediction, useVariableSets } from './useRisk'
+import { RiskPurposeAlert } from './RiskPurposeAlert'
+import { useCurrentPrediction, useRiskPurpose, useVariableSets } from './useRisk'
 
 /** Lista legible de lo que falta para calcular (CA-55.4). */
 function MissingList({ missing }) {
@@ -35,6 +36,8 @@ export function RiskPanel({ patient }) {
   const [unavailable, setUnavailable] = useState(false)
   const current = useCurrentPrediction(patient.id)
   const sets = useVariableSets(patient.id, isDentist)
+  const purpose = useRiskPurpose(patient.id, isDentist)
+  const blocked = purpose.isLoading || purpose.allowed === false
   const latest = sets.data?.[0] ?? null
 
   const predict = useMutation({
@@ -70,7 +73,7 @@ export function RiskPanel({ patient }) {
               <button
                 type="button"
                 className="btn"
-                disabled={predict.isPending || !latest?.is_complete}
+                disabled={predict.isPending || !latest?.is_complete || blocked}
                 onClick={() => predict.mutate()}
               >
                 {predict.isPending && <Spinner />}
@@ -83,10 +86,11 @@ export function RiskPanel({ patient }) {
               {generalError(sets.error)}
             </Alert>
           )}
-          {sets.isSuccess && latest === null && (
+          {purpose.allowed === false && <RiskPurposeAlert patient={patient} className="mt-3" />}
+          {purpose.allowed !== false && sets.isSuccess && latest === null && (
             <p className="muted mb-0">Registre las variables de riesgo del paciente para poder calcular.</p>
           )}
-          {missing.length > 0 && (
+          {purpose.allowed !== false && missing.length > 0 && (
             <Alert tone="warning" title="Faltan variables para calcular" className="mt-3">
               <MissingList missing={missing} />
             </Alert>

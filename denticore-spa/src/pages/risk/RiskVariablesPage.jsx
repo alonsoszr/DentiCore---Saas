@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from 'react-router-dom'
 import { apiClient } from '../../api/client'
@@ -8,8 +8,9 @@ import { useClinic } from '../../auth/useClinic'
 import { Alert } from '../../components/Alert'
 import { Field } from '../../components/Field'
 import { formatDateTime } from '../../ui/format'
-import { FIELDS, SECTION_TITLES, SECTIONS_BY_ROLE, VARIABLE_ROLES, missingLabel } from './labels'
-import { useVariableSets } from './useRisk'
+import { FIELDS, SECTION_TITLES, SECTIONS_BY_ROLE, VARIABLE_ROLES, dentitionFor, missingLabel } from './labels'
+import { RiskPurposeAlert } from './RiskPurposeAlert'
+import { useRiskPurpose, useVariableSets } from './useRisk'
 
 /** Valor del formulario desde el registro: números y booleanos como texto para los controles. */
 function initialValues(set, sections) {
@@ -26,15 +27,23 @@ function initialValues(set, sections) {
   )
 }
 
+/** ¿Se pide el campo a este paciente? La estructura familiar solo a menores y CPOD/ceod según la dentición (DI-20). */
+function appliesTo(field, patient) {
+  if (field.minorOnly && !patient.is_minor) return false
+  return !field.dentitions || field.dentitions.includes(dentitionFor(patient.age_years))
+}
+
 /** Cuerpo de la API: números, booleanos y el informante según la edad (SDD §2.14.2). */
-function toPayload(values, sections, isMinor) {
+function toPayload(values, sections, patient) {
+  const isMinor = patient.is_minor
   return Object.fromEntries(
     sections.map((section) => {
       const entries = FIELDS[section]
         .filter((field) => !field.minorOnly || isMinor)
-        .map(({ key, kind }) => {
+        .map((field) => {
+          const { key, kind } = field
           const raw = values[section][key]
-          if (raw === '') return [key, null]
+          if (raw === '' || !appliesTo(field, patient)) return [key, null]
           if (kind === 'number') return [key, Number(raw)]
           if (kind === 'boolean') return [key, raw === 'true']
           return [key, raw]
@@ -67,6 +76,8 @@ export function RiskVariablesPage({ patient }) {
   const editable = SECTIONS_BY_ROLE[user?.role] ?? []
   const canSee = VARIABLE_ROLES.includes(user?.role)
   const sets = useVariableSets(patient.id, canSee)
+  const purpose = useRiskPurpose(patient.id, canSee)
+  const formRef = useRef(null)
   const latest = sets.data?.[0] ?? null
   const [form, setForm] = useState(null)
   const [notice, setNotice] = useState(null)
@@ -89,6 +100,11 @@ export function RiskVariablesPage({ patient }) {
     },
   })
 
+  // Tras un 422 el foco va al primer campo con error, para leerlo y corregirlo de inmediato.
+  useEffect(() => {
+    if (save.error) formRef.current?.querySelector('[aria-invalid="true"]')?.focus()
+  }, [save.error])
+
   if (!canSee) return <Navigate to={appPath(`/pacientes/${patient.id}/riesgo`)} replace />
   if (sets.isLoading) return <div className="card empty">Cargando…</div>
   if (sets.isError) return <div className="alert alert-error">{generalError(sets.error)}</div>
@@ -100,9 +116,9 @@ export function RiskVariablesPage({ patient }) {
   }
   const handleSubmit = (event) => {
     event.preventDefault()
-    save.mutate(toPayload(values, editable, patient.is_minor))
+    save.mutate(toPayload(values, editable, patient))
   }
-  const visibleFields = (section) => FIELDS[section].filter((field) => !field.minorOnly || patient.is_minor)
+  const visibleFields = (section) => FIELDS[section].filter((field) => appliesTo(field, patient))
 
   return (
     <>
@@ -129,12 +145,21 @@ export function RiskVariablesPage({ patient }) {
           </Alert>
         )}
         {latest?.is_complete && <Alert tone="success">El registro está completo para calcular el riesgo.</Alert>}
+        {purpose.allowed === false && <RiskPurposeAlert patient={patient} className="mt-3" />}
       </section>
 
-      {editable.length > 0 && (
-        <form onSubmit={handleSubmit} noValidate className="card" aria-label="Registrar variables">
-          {notice && <Alert tone="success">{notice}</Alert>}
-          {generalError(save.error) && <Alert tone="error">{generalError(save.error)}</Alert>}
+      {editable.length > 0 && !purpose.isLoading && purpose.allowed !== false && (
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="card" aria-label="Registrar variables">
+          {notice && (
+            <Alert tone="success" className="mb-4">
+              {notice}
+            </Alert>
+          )}
+          {generalError(save.error) && (
+            <Alert tone="error" className="mb-4">
+              {generalError(save.error)}
+            </Alert>
+          )}
           {editable.map((section) => (
             <fieldset key={section} className="m-0 mb-4 border-0 p-0">
               <legend className="text-title-md mb-3">{SECTION_TITLES[section]}</legend>

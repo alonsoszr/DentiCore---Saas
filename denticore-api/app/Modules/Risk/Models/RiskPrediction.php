@@ -32,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property string $threshold_high
  * @property string $base_value
  * @property list<array{feature: string, mean_abs_shap: float}> $explanation_global
- * @property list<array{feature: string, value: string, shap: float}> $explanation_individual
+ * @property list<array{feature: string, value: string|null, shap: float}> $explanation_individual
  * @property string $status
  * @property int $requested_by
  * @property Carbon $predicted_at

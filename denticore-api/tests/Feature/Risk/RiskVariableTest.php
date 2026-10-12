@@ -66,7 +66,14 @@ it('rejects out of domain values with an error on the field', function () {
         'clinical' => RiskFixtures::clinical(['cpod' => 33, 'plaque_index_pct' => 42.55]),
         'behavioral' => RiskFixtures::behavioral(['brushing_per_day' => '4']),
     ])->assertUnprocessable()
-        ->assertJsonValidationErrors(['clinical.cpod', 'clinical.plaque_index_pct', 'behavioral.brushing_per_day']);
+        ->assertJsonValidationErrors(['clinical.cpod', 'clinical.plaque_index_pct', 'behavioral.brushing_per_day'])
+        ->assertJsonPath('errors', fn (array $errors) => $errors['clinical.cpod'] === ['El campo CPOD debe estar entre 0 y 32.']
+            && $errors['clinical.plaque_index_pct'] === ['El campo índice de placa debe tener 0-1 decimales.']);
+
+    captureRisk($patient, ['clinical' => RiskFixtures::clinical(['cpod' => 'tres', 'plaque_index_pct' => 'alto'])])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors', fn (array $errors) => $errors['clinical.cpod'][0] === 'El campo CPOD debe ser un número entero.'
+            && $errors['clinical.plaque_index_pct'][0] === 'El campo índice de placa debe ser un número.');
 })->group('RF-161', 'RNF-174');
 
 it('requires the caries index of the current dentition and the family structure only for minors', function () {

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 /**
  * Diálogo de confirmación de acciones irreversibles (RNF-063; DESIGN.md › Confirmation dialogs):
@@ -19,10 +19,16 @@ export function ConfirmDialog({
 }) {
   const titleId = useId()
   const dialogRef = useRef(null)
+  // Quien abrió el diálogo, leído al montar y antes de mover el foco (también con StrictMode).
+  const [opener] = useState(() => document.activeElement)
 
   useEffect(() => {
     dialogRef.current?.querySelector('input, textarea, select, button')?.focus()
-  }, [])
+    // Al cerrarse, el foco vuelve a quien lo abrió, salvo que la pantalla ya lo haya movido.
+    return () => {
+      if (opener?.isConnected && document.activeElement === document.body) opener.focus()
+    }
+  }, [opener])
 
   return (
     <div className="dialog-backdrop">

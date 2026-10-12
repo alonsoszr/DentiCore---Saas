@@ -35,6 +35,7 @@ export const FIELDS = {
       max: 32,
       step: 1,
       hint: 'Dentición permanente o mixta (0 a 32).',
+      dentitions: ['mixta', 'permanente'],
     },
     {
       key: 'ceod',
@@ -44,6 +45,7 @@ export const FIELDS = {
       max: 20,
       step: 1,
       hint: 'Dentición temporal o mixta (0 a 20).',
+      dentitions: ['temporal', 'mixta'],
     },
     {
       key: 'plaque_index_pct',
@@ -129,6 +131,12 @@ export const FIELDS = {
       ],
     },
   ],
+}
+
+/** Dentición según la edad, como `DentitionResolver::default` de la API (DI-20): define si se pide CPOD, ceod o ambos. */
+export function dentitionFor(ageYears) {
+  if (ageYears < 6) return 'temporal'
+  return ageYears <= 12 ? 'mixta' : 'permanente'
 }
 
 /** Nombre en español de una variable que falta (`missing` de la API). */

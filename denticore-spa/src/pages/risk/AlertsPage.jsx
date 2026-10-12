@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { apiClient } from '../../api/client'
@@ -20,17 +20,17 @@ const ACTIONS = {
 
 const OPEN_PLAN = ['borrador', 'propuesto', 'aceptado', 'en_ejecucion']
 
-/**
- * Diálogo de reconocimiento (CUS-58; RN-65, RF-171): la acción es obligatoria. El plan o la cita
- * se eligen entre los vigentes del paciente; la justificación tiene 20 caracteres o más.
- */
 /** aria-describedby del control: el error si lo hay, si no la ayuda. */
 function describedBy(name, error, hint) {
   if (error) return `${name}-error`
   return hint ? `${name}-hint` : undefined
 }
 
-function AcknowledgeDialog({ alert, onClose }) {
+/**
+ * Diálogo de reconocimiento (CUS-58; RN-65, RF-171): la acción es obligatoria. El plan o la cita
+ * se eligen entre los vigentes del paciente; la justificación tiene 20 caracteres o más.
+ */
+function AcknowledgeDialog({ alert, onClose, onAcknowledged }) {
   const { slug, appPath } = useClinic()
   const timeZone = useTimeZone()
   const queryClient = useQueryClient()
@@ -69,7 +69,7 @@ function AcknowledgeDialog({ alert, onClose }) {
       ).data.data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['risk-alerts', slug] })
-      onClose()
+      onAcknowledged(alert)
     },
     // 409 (ya reconocida) o 404: la fila de la bandeja se actualiza aunque el diálogo siga abierto.
     onError: () => queryClient.invalidateQueries({ queryKey: ['risk-alerts', slug] }),
@@ -100,7 +100,9 @@ function AcknowledgeDialog({ alert, onClose }) {
       error={generalError(acknowledge.error)}
       confirmDisabled={!ready}
     >
-      <p>Registra la acción que tomaste frente al riesgo alto. Queda en la bitácora y no se puede deshacer.</p>
+      <p className="mb-4">
+        Registra la acción que tomaste frente al riesgo alto. Queda en la bitácora y no se puede deshacer.
+      </p>
       <fieldset className="m-0 mb-4 border-0 p-0">
         <legend className="text-label-md mb-2">Acción</legend>
         {Object.entries(ACTIONS).map(([value, label]) => (
@@ -127,6 +129,7 @@ function AcknowledgeDialog({ alert, onClose }) {
           <select
             id="alert-plan"
             value={planId}
+            disabled={plans.isSuccess && openPlans.length === 0}
             aria-invalid={errors.treatment_plan_id ? true : undefined}
             aria-describedby={describedBy('alert-plan', errors.treatment_plan_id, planHint)}
             onChange={(event) => setPlanId(event.target.value)}
@@ -154,6 +157,7 @@ function AcknowledgeDialog({ alert, onClose }) {
           <select
             id="alert-appointment"
             value={appointmentId}
+            disabled={appointments.isSuccess && activeAppointments.length === 0}
             aria-invalid={errors.appointment_id ? true : undefined}
             aria-describedby={describedBy('alert-appointment', errors.appointment_id, appointmentHint)}
             onChange={(event) => setAppointmentId(event.target.value)}
@@ -204,6 +208,8 @@ export function AlertsPage() {
   const { slug, appPath } = useClinic()
   const timeZone = useTimeZone()
   const [selected, setSelected] = useState(null)
+  const [acknowledged, setAcknowledged] = useState(null)
+  const trayRef = useRef(null)
   const alerts = useQuery({
     queryKey: ['risk-alerts', slug],
     queryFn: async () => (await apiClient.get('/risk-alerts')).data.data,
@@ -212,7 +218,16 @@ export function AlertsPage() {
   return (
     <>
       <PageHeader title="Alertas de riesgo alto" />
-      <section className="card" aria-label="Bandeja de alertas">
+      <section ref={trayRef} tabIndex={-1} className="card" aria-label="Bandeja de alertas">
+        <div role="status">
+          {acknowledged && (
+            // La clave por alerta crea un nodo nuevo: el mensaje se anuncia aunque el texto se repita.
+            <p key={acknowledged.id} className="mt-0 mb-3 flex items-center gap-2">
+              <CheckIcon className="size-4 text-tertiary" />
+              {acknowledged.text}
+            </p>
+          )}
+        </div>
         {alerts.isLoading && (
           <div className="empty" role="status">
             Cargando…
@@ -280,7 +295,18 @@ export function AlertsPage() {
           </div>
         )}
       </section>
-      {selected && <AcknowledgeDialog alert={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <AcknowledgeDialog
+          alert={selected}
+          onClose={() => setSelected(null)}
+          onAcknowledged={(alert) => {
+            // La fila ya no tiene el botón que abrió el diálogo: el foco vuelve a la bandeja y se anuncia.
+            setSelected(null)
+            setAcknowledged({ id: alert.id, text: `Alerta de ${alert.patient.name} reconocida.` })
+            trayRef.current?.focus()
+          }}
+        />
+      )}
     </>
   )
 }
