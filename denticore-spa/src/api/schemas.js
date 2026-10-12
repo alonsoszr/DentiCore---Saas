@@ -530,6 +530,39 @@ export const procedureResourceSchema = z.object({
   is_active: z.boolean(),
 })
 
+export const riskVariableSetResourceSchema = z.object({
+  id: z.string(),
+  age_group: z.enum(['menor', 'adulto']),
+  age_years: z.number().int(),
+  clinical: z.object({
+    cpod: z.union([z.number().int(), z.null()]).optional(),
+    ceod: z.union([z.number().int(), z.null()]).optional(),
+    plaque_index_pct: z.number().optional(),
+    active_lesions: z.number().int().optional(),
+  }),
+  behavioral: z.object({
+    sugar_between_meals: z.string().optional(),
+    fluoride_toothpaste: z.boolean().optional(),
+    brushing_per_day: z.string().optional(),
+    dental_visits_per_year: z.string().optional(),
+  }),
+  sociodemographic: z.object({
+    respondent: z.string().optional(),
+    education_level: z.string().optional(),
+    employment_status: z.string().optional(),
+    family_structure: z.union([z.string(), z.null()]).optional(),
+  }),
+  is_complete: z.boolean(),
+  missing: z.array(z.string()),
+  clinical_captured_by: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+  clinical_captured_at: z.union([z.string(), z.null()]),
+  sociodemographic_captured_by: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+  sociodemographic_captured_at: z.union([z.string(), z.null()]),
+  supersedes_id: z.union([z.string(), z.null()]),
+  locked_at: z.union([z.string(), z.null()]),
+  created_at: z.string(),
+})
+
 export const scheduleBlockRequestSchema = z
   .object({
     dentist_id: z.union([z.string().uuid(), z.null()]).optional(),
