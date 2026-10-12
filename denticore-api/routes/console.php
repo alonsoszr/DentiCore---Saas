@@ -42,5 +42,9 @@ Schedule::command('appointments:mark-no-shows')->everyFiveMinutes()->onOneServer
 // minutos, con clave de deduplicación por cita.
 Schedule::command('appointments:send-reminders')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
 
+// Vencimiento de las predicciones de riesgo de más de 12 meses (SDD §1.9, §2.11; RN-60): a diario
+// a las 00:30; es idempotente.
+Schedule::command('risk:expire-predictions')->dailyAt('00:30')->onOneServer()->withoutOverlapping();
+
 // Conservación de 90 días de los avisos in-app (SDD §1.9; CUS-53, RF-158).
 Schedule::command('notifications:prune-inapp')->dailyAt('03:15')->onOneServer()->withoutOverlapping();
