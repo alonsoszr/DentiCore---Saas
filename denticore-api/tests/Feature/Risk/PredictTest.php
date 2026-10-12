@@ -205,6 +205,19 @@ it('exposes the explanation only inside a computed prediction', function () {
         ->toContain('confidence', 'explanation_global', 'legend');
 })->group('T-134', 'RN-62', 'RN-63', 'CA-55.7', 'CUS-56');
 
+it('leaves the variables that do not apply out of the top contributions', function () {
+    ['patient' => $patient, 'set' => $set] = predictionScenario();
+    // El adulto no tiene ceod ni estructura familiar (null, DI-20); el modelo igual les da peso.
+    MlEngine::predicts(0.45, shap: ['ceod' => -0.4, 'family_structure' => 0.6]);
+
+    requestPrediction($patient, $set)->assertCreated()
+        ->assertJsonPath('data.top_increasing.0.feature', 'active_lesions')
+        ->assertJsonPath('data.top_decreasing.0.feature', 'fluoride_toothpaste')
+        ->assertJsonMissingPath('data.top_increasing.3')
+        ->assertJsonCount(12, 'data.explanation_individual')
+        ->assertJsonFragment(['feature' => 'ceod', 'label' => 'ceod', 'value' => '—', 'shap' => '-0.400']);
+})->group('T-134', 'RN-62', 'DI-20');
+
 it('answers unavailable without an active model version', function () {
     ['patient' => $patient, 'set' => $set] = predictionScenario();
     ModelVersion::query()->update(['status' => 'retirada']);

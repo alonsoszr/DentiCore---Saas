@@ -38,23 +38,26 @@ final class MlEngine
 
     /**
      * @param  array<string, mixed>  $overrides
+     * @param  array<string, float>  $shap  contribución SHAP por variable que reemplaza la de base
      */
-    public static function predicts(float $probability = 0.2, array $overrides = []): void
+    public static function predicts(float $probability = 0.2, array $overrides = [], array $shap = []): void
     {
-        Http::fake([self::URL => fn (Request $request) => Http::response(self::response($request->data(), $probability, $overrides))]);
+        Http::fake([self::URL => fn (Request $request) => Http::response(self::response($request->data(), $probability, $overrides, $shap))]);
     }
 
     /**
      * @param  array<string, mixed>  $request
      * @param  array<string, mixed>  $overrides
+     * @param  array<string, float>  $shap
      * @return array<string, mixed>
      */
-    public static function response(array $request, float $probability, array $overrides = []): array
+    public static function response(array $request, float $probability, array $overrides = [], array $shap = []): array
     {
         $features = (array) ($request['features'] ?? []);
         $shap = [
             'active_lesions' => 0.521, 'sugar_between_meals' => 0.304, 'plaque_index_pct' => 0.12, 'cpod' => 0.08,
             'fluoride_toothpaste' => -0.188, 'brushing_per_day' => -0.11, 'dental_visits_per_year' => -0.05,
+            ...$shap,
         ];
 
         return [

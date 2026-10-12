@@ -227,6 +227,11 @@
     color: var(--color-secondary);
   }
 
+  /* Un enlace dentro de un texto se distingue también por el subrayado, no solo por el color (WCAG 1.4.1). */
+  p a:not(.btn) {
+    text-decoration: underline;
+  }
+
   /* Foco visible en todo control: anillo #0369A1 con separación de 2px más el halo. */
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--color-focus-ring);
@@ -422,6 +427,19 @@
 
   .bell-item.unread {
     font-weight: 600;
+  }
+
+  /* Badge base: va antes de sus variantes (estado, riesgo, aviso), que tienen la misma
+     especificidad y deben ganarle por orden. */
+  .badge {
+    @apply text-label-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
   }
 
   /* Estado de la cita: texto e ícono sobre su contenedor (DESIGN.md › Status palette). */
@@ -699,7 +717,9 @@
     opacity: 1;
   }
 
-  .field input[aria-invalid='true'] {
+  .field input[aria-invalid='true'],
+  .field select[aria-invalid='true'],
+  .field textarea[aria-invalid='true'] {
     border-color: var(--color-error);
   }
 
@@ -827,17 +847,6 @@
 
   .table-wrap {
     overflow-x: auto;
-  }
-
-  .badge {
-    @apply text-label-sm;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: var(--radius-full);
-    background: var(--color-secondary-container);
-    color: var(--color-on-secondary-container);
   }
 
   .badge-muted {

@@ -63,6 +63,8 @@ describe('AlertsPage', () => {
       justification: 'Muy corta y ya con más de veinte',
     })
     expect(await screen.findByText('Reconocida')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Alerta de Lucía Sintética reconocida.')
+    expect(screen.getByRole('region', { name: 'Bandeja de alertas' })).toHaveFocus()
   })
 
   it('offers the current plans of the patient for a preventive plan', async () => {

@@ -240,7 +240,57 @@ describe('RiskVariablesPage', () => {
 
     expect(await screen.findByText('El campo CPOD debe estar entre 0 y 32.')).toBeInTheDocument()
     expect(screen.getByLabelText('CPOD')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('CPOD')).toHaveFocus()
     expect(screen.getByText('Estructura familiar')).toBeInTheDocument()
     expect(screen.getByText('Informa el representante del paciente.', { exact: false })).toBeInTheDocument()
+  })
+
+  it.each([
+    [36, ['CPOD'], ['ceod']],
+    [9, ['CPOD', 'ceod'], []],
+    [4, ['ceod'], ['CPOD']],
+  ])('asks at %i years only the indices of its dentition (DI-20)', async (age, shown, hidden) => {
+    mockApi((config) => {
+      if (key(config) === 'GET /patients/p-1/risk-variable-sets') return { data: { data: [] } }
+      return { status: 404 }
+    })
+    renderPage(<RiskVariablesPage patient={{ ...PATIENT, age_years: age, is_minor: age < 18 }} />, { user: dentist })
+
+    expect(await screen.findByLabelText('Lesiones activas')).toBeInTheDocument()
+    for (const label of shown) expect(screen.getByLabelText(label)).toBeInTheDocument()
+    for (const label of hidden) expect(screen.queryByLabelText(label)).not.toBeInTheDocument()
+  })
+
+  it('warns before the capture when the current consent lacks the purpose (d)', async () => {
+    mockApi((config) => {
+      if (key(config) === 'GET /patients/p-1/risk-variable-sets') return { data: { data: [] } }
+      if (key(config) === 'GET /patients/p-1/consents')
+        return { data: { data: [{ status: 'vigente', purpose_care: true, purpose_risk: false }] } }
+      return { status: 404 }
+    })
+    renderPage(<RiskVariablesPage patient={PATIENT} />, { user: dentist })
+
+    expect(await screen.findByText('Falta la finalidad (d) del consentimiento')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Registrar el consentimiento' }).getAttribute('href')).toMatch(
+      /\/pacientes\/p-1\/consentimiento$/,
+    )
+    expect(screen.queryByRole('button', { name: 'Guardar variables' })).not.toBeInTheDocument()
+  })
+})
+
+describe('RiskPanel consent', () => {
+  it('blocks the calculation when the current consent lacks the purpose (d)', async () => {
+    mockApi((config) => {
+      if (key(config) === 'GET /patients/p-1/clinical-record')
+        return { data: { data: { current_risk_prediction: null } } }
+      if (key(config) === 'GET /patients/p-1/risk-variable-sets')
+        return { data: { data: [variableSet({ is_complete: true, missing: [] })] } }
+      if (key(config) === 'GET /patients/p-1/consents') return { data: { data: [] } }
+      return { status: 404 }
+    })
+    renderPage(<RiskPanel patient={PATIENT} />, { user: dentist })
+
+    expect(await screen.findByText('Falta la finalidad (d) del consentimiento')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Calcular riesgo' })).toBeDisabled()
   })
 })

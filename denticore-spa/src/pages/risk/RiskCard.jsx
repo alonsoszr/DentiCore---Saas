@@ -97,7 +97,7 @@ export function RiskCard({ prediction, title = 'Riesgo de caries' }) {
       {(prediction.explanation_global ?? []).length > 0 && (
         <div className="mt-4">
           <h3 className="text-title-md">Variables con más peso en el modelo</h3>
-          <ol className="m-0 pl-5">
+          <ol className="m-0 list-decimal pl-5">
             {prediction.explanation_global.slice(0, 3).map((item) => (
               <li key={item.feature}>{item.label}</li>
             ))}
