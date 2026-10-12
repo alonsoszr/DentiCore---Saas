@@ -7640,6 +7640,155 @@
                 }
             }
         },
+        "/risk-alerts": {
+            "get": {
+                "operationId": "riskAlert.index",
+                "tags": [
+                    "RiskAlert"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `RiskAlertResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/RiskAlertResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/risk-alerts/{alert}/acknowledge": {
+            "post": {
+                "operationId": "riskAlert.acknowledge",
+                "tags": [
+                    "RiskAlert"
+                ],
+                "parameters": [
+                    {
+                        "name": "alert",
+                        "in": "path",
+                        "required": true,
+                        "description": "The alert UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AcknowledgeRiskAlertRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`RiskAlertResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/RiskAlertResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "anyOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/BusinessRuleException"
+                                                },
+                                                {
+                                                    "type": "object"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "La alerta ya fue reconocida (RN-65)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/patients/{patient}/risk-predictions": {
             "post": {
                 "operationId": "riskPrediction.store",
@@ -11307,6 +11456,46 @@
     },
     "components": {
         "schemas": {
+            "AcknowledgeRiskAlertRequest": {
+                "type": "object",
+                "description": "Acci\u00f3n con que se reconoce una alerta de riesgo alto (SDD \u00a72.11 `risk_alerts`; RN-65, RF-171):\nplan preventivo, cita de control o justificaci\u00f3n de 20 a 1000 caracteres.",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "plan_preventivo",
+                            "cita_control",
+                            "justificacion"
+                        ]
+                    },
+                    "treatment_plan_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "appointment_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "justification": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 20,
+                        "maxLength": 1000
+                    }
+                },
+                "required": [
+                    "action"
+                ],
+                "title": "AcknowledgeRiskAlertRequest"
+            },
             "AffectedAppointmentResource": {
                 "type": "object",
                 "properties": {
@@ -13721,6 +13910,116 @@
                     "is_active"
                 ],
                 "title": "ProcedureResource"
+            },
+            "RiskAlertResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "abierta",
+                            "reconocida"
+                        ]
+                    },
+                    "patient": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "prediction": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "level": {
+                                "type": "string",
+                                "enum": [
+                                    "bajo",
+                                    "medio",
+                                    "alto"
+                                ]
+                            },
+                            "confidence": {
+                                "type": "string"
+                            },
+                            "predicted_at": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "level",
+                            "confidence",
+                            "predicted_at"
+                        ]
+                    },
+                    "action": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "plan_preventivo",
+                            "cita_control",
+                            "justificacion",
+                            null
+                        ]
+                    },
+                    "treatment_plan_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "appointment_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "justification": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "acknowledged_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "status",
+                    "patient",
+                    "prediction",
+                    "action",
+                    "treatment_plan_id",
+                    "appointment_id",
+                    "justification",
+                    "acknowledged_at",
+                    "created_at"
+                ],
+                "title": "RiskAlertResource"
             },
             "RiskPredictionResource": {
                 "type": "object",

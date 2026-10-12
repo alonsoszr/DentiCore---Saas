@@ -165,6 +165,9 @@ return [
     // CUS-55: solo OD calcula; CUS-56: CA y OD consultan (cada uno con sus campos, SDD §3.5).
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/risk-predictions', 'cus' => 'CUS-55', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/risk-predictions/{prediction}', 'cus' => 'CUS-56', 'denied' => ['super_admin', 'receptionist', 'patient']],
+    // CUS-58: solo OD, y solo las alertas dirigidas a él (RiskAlertPolicy, 404 para las ajenas).
+    ['method' => 'GET', 'uri' => 'api/v1/risk-alerts', 'cus' => 'CUS-58', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/risk-alerts/{alert}/acknowledge', 'cus' => 'CUS-58', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'dentist', 'patient']],
 
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],

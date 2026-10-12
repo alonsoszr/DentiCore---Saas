@@ -563,6 +563,15 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     ModelVersion::query()->update(['status' => 'retirada']);
     $check($this->actingWithToken($riskDentist)->postJson($predictPath, $completeSet, $idempotent()), 'POST', '/patients/{patient}/risk-predictions');
 
+    // Alertas de riesgo (TASK-082): la predicción de 0,70 abrió una alerta para el odontólogo.
+    $check($this->actingWithToken($riskDentist)->getJson('/api/v1/risk-alerts'), 'GET', '/risk-alerts');
+    $acknowledgePath = '/api/v1/risk-alerts/'.$predicted->json('data.alert_id').'/acknowledge';
+    $check($this->actingWithToken($riskDentist)->postJson($acknowledgePath, []), 'POST', '/risk-alerts/{alert}/acknowledge');
+    $justified = ['action' => 'justificacion', 'justification' => 'Paciente con control preventivo vigente en otra sede.'];
+    $check($this->actingWithToken($riskDentist)->postJson($acknowledgePath, $justified), 'POST', '/risk-alerts/{alert}/acknowledge');
+    $check($this->actingWithToken($riskDentist)->postJson($acknowledgePath, $justified), 'POST', '/risk-alerts/{alert}/acknowledge');
+    $check($this->actingWithToken($riskDentist)->postJson('/api/v1/risk-alerts/'.fake()->uuid().'/acknowledge', $justified), 'POST', '/risk-alerts/{alert}/acknowledge');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');

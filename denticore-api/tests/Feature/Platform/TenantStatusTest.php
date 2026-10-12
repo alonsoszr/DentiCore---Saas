@@ -12,6 +12,7 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\InformedConsentService;
 use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Risk\Models\RiskAlert;
 use App\Modules\Risk\Models\RiskPrediction;
 use App\Modules\Risk\Models\RiskVariableSet;
 use App\Modules\Scheduling\Models\Appointment;
@@ -132,6 +133,7 @@ it('applies the read-only rule to every registered staff route', function () {
         '{appointment}' => fn () => Appointment::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{set}' => fn () => RiskVariableSet::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{prediction}' => fn () => RiskPrediction::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{alert}' => fn () => RiskAlert::factory()->create(['tenant_id' => $tenant->id])->uuid,
         // Enlace de confirmación vigente de una cita de la clínica suspendida (ruta pública, RN-07).
         '{token}' => fn () => TenantContext::run($tenant, fn () => app(OneTimeTokenService::class)->issue(
             Appointment::factory()->create(['tenant_id' => $tenant->id]), TokenPurpose::AppointmentConfirmation, now()->addDay(),
