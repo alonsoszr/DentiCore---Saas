@@ -8,6 +8,7 @@ use App\Modules\Patients\Services\ConsentGate;
 use App\Modules\Scheduling\Enums\NotificationEvent;
 use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\AppointmentType;
+use App\Modules\Scheduling\Models\Notification;
 use App\Modules\Scheduling\Models\ScheduleBlock;
 use App\Modules\Scheduling\Models\WorkSchedule;
 use App\Support\Audit\AuditEvent;
@@ -191,6 +192,22 @@ class AppointmentService
     }
 
     /**
+     * CUS-52, RN-52: recordatorio por correo 24 h antes, una sola vez por cita. Lleva el enlace de
+     * confirmación si la cita aún no está confirmada o espera la reconfirmación.
+     */
+    public function remind(Appointment $appointment): void
+    {
+        $dedupeKey = "recordatorio:{$appointment->uuid}";
+
+        if (Notification::query()->where('dedupe_key', $dedupeKey)->exists()) {
+            return;
+        }
+
+        $needsConfirmation = $appointment->status === 'programada' || $appointment->reconfirmation_pending;
+        $this->notify($appointment, NotificationEvent::CitaRecordatorio, $needsConfirmation, $dedupeKey);
+    }
+
+    /**
      * RN-47 y RN-48: inicio futuro, dentro de una franja vigente del odontólogo en la hora local
      * de la clínica y sin cruzarse con un bloqueo del odontólogo o de la clínica.
      *
@@ -271,7 +288,7 @@ class AppointmentService
     /**
      * RN-52 y RN-80: aviso por correo al paciente con la finalidad (b), sin datos clínicos.
      */
-    private function notify(Appointment $appointment, NotificationEvent $event, bool $withConfirmation): void
+    private function notify(Appointment $appointment, NotificationEvent $event, bool $withConfirmation, ?string $dedupeKey = null): void
     {
         $appointment->loadMissing(['patient', 'dentist', 'type']);
         $patient = $appointment->patient;
@@ -294,6 +311,6 @@ class AppointmentService
             'time' => $start->format('H:i'),
             'dentist' => $appointment->dentist->name,
             'type' => $appointment->type->name,
-        ], links: $links, dedupeKey: "{$event->value}:{$appointment->uuid}:{$appointment->starts_at->getTimestamp()}");
+        ], links: $links, dedupeKey: $dedupeKey ?? "{$event->value}:{$appointment->uuid}:{$appointment->starts_at->getTimestamp()}");
     }
 }

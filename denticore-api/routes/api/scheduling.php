@@ -5,6 +5,7 @@ use App\Modules\Scheduling\Http\Controllers\AppointmentController;
 use App\Modules\Scheduling\Http\Controllers\AppointmentTypeController;
 use App\Modules\Scheduling\Http\Controllers\AvailabilityController;
 use App\Modules\Scheduling\Http\Controllers\CheckInController;
+use App\Modules\Scheduling\Http\Controllers\NotificationController;
 use App\Modules\Scheduling\Http\Controllers\ScheduleBlockController;
 use App\Modules\Scheduling\Http\Controllers\WaitingRoomController;
 use App\Modules\Scheduling\Http\Controllers\WorkScheduleController;
@@ -65,3 +66,11 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
 // CUS-49: confirmación por el enlace del correo, sin sesión (PUB). El token resuelve la clínica.
 Route::post('/public/appointment-confirmations/{token}', [AppointmentConfirmationController::class, 'confirmByLink'])
     ->middleware(['throttle:public', 'tenant.token:confirmacion_cita', 'tenant.writable']);
+
+// CUS-53: bandeja in-app de la propia cuenta (AUTH, sin contexto de clínica; RF-158). Cada usuario
+// ve solo sus avisos (NotificationController filtra por destinatario).
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+});

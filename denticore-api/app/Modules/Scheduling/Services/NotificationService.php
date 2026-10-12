@@ -25,7 +25,8 @@ class NotificationService
 
     /**
      * Encola un correo para un usuario o un paciente. Devuelve null si el destinatario no
-     * tiene correo registrado.
+     * tiene correo registrado. Con `$dedupeKey`, repetir el aviso no lo duplica (p. ej. el
+     * recordatorio de una cita, RN-52).
      *
      * @param  array<string, mixed>  $data  Datos de la plantilla, sin nombre ni correo del destinatario (RNF-110).
      * @param  array<string, string>  $links  Enlaces absolutos que muestra el correo.
@@ -41,6 +42,10 @@ class NotificationService
 
         if (! is_string($email) || $email === '') {
             return null;
+        }
+
+        if ($dedupeKey !== null && ($existing = Notification::query()->where('dedupe_key', $dedupeKey)->first()) !== null) {
+            return $existing;
         }
 
         $notification = new Notification;

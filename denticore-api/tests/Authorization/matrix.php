@@ -150,6 +150,10 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/appointments/{appointment}/reschedule', 'cus' => 'CUS-48', 'denied' => ['super_admin', 'dentist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/appointments/{appointment}/cancel', 'cus' => 'CUS-48', 'denied' => ['super_admin', 'dentist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/appointments/{appointment}/confirm', 'cus' => 'CUS-49', 'denied' => ['super_admin', 'dentist', 'patient']],
+    // CUS-53: todos los usuarios ven su propia bandeja (el filtro por destinatario lo prueba NotificationInboxTest).
+    ['method' => 'GET', 'uri' => 'api/v1/notifications', 'cus' => 'CUS-53', 'denied' => []],
+    ['method' => 'POST', 'uri' => 'api/v1/notifications/read-all', 'cus' => 'CUS-53', 'denied' => []],
+    ['method' => 'POST', 'uri' => 'api/v1/notifications/{notification}/read', 'cus' => 'CUS-53', 'denied' => []],
     // Sin sesión: la autorización es el token de un solo uso (RF-150).
     ['method' => 'POST', 'uri' => 'api/v1/public/appointment-confirmations/{token}', 'cus' => 'CUS-49', 'denied' => []],
 
