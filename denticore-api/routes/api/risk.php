@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Risk\Http\Controllers\RiskPredictionController;
 use App\Modules\Risk\Http\Controllers\RiskVariableSetController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,4 +19,12 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
             Route::patch('/risk-variable-sets/{set}', [RiskVariableSetController::class, 'update']);
         });
     });
+
+    // CUS-55 a CUS-57: el odontólogo calcula el riesgo (la finalidad (d) la verifica el servicio,
+    // SDD §5.8.2); CUS-56: CA y OD consultan la predicción, cada uno con sus campos (SDD §3.5). La
+    // consulta no exige el plan: el historial sigue legible tras bajar de plan (RF-023).
+    Route::post('/patients/{patient}/risk-predictions', [RiskPredictionController::class, 'store'])
+        ->middleware(['role:dentist', 'plan.feature:risk', 'idempotent']);
+    Route::get('/risk-predictions/{prediction}', [RiskPredictionController::class, 'show'])
+        ->middleware('role:clinic_admin,dentist');
 });

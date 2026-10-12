@@ -49,7 +49,7 @@ class RiskPredictionFactory extends TenantScopedFactory
             'status' => 'vigente',
             'requested_by' => fn (array $attributes) => User::factory()->create(['tenant_id' => $attributes['tenant_id'], 'role' => 'dentist'])->id,
             'predicted_at' => fn () => Carbon::now()->utc(),
-            'expires_at' => fn (array $attributes) => Carbon::parse($attributes['predicted_at'])->utc()->addMonths(12),
+            'expires_at' => fn (array $attributes) => Carbon::parse($attributes['predicted_at'])->utc()->addMonthsNoOverflow(12),
             'request_ref' => fn () => (string) Str::uuid(),
             'latency_ms' => 120,
         ];

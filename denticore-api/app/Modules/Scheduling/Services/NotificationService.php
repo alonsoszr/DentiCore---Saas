@@ -7,7 +7,6 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Enums\NotificationEvent;
 use App\Modules\Scheduling\Models\Notification;
-use App\Support\Outbox\OutboxQueue;
 use App\Support\Outbox\OutboxWriter;
 use App\Support\Tenancy\TenantContext;
 
@@ -66,7 +65,7 @@ class NotificationService
             'dedupe_key' => $dedupeKey,
         ])->save();
 
-        $this->outbox->record(self::OUTBOX_TYPE, ['notification' => $notification->uuid], OutboxQueue::Notifications);
+        $this->outbox->record(self::OUTBOX_TYPE, ['notification' => $notification->uuid], $event->queue());
 
         return $notification;
     }

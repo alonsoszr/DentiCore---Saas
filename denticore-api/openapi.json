@@ -3336,12 +3336,52 @@
                                                         "closed_at",
                                                         "closed_by"
                                                     ]
+                                                },
+                                                "current_risk_prediction": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ],
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "level": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "bajo",
+                                                                "medio",
+                                                                "alto"
+                                                            ]
+                                                        },
+                                                        "confidence": {
+                                                            "type": "string"
+                                                        },
+                                                        "low_confidence": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "predicted_at": {
+                                                            "type": "string"
+                                                        },
+                                                        "expires_at": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "level",
+                                                        "confidence",
+                                                        "low_confidence",
+                                                        "predicted_at",
+                                                        "expires_at"
+                                                    ]
                                                 }
                                             },
                                             "required": [
                                                 "patient",
                                                 "attentions",
-                                                "initial_odontogram"
+                                                "initial_odontogram",
+                                                "current_risk_prediction"
                                             ]
                                         }
                                     },
@@ -7579,6 +7619,227 @@
                     },
                     "404": {
                         "description": "Recurso no encontrado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/patients/{patient}/risk-predictions": {
+            "post": {
+                "operationId": "riskPrediction.store",
+                "summary": "Calcula el riesgo con el registro de variables indicado (201), o repite el de hace menos de 60 s (200)",
+                "tags": [
+                    "RiskPrediction"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "risk_variable_set_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                },
+                                "required": [
+                                    "risk_variable_set_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`RiskPredictionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/RiskPredictionResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "status": {
+                                                            "type": "string",
+                                                            "const": "no_disponible"
+                                                        },
+                                                        "message": {
+                                                            "type": "string",
+                                                            "const": "Predicci\u00f3n no disponible"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "status",
+                                                        "message"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "`RiskPredictionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RiskPredictionResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/risk-predictions/{prediction}": {
+            "get": {
+                "operationId": "riskPrediction.show",
+                "summary": "Predicci\u00f3n con su explicaci\u00f3n seg\u00fan el rol (\u00a73.5). Otra cl\u00ednica \u2192 404",
+                "tags": [
+                    "RiskPrediction"
+                ],
+                "parameters": [
+                    {
+                        "name": "prediction",
+                        "in": "path",
+                        "required": true,
+                        "description": "The prediction UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RiskPredictionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RiskPredictionResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -11973,9 +12234,19 @@
                     "extensions": {
                         "type": "object",
                         "additionalProperties": {
-                            "type": [
-                                "string",
-                                "null"
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                {
+                                    "type": "null"
+                                }
                             ]
                         }
                     }
@@ -13450,6 +13721,188 @@
                     "is_active"
                 ],
                 "title": "ProcedureResource"
+            },
+            "RiskPredictionResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "vigente",
+                            "reemplazada",
+                            "vencida"
+                        ]
+                    },
+                    "level": {
+                        "type": "string",
+                        "enum": [
+                            "bajo",
+                            "medio",
+                            "alto"
+                        ]
+                    },
+                    "confidence": {
+                        "type": "string"
+                    },
+                    "low_confidence": {
+                        "type": "boolean"
+                    },
+                    "model_version": {
+                        "type": "string"
+                    },
+                    "thresholds": {
+                        "type": "object",
+                        "properties": {
+                            "medium": {
+                                "type": "string"
+                            },
+                            "high": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "medium",
+                            "high"
+                        ]
+                    },
+                    "predicted_at": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "type": "string"
+                    },
+                    "legend": {
+                        "type": "string",
+                        "const": "Herramienta de apoyo; no constituye diagn\u00f3stico"
+                    },
+                    "explanation_global": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "feature": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "mean_abs_shap": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "feature",
+                                "label",
+                                "mean_abs_shap"
+                            ]
+                        }
+                    },
+                    "alert_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "probability": {
+                        "type": "string"
+                    },
+                    "top_increasing": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "feature": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": "string"
+                                },
+                                "shap": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "feature",
+                                "label",
+                                "value",
+                                "shap"
+                            ]
+                        }
+                    },
+                    "top_decreasing": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "feature": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": "string"
+                                },
+                                "shap": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "feature",
+                                "label",
+                                "value",
+                                "shap"
+                            ]
+                        }
+                    },
+                    "explanation_individual": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "feature": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": "string"
+                                },
+                                "shap": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "feature",
+                                "label",
+                                "value",
+                                "shap"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "status",
+                    "level",
+                    "confidence",
+                    "low_confidence",
+                    "model_version",
+                    "thresholds",
+                    "predicted_at",
+                    "expires_at",
+                    "legend",
+                    "explanation_global",
+                    "alert_id"
+                ],
+                "title": "RiskPredictionResource"
             },
             "RiskVariableSetResource": {
                 "type": "object",

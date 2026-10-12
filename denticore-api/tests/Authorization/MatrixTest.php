@@ -10,6 +10,7 @@ use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Risk\Models\RiskPrediction;
 use App\Modules\Risk\Models\RiskVariableSet;
 use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\AppointmentType;
@@ -68,6 +69,7 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         '{type}' => fn () => AppointmentType::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{appointment}' => fn () => Appointment::factory()->create(['tenant_id' => $tenant->id])->uuid,
         '{set}' => fn () => RiskVariableSet::factory()->create(['tenant_id' => $tenant->id])->uuid,
+        '{prediction}' => fn () => RiskPrediction::factory()->create(['tenant_id' => $tenant->id])->uuid,
     ];
 
     $path = preg_replace_callback('/\{[a-z_]+\}/i', fn ($match) => $bindings[$match[0]](), $uri);

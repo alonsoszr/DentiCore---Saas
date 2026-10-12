@@ -9,6 +9,8 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\InvitationService;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Risk\Models\ModelVersion;
+use App\Modules\Risk\Services\CircuitBreaker;
 use App\Modules\Scheduling\Enums\NotificationEvent;
 use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\Notification;
@@ -29,6 +31,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\ClinicalFixtures;
+use Tests\Support\MlEngine;
 use Tests\Support\OpenApiContract;
 use Tests\Support\RiskFixtures;
 
@@ -531,7 +534,8 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $riskTenant = Tenant::factory()->plan('pro')->create();
     $riskDentist = User::factory()->for($riskTenant)->create(['role' => 'dentist']);
     $riskReceptionist = User::factory()->for($riskTenant)->create(['role' => 'receptionist']);
-    $riskPath = '/api/v1/patients/'.RiskFixtures::patient($riskTenant)->uuid.'/risk-variable-sets';
+    $riskPatient = RiskFixtures::patient($riskTenant);
+    $riskPath = "/api/v1/patients/{$riskPatient->uuid}/risk-variable-sets";
     $riskSet = $this->actingWithToken($riskDentist)->postJson($riskPath, ['clinical' => RiskFixtures::clinical()]);
     $check($riskSet, 'POST', '/patients/{patient}/risk-variable-sets');
     $check($this->actingWithToken($riskDentist)->postJson($riskPath, ['clinical' => RiskFixtures::clinical(['cpod' => 40])]), 'POST', '/patients/{patient}/risk-variable-sets');
@@ -540,6 +544,24 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $riskSetPath = '/api/v1/risk-variable-sets/'.$riskSet->json('data.id');
     $check($this->actingWithToken($riskDentist)->patchJson($riskSetPath, ['behavioral' => RiskFixtures::behavioral()]), 'PATCH', '/risk-variable-sets/{set}');
     $check($this->actingWithToken($riskDentist)->patchJson($riskSetPath, ['behavioral' => RiskFixtures::behavioral(['brushing_per_day' => '9'])]), 'PATCH', '/risk-variable-sets/{set}');
+
+    // Predicción de riesgo (TASK-081) con el motor simulado.
+    $riskAdmin = User::factory()->for($riskTenant)->create(['role' => 'clinic_admin']);
+    app(CircuitBreaker::class)->reset();
+    ModelVersion::factory()->active()->create(['version' => '1.0.0']);
+    MlEngine::predicts(0.7);
+    $this->actingWithToken($riskReceptionist)->postJson($riskPath, ['sociodemographic' => RiskFixtures::sociodemographic()]);
+    $predictPath = "/api/v1/patients/{$riskPatient->uuid}/risk-predictions";
+    $completeSet = ['risk_variable_set_id' => $this->actingWithToken($riskDentist)->getJson($riskPath)->json('data.0.id')];
+    $predicted = $this->actingWithToken($riskDentist)->postJson($predictPath, $completeSet, $idempotent());
+    $check($predicted, 'POST', '/patients/{patient}/risk-predictions');
+    $check($this->actingWithToken($riskDentist)->postJson($predictPath, $completeSet, $idempotent()), 'POST', '/patients/{patient}/risk-predictions');
+    $check($this->actingWithToken($riskDentist)->postJson($predictPath, ['risk_variable_set_id' => fake()->uuid()], $idempotent()), 'POST', '/patients/{patient}/risk-predictions');
+    $check($this->actingWithToken($riskDentist)->getJson('/api/v1/risk-predictions/'.$predicted->json('data.id')), 'GET', '/risk-predictions/{prediction}');
+    $check($this->actingWithToken($riskAdmin)->getJson('/api/v1/risk-predictions/'.$predicted->json('data.id')), 'GET', '/risk-predictions/{prediction}');
+    $check($this->actingWithToken($riskDentist)->getJson('/api/v1/risk-predictions/'.fake()->uuid()), 'GET', '/risk-predictions/{prediction}');
+    ModelVersion::query()->update(['status' => 'retirada']);
+    $check($this->actingWithToken($riskDentist)->postJson($predictPath, $completeSet, $idempotent()), 'POST', '/patients/{patient}/risk-predictions');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

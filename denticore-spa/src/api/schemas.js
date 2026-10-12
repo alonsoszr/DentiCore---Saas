@@ -219,7 +219,7 @@ export const businessRuleExceptionSchema = z.object({
   rule: z.string(),
   errors: z.record(z.string(), z.array(z.string())),
   status: z.number().int(),
-  extensions: z.record(z.string(), z.union([z.string(), z.null()])),
+  extensions: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.null()])),
 })
 
 export const clinicSettingsResourceSchema = z.object({
@@ -528,6 +528,31 @@ export const procedureResourceSchema = z.object({
     z.null(),
   ]),
   is_active: z.boolean(),
+})
+
+export const riskPredictionResourceSchema = z.object({
+  id: z.string(),
+  status: z.enum(['vigente', 'reemplazada', 'vencida']),
+  level: z.enum(['bajo', 'medio', 'alto']),
+  confidence: z.string(),
+  low_confidence: z.boolean(),
+  model_version: z.string(),
+  thresholds: z.object({ medium: z.string(), high: z.string() }),
+  predicted_at: z.string(),
+  expires_at: z.string(),
+  legend: z.literal('Herramienta de apoyo; no constituye diagnóstico'),
+  explanation_global: z.array(z.object({ feature: z.string(), label: z.string(), mean_abs_shap: z.string() })),
+  alert_id: z.union([z.string(), z.null()]),
+  probability: z.string().optional(),
+  top_increasing: z
+    .array(z.object({ feature: z.string(), label: z.string(), value: z.string(), shap: z.string() }))
+    .optional(),
+  top_decreasing: z
+    .array(z.object({ feature: z.string(), label: z.string(), value: z.string(), shap: z.string() }))
+    .optional(),
+  explanation_individual: z
+    .array(z.object({ feature: z.string(), label: z.string(), value: z.string(), shap: z.string() }))
+    .optional(),
 })
 
 export const riskVariableSetResourceSchema = z.object({

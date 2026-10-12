@@ -52,6 +52,7 @@ class NotificationMail extends Mailable
             NotificationEvent::CitaModificada => 'Tu cita cambió de horario',
             NotificationEvent::CitaCancelada => 'Tu cita fue cancelada',
             NotificationEvent::CitaRecordatorio => 'Recordatorio de tu cita',
+            NotificationEvent::AlertaRiesgoAlto => 'Alerta de riesgo alto de caries',
             default => 'Aviso de DentiCore',
         };
     }
