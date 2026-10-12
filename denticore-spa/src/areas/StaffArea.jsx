@@ -10,6 +10,9 @@ import { AttentionPage } from '../pages/attentions/AttentionPage'
 import { PatientCreatePage } from '../pages/patients/PatientCreatePage'
 import { PatientDetailPage } from '../pages/patients/PatientDetailPage'
 import { PatientsPage } from '../pages/patients/PatientsPage'
+import { AgendaPage } from '../pages/scheduling/AgendaPage'
+import { AppointmentDetailPage } from '../pages/scheduling/AppointmentDetailPage'
+import { AppointmentNewPage } from '../pages/scheduling/AppointmentNewPage'
 import { AppointmentTypesPage } from '../pages/scheduling/AppointmentTypesPage'
 import { SchedulePage } from '../pages/scheduling/SchedulePage'
 import { BudgetDetailPage } from '../pages/treatment/BudgetDetailPage'
@@ -25,6 +28,7 @@ export default function StaffArea() {
   const forbiddenPath = appPath('/sin-acceso')
 
   const navItems = [
+    { to: appPath('/agenda'), label: 'Agenda', roles: STAFF_ROLES, end: true },
     { to: appPath('/pacientes'), label: 'Pacientes', roles: STAFF_ROLES },
     { to: appPath('/agenda/horarios'), label: 'Horarios', roles: ['clinic_admin', 'dentist'] },
     { to: appPath('/agenda/tipos'), label: 'Tipos de cita', roles: ['clinic_admin'] },
@@ -39,6 +43,16 @@ export default function StaffArea() {
       <Route element={<Layout items={navItems} />}>
         <Route index element={<Navigate to="pacientes" replace />} />
         <Route path="sin-acceso" element={<ForbiddenPage />} />
+        <Route path="agenda" element={<AgendaPage />} />
+        <Route
+          path="agenda/nueva"
+          element={
+            <RequireRole allow={['clinic_admin', 'receptionist']} forbiddenPath={forbiddenPath}>
+              <AppointmentNewPage />
+            </RequireRole>
+          }
+        />
+        <Route path="agenda/:uuid" element={<AppointmentDetailPage />} />
         <Route
           path="agenda/horarios"
           element={

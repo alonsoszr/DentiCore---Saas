@@ -17,6 +17,10 @@ const AdminArea = lazy(() => import('./areas/AdminArea'))
 const StaffArea = lazy(() => import('./areas/StaffArea'))
 const PortalArea = lazy(() => import('./areas/PortalArea'))
 // A4 carga el generador de QR solo cuando hace falta.
+// La confirmación de cita por correo carga aparte: no infla el JS inicial (RNF-028).
+const AppointmentConfirmPage = lazy(() =>
+  import('./pages/auth/AppointmentConfirmPage').then((module) => ({ default: module.AppointmentConfirmPage })),
+)
 const TwoFactorSetupPage = lazy(() =>
   import('./pages/auth/TwoFactorSetupPage').then((module) => ({ default: module.TwoFactorSetupPage })),
 )
@@ -73,6 +77,14 @@ export default function App() {
       <Route path="/c/:slug/restablecer" element={<ForgotPasswordPage />} />
       <Route path="/c/:slug/restablecer/:token" element={<ResetPasswordPage />} />
       <Route path="/c/:slug/activar/:token" element={<ActivateAccountPage />} />
+      <Route
+        path="/c/:slug/confirmar/:token"
+        element={
+          <Suspense fallback={null}>
+            <AppointmentConfirmPage />
+          </Suspense>
+        }
+      />
       <Route path="/admin/seguridad/2fa" element={<TwoFactorSetup />} />
       <Route path="/c/:slug/app/seguridad/2fa" element={<TwoFactorSetup />} />
 
