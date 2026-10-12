@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * Plan de tratamiento (SDD §2.8 `treatment_plans`; CUS-33, CUS-40; RF-110, RF-129; estados de
- * SRS §5.5.2). `risk_alert_id` se agrega en TASK-078.
+ * SRS §5.5.2). `risk_alert_id` vincula el plan preventivo de una alerta de riesgo (RN-65).
  *
  * @property int $id
  * @property string $uuid
@@ -30,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property string $title
  * @property string $status
  * @property string $origin
+ * @property int|null $risk_alert_id
  * @property int $created_by
  * @property string|null $cancel_reason
  * @property Carbon|null $cancelled_at
