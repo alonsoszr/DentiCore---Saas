@@ -121,6 +121,15 @@ it('covers the use cases of MS-03 in AUTH_MATRIX', function () {
     }
 })->group('T-019', 'RN-06', 'RF-004');
 
+it('covers the use cases of MS-05 in AUTH_MATRIX', function () {
+    $covered = collect(authMatrix())->pluck('cus')->unique();
+
+    // CUS-57 (alerta de riesgo alto) lo ejecuta el sistema dentro de CUS-55, sin ruta propia.
+    foreach (['CUS-54', 'CUS-55', 'CUS-56', 'CUS-58'] as $cus) {
+        expect($covered)->toContain($cus);
+    }
+})->group('T-019', 'RN-06', 'RF-004');
+
 it('covers the use cases of MS-04 in AUTH_MATRIX', function () {
     $covered = collect(authMatrix())->pluck('cus')->unique();
 

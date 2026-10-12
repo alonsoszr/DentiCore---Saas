@@ -8,6 +8,8 @@
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Risk\Models\ModelVersion;
+use App\Modules\Risk\Services\CircuitBreaker;
 use App\Modules\Scheduling\Models\AppointmentType;
 use App\Modules\Scheduling\Models\Notification;
 use App\Modules\Scheduling\Models\WorkSchedule;
@@ -23,6 +25,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\ClinicalFixtures;
+use Tests\Support\MlEngine;
+use Tests\Support\RiskFixtures;
 
 function auditActions(): array
 {
@@ -372,6 +376,46 @@ it('writes the audit events of the MS-03 commercial flows without clinical value
     ] as $value) {
         expect($serialized)->not->toContain($value);
     }
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
+
+it('writes the audit events of the MS-05 risk flows without variables or probabilities', function () {
+    app(CircuitBreaker::class)->reset();
+    ModelVersion::factory()->active()->create(['version' => '1.0.0']);
+    MlEngine::predicts(0.7313);
+    $tenant = Tenant::factory()->plan('pro')->create();
+    $dentist = $this->actingAsRole('dentist', $tenant);
+    $patient = RiskFixtures::patient($tenant);
+    $key = fn () => ['Idempotency-Key' => (string) Str::uuid()];
+
+    // risk.variables_captured (CUS-54): la recepción y el odontólogo, cada uno su sección.
+    $this->actingAsRole('receptionist', $tenant);
+    $this->postJson("/api/v1/patients/{$patient->uuid}/risk-variable-sets", ['sociodemographic' => RiskFixtures::sociodemographic()])->assertCreated();
+    $this->actingWithToken($dentist);
+    $set = $this->postJson("/api/v1/patients/{$patient->uuid}/risk-variable-sets", [
+        'clinical' => RiskFixtures::clinical(['plaque_index_pct' => 63.7]), 'behavioral' => RiskFixtures::behavioral(),
+    ])->assertOk()->json('data.id');
+
+    // risk.predicted (CUS-55) y risk.alert_acknowledged (CUS-58).
+    $alert = $this->postJson("/api/v1/patients/{$patient->uuid}/risk-predictions", ['risk_variable_set_id' => $set], $key())
+        ->assertCreated()->json('data.alert_id');
+    $this->postJson("/api/v1/risk-alerts/{$alert}/acknowledge", [
+        'action' => 'justificacion', 'justification' => 'Paciente con control preventivo vigente en otra sede.',
+    ])->assertOk();
+
+    TenantContext::run($tenant, function () {
+        $actions = AuditLog::query()->pluck('action')->all();
+        foreach (['risk.variables_captured', 'risk.predicted', 'risk.alert_acknowledged'] as $action) {
+            expect($actions)->toContain($action);
+        }
+        expect(AuditLog::query()->where('action', 'risk.variables_captured')->count())->toBe(2);
+    });
+
+    // RN-67: sin nombre ni documento del paciente, valores de las variables, probabilidad ni justificación.
+    $serialized = json_encode(DB::table('audit_logs')->get());
+    foreach ([$patient->first_name, $patient->last_name, $patient->document_number, '63.7', '0.7313', 'control preventivo'] as $value) {
+        expect($serialized)->not->toContain((string) $value);
+    }
+    app(CircuitBreaker::class)->reset();
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
 
 it('writes the audit events of the MS-04 scheduling flows without identification data', function () {
