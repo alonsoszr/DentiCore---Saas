@@ -9,8 +9,10 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\InvitationService;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Enums\NotificationEvent;
 use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Scheduling\Services\NotificationService;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
@@ -514,6 +516,15 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson("/api/v1/appointments/{$soon->uuid}/check-in", [], $idempotent()), 'POST', '/appointments/{appointment}/check-in');
     $check($this->actingWithToken($admin)->postJson("/api/v1/appointments/{$soon->uuid}/check-in", [], $idempotent()), 'POST', '/appointments/{appointment}/check-in');
     $check($this->actingWithToken($admin)->getJson('/api/v1/waiting-room'), 'GET', '/waiting-room');
+
+    // Bandeja in-app (TASK-070).
+    $notice = TenantContext::run($tenant, fn () => app(NotificationService::class)->notifyInApp(
+        NotificationEvent::PresupuestoAceptado, $admin, ['number' => 'P-000009', 'total' => '150.00'], ['budget' => 'https://app.test/p/9'],
+    ));
+    $check($this->actingWithToken($admin)->getJson('/api/v1/notifications'), 'GET', '/notifications');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/notifications/{$notice->uuid}/read"), 'POST', '/notifications/{notification}/read');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/notifications/'.fake()->uuid().'/read'), 'POST', '/notifications/{notification}/read');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/notifications/read-all'), 'POST', '/notifications/read-all');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

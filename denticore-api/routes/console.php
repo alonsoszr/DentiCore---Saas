@@ -37,3 +37,10 @@ Schedule::command('budgets:expire')->everyFiveMinutes()->onOneServer()->withoutO
 // Inasistencias (SDD §1.9, §5.7; CUS-51, RN-51): citas sin check-in 30 minutos después de su fin, a
 // lo más 5 minutos más tarde (RNF-020). Corre cada 5 minutos; es idempotente.
 Schedule::command('appointments:mark-no-shows')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
+
+// Recordatorios de cita 24 h antes (SDD §1.9; CUS-52, RF-156, RN-52): ventana de 30 minutos, cada 5
+// minutos, con clave de deduplicación por cita.
+Schedule::command('appointments:send-reminders')->everyFiveMinutes()->onOneServer()->withoutOverlapping();
+
+// Conservación de 90 días de los avisos in-app (SDD §1.9; CUS-53, RF-158).
+Schedule::command('notifications:prune-inapp')->dailyAt('03:15')->onOneServer()->withoutOverlapping();

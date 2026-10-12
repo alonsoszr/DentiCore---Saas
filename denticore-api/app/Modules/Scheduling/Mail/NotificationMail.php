@@ -51,6 +51,7 @@ class NotificationMail extends Mailable
             NotificationEvent::CitaCreada => 'Tu cita fue reservada',
             NotificationEvent::CitaModificada => 'Tu cita cambió de horario',
             NotificationEvent::CitaCancelada => 'Tu cita fue cancelada',
+            NotificationEvent::CitaRecordatorio => 'Recordatorio de tu cita',
             default => 'Aviso de DentiCore',
         };
     }

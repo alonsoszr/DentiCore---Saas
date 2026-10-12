@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $last_error
  * @property CarbonImmutable|null $sent_at
  * @property CarbonImmutable|null $read_at
+ * @property CarbonImmutable|null $created_at
  * @property-read User|null $recipientUser
  * @property-read Patient|null $recipientPatient
  */
@@ -62,6 +63,7 @@ class Notification extends Model
             'manual_resends' => 'integer',
             'sent_at' => 'immutable_datetime',
             'read_at' => 'immutable_datetime',
+            'created_at' => 'immutable_datetime',
         ];
     }
 

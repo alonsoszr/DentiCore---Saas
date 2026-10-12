@@ -325,6 +325,17 @@ export const loginRequestSchema = z
     'Inicio de sesión (CUS-06; SRS §11.2, Datos). La clínica la resuelve `tenant.slug:login` por el\ncódigo de acceso, con el mismo 401 si no existe (no se valida su existencia aquí para no\nrevelarla). La política de longitud mínima se aplica al definir la contraseña, no al ingresar.',
   )
 
+export const notificationResourceSchema = z.object({
+  id: z.string(),
+  event: z.string(),
+  params: z
+    .record(z.string(), z.any())
+    .describe('`params` y no `data`: un recurso con la clave `data` no se envuelve en `data`.'),
+  links: z.record(z.string(), z.string()),
+  read_at: z.union([z.string(), z.null()]),
+  created_at: z.union([z.string(), z.null()]),
+})
+
 export const odontogramEntryResourceSchema = z.object({
   id: z.string(),
   entry_type: z.enum(['inicial', 'evolucion', 'correccion']),
