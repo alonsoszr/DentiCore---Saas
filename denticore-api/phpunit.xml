@@ -34,6 +34,8 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
+        <!-- Base propia: el breaker del motor ML (DI-12) no pisa el de la API local. -->
+        <env name="REDIS_DB" value="15"/>
         <env name="DB_CONNECTION" value="pgsql"/>
         <!-- Host, puerto y credenciales (denticore_app / denticore_migrator) vienen del .env
              o de las variables de la CI; las pruebas nunca usan otra base. -->

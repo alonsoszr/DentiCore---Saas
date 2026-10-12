@@ -42,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Modules/Odontogram/Console',
         __DIR__.'/../app/Modules/Treatment/Console',
         __DIR__.'/../app/Modules/Scheduling/Console',
+        __DIR__.'/../app/Modules/Risk/Console',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Alias de SDD §4.2.

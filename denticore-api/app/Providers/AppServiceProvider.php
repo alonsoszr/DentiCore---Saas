@@ -6,6 +6,7 @@ use App\Modules\Identity\Services\InactivityPolicy;
 use App\Modules\Patients\Services\ConsentGate;
 use App\Modules\Patients\Services\PatientSearchRepository;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Risk\Services\MlSettings;
 use App\Support\Encryption\BlindIndex;
 use App\Support\Encryption\KeyRing;
 use App\Support\Encryption\TenantEncryption;
@@ -43,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PatientSearchRepository::class, fn () => new PatientSearchRepository(DB::connection('pgsql_platform')));
 
         $this->app->bind(EvidenceSealer::class, fn () => new EvidenceSealer((string) config('services.evidence.hmac_key')));
+
+        // Timeout y umbrales del Circuit Breaker del motor ML (platform_settings ml.*), una vez por solicitud o job.
+        $this->app->scoped(MlSettings::class, fn () => MlSettings::load());
 
         $this->app->bind(VirusScanner::class, fn () => new ClamAvScanner(
             (string) config('services.clamav.host'),
