@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Risk\Http\Controllers\RiskAlertController;
 use App\Modules\Risk\Http\Controllers\RiskPredictionController;
 use App\Modules\Risk\Http\Controllers\RiskVariableSetController;
 use Illuminate\Support\Facades\Route;
@@ -27,4 +28,10 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         ->middleware(['role:dentist', 'plan.feature:risk', 'idempotent']);
     Route::get('/risk-predictions/{prediction}', [RiskPredictionController::class, 'show'])
         ->middleware('role:clinic_admin,dentist');
+
+    // CUS-58: el odontólogo reconoce sus alertas con una acción (RN-65); una ajena responde 404.
+    Route::middleware('role:dentist')->group(function () {
+        Route::get('/risk-alerts', [RiskAlertController::class, 'index']);
+        Route::post('/risk-alerts/{alert}/acknowledge', [RiskAlertController::class, 'acknowledge']);
+    });
 });

@@ -1,6 +1,17 @@
 // Archivo generado por scripts/gen-api.mjs desde denticore-api/openapi.json. No editar a mano.
 import { z } from 'zod'
 
+export const acknowledgeRiskAlertRequestSchema = z
+  .object({
+    action: z.enum(['plan_preventivo', 'cita_control', 'justificacion']),
+    treatment_plan_id: z.union([z.string().uuid(), z.null()]).optional(),
+    appointment_id: z.union([z.string().uuid(), z.null()]).optional(),
+    justification: z.union([z.string().min(20).max(1000), z.null()]).optional(),
+  })
+  .describe(
+    'Acción con que se reconoce una alerta de riesgo alto (SDD §2.11 `risk_alerts`; RN-65, RF-171):\nplan preventivo, cita de control o justificación de 20 a 1000 caracteres.',
+  )
+
 export const affectedAppointmentResourceSchema = z.object({
   id: z.string(),
   starts_at: z.string(),
@@ -528,6 +539,29 @@ export const procedureResourceSchema = z.object({
     z.null(),
   ]),
   is_active: z.boolean(),
+})
+
+export const riskAlertResourceSchema = z.object({
+  id: z.string(),
+  status: z.enum(['abierta', 'reconocida']),
+  patient: z.object({ id: z.string(), name: z.string() }),
+  prediction: z.object({
+    id: z.string(),
+    level: z.enum(['bajo', 'medio', 'alto']),
+    confidence: z.string(),
+    predicted_at: z.string(),
+  }),
+  action: z.union([
+    z.literal('plan_preventivo'),
+    z.literal('cita_control'),
+    z.literal('justificacion'),
+    z.literal(null),
+  ]),
+  treatment_plan_id: z.union([z.string(), z.null()]),
+  appointment_id: z.union([z.string(), z.null()]),
+  justification: z.union([z.string(), z.null()]),
+  acknowledged_at: z.union([z.string(), z.null()]),
+  created_at: z.string(),
 })
 
 export const riskPredictionResourceSchema = z.object({
