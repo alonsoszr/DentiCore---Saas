@@ -7600,6 +7600,243 @@
                 }
             }
         },
+        "/patients/{patient}/risk-variable-sets": {
+            "get": {
+                "operationId": "riskVariableSet.index",
+                "summary": "Versiones del registro del paciente, de la m\u00e1s reciente a la m\u00e1s antigua (RF-164)",
+                "tags": [
+                    "RiskVariableSet"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `RiskVariableSetResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/RiskVariableSetResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "riskVariableSet.store",
+                "summary": "Registra secciones en el registro vigente del paciente (lo crea si no hay uno editable)",
+                "tags": [
+                    "RiskVariableSet"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RiskVariableSetResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RiskVariableSetResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "`RiskVariableSetResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RiskVariableSetResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/risk-variable-sets/{set}": {
+            "patch": {
+                "operationId": "riskVariableSet.update",
+                "summary": "Edita el registro indicado; si una predicci\u00f3n ya lo us\u00f3, crea otro que lo reemplaza (RF-164)",
+                "tags": [
+                    "RiskVariableSet"
+                ],
+                "parameters": [
+                    {
+                        "name": "set",
+                        "in": "path",
+                        "required": true,
+                        "description": "The set UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`RiskVariableSetResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RiskVariableSetResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "`RiskVariableSetResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/RiskVariableSetResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "El registro fue reemplazado por uno m\u00e1s reciente (RF-164)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/schedule-blocks": {
             "get": {
                 "operationId": "scheduleBlock.index",
@@ -13213,6 +13450,174 @@
                     "is_active"
                 ],
                 "title": "ProcedureResource"
+            },
+            "RiskVariableSetResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "age_group": {
+                        "type": "string",
+                        "enum": [
+                            "menor",
+                            "adulto"
+                        ]
+                    },
+                    "age_years": {
+                        "type": "integer"
+                    },
+                    "clinical": {
+                        "type": "object",
+                        "properties": {
+                            "cpod": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "ceod": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "plaque_index_pct": {
+                                "type": "number"
+                            },
+                            "active_lesions": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "behavioral": {
+                        "type": "object",
+                        "properties": {
+                            "sugar_between_meals": {
+                                "type": "string"
+                            },
+                            "fluoride_toothpaste": {
+                                "type": "boolean"
+                            },
+                            "brushing_per_day": {
+                                "type": "string"
+                            },
+                            "dental_visits_per_year": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "sociodemographic": {
+                        "type": "object",
+                        "properties": {
+                            "respondent": {
+                                "type": "string"
+                            },
+                            "education_level": {
+                                "type": "string"
+                            },
+                            "employment_status": {
+                                "type": "string"
+                            },
+                            "family_structure": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    },
+                    "is_complete": {
+                        "type": "boolean"
+                    },
+                    "missing": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "clinical_captured_by": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "clinical_captured_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "sociodemographic_captured_by": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "sociodemographic_captured_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "supersedes_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "locked_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "age_group",
+                    "age_years",
+                    "clinical",
+                    "behavioral",
+                    "sociodemographic",
+                    "is_complete",
+                    "missing",
+                    "clinical_captured_by",
+                    "clinical_captured_at",
+                    "sociodemographic_captured_by",
+                    "sociodemographic_captured_at",
+                    "supersedes_id",
+                    "locked_at",
+                    "created_at"
+                ],
+                "title": "RiskVariableSetResource"
             },
             "ScheduleBlockRequest": {
                 "type": "object",

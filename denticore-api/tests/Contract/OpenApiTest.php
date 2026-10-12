@@ -30,6 +30,7 @@ use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\ClinicalFixtures;
 use Tests\Support\OpenApiContract;
+use Tests\Support\RiskFixtures;
 
 it('keeps openapi.json in sync with the code', function () {
     Artisan::call('scramble:export', ['--path' => $fresh = storage_path('framework/testing/openapi-actual.json')]);
@@ -525,6 +526,20 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson("/api/v1/notifications/{$notice->uuid}/read"), 'POST', '/notifications/{notification}/read');
     $check($this->actingWithToken($admin)->postJson('/api/v1/notifications/'.fake()->uuid().'/read'), 'POST', '/notifications/{notification}/read');
     $check($this->actingWithToken($admin)->postJson('/api/v1/notifications/read-all'), 'POST', '/notifications/read-all');
+
+    // Variables de riesgo (TASK-079), en una clínica con plan que incluye riesgo.
+    $riskTenant = Tenant::factory()->plan('pro')->create();
+    $riskDentist = User::factory()->for($riskTenant)->create(['role' => 'dentist']);
+    $riskReceptionist = User::factory()->for($riskTenant)->create(['role' => 'receptionist']);
+    $riskPath = '/api/v1/patients/'.RiskFixtures::patient($riskTenant)->uuid.'/risk-variable-sets';
+    $riskSet = $this->actingWithToken($riskDentist)->postJson($riskPath, ['clinical' => RiskFixtures::clinical()]);
+    $check($riskSet, 'POST', '/patients/{patient}/risk-variable-sets');
+    $check($this->actingWithToken($riskDentist)->postJson($riskPath, ['clinical' => RiskFixtures::clinical(['cpod' => 40])]), 'POST', '/patients/{patient}/risk-variable-sets');
+    $check($this->actingWithToken($riskReceptionist)->postJson($riskPath, ['clinical' => RiskFixtures::clinical()]), 'POST', '/patients/{patient}/risk-variable-sets');
+    $check($this->actingWithToken($riskReceptionist)->getJson($riskPath), 'GET', '/patients/{patient}/risk-variable-sets');
+    $riskSetPath = '/api/v1/risk-variable-sets/'.$riskSet->json('data.id');
+    $check($this->actingWithToken($riskDentist)->patchJson($riskSetPath, ['behavioral' => RiskFixtures::behavioral()]), 'PATCH', '/risk-variable-sets/{set}');
+    $check($this->actingWithToken($riskDentist)->patchJson($riskSetPath, ['behavioral' => RiskFixtures::behavioral(['brushing_per_day' => '9'])]), 'PATCH', '/risk-variable-sets/{set}');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

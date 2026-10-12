@@ -17,5 +17,6 @@ Route::group([], base_path('routes/api/patients.php'));
 Route::group([], base_path('routes/api/odontogram.php'));
 Route::group([], base_path('routes/api/treatment.php'));
 Route::group([], base_path('routes/api/scheduling.php'));
+Route::group([], base_path('routes/api/risk.php'));
 Route::group([], base_path('routes/api/compliance.php'));
 Route::group([], base_path('routes/api/files.php'));

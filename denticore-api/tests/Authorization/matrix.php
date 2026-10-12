@@ -157,6 +157,12 @@ return [
     // Sin sesión: la autorización es el token de un solo uso (RF-150).
     ['method' => 'POST', 'uri' => 'api/v1/public/appointment-confirmations/{token}', 'cus' => 'CUS-49', 'denied' => []],
 
+    // M09 — Riesgo de caries (SDD §4.3.9). CUS-54: OD y RE registran variables, cada uno sus
+    // secciones (RiskVariableSetPolicy); CA no las ve (SDD §3.5).
+    ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/risk-variable-sets', 'cus' => 'CUS-54', 'denied' => ['super_admin', 'clinic_admin', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/risk-variable-sets', 'cus' => 'CUS-54', 'denied' => ['super_admin', 'clinic_admin', 'patient']],
+    ['method' => 'PATCH', 'uri' => 'api/v1/risk-variable-sets/{set}', 'cus' => 'CUS-54', 'denied' => ['super_admin', 'clinic_admin', 'patient']],
+
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],
 ];
