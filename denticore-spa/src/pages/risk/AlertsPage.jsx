@@ -9,6 +9,7 @@ import { Field } from '../../components/Field'
 import { PageHeader } from '../../components/PageHeader'
 import { addDays, formatDate, formatDateTime, localDate } from '../../ui/format'
 import { useTimeZone } from '../../ui/useTimeZone'
+import { AlertTriangleIcon, CheckIcon } from '../../ui/icons'
 import { RiskLevelBadge } from './RiskLevelBadge'
 
 const ACTIONS = {
@@ -23,8 +24,14 @@ const OPEN_PLAN = ['borrador', 'propuesto', 'aceptado', 'en_ejecucion']
  * Diálogo de reconocimiento (CUS-58; RN-65, RF-171): la acción es obligatoria. El plan o la cita
  * se eligen entre los vigentes del paciente; la justificación tiene 20 caracteres o más.
  */
+/** aria-describedby del control: el error si lo hay, si no la ayuda. */
+function describedBy(name, error, hint) {
+  if (error) return `${name}-error`
+  return hint ? `${name}-hint` : undefined
+}
+
 function AcknowledgeDialog({ alert, onClose }) {
-  const { slug } = useClinic()
+  const { slug, appPath } = useClinic()
   const timeZone = useTimeZone()
   const queryClient = useQueryClient()
   const [action, setAction] = useState('')
@@ -64,6 +71,8 @@ function AcknowledgeDialog({ alert, onClose }) {
       queryClient.invalidateQueries({ queryKey: ['risk-alerts', slug] })
       onClose()
     },
+    // 409 (ya reconocida) o 404: la fila de la bandeja se actualiza aunque el diálogo siga abierto.
+    onError: () => queryClient.invalidateQueries({ queryKey: ['risk-alerts', slug] }),
   })
 
   const errors = fieldErrors(acknowledge.error)
@@ -71,6 +80,11 @@ function AcknowledgeDialog({ alert, onClose }) {
   const activeAppointments = (appointments.data ?? []).filter((appointment) =>
     ['programada', 'confirmada', 'en_atencion'].includes(appointment.status),
   )
+  const planHint = plans.isSuccess && openPlans.length === 0 ? 'El paciente no tiene planes vigentes.' : undefined
+  const appointmentHint =
+    appointments.isSuccess && activeAppointments.length === 0
+      ? 'El paciente no tiene citas en los próximos 30 días: pide a recepción que reserve la cita de control.'
+      : undefined
   const ready =
     (action === 'plan_preventivo' && planId) ||
     (action === 'cita_control' && appointmentId) ||
@@ -86,7 +100,7 @@ function AcknowledgeDialog({ alert, onClose }) {
       error={generalError(acknowledge.error)}
       confirmDisabled={!ready}
     >
-      <p>Registre la acción que tomó frente al riesgo alto. Queda en la bitácora y no se puede deshacer.</p>
+      <p>Registra la acción que tomaste frente al riesgo alto. Queda en la bitácora y no se puede deshacer.</p>
       <fieldset className="m-0 mb-4 border-0 p-0">
         <legend className="text-label-md mb-2">Acción</legend>
         {Object.entries(ACTIONS).map(([value, label]) => (
@@ -109,13 +123,14 @@ function AcknowledgeDialog({ alert, onClose }) {
       </fieldset>
 
       {action === 'plan_preventivo' && (
-        <Field
-          label="Plan del paciente"
-          name="alert-plan"
-          error={errors.treatment_plan_id}
-          hint={plans.isSuccess && openPlans.length === 0 ? 'El paciente no tiene planes vigentes.' : undefined}
-        >
-          <select id="alert-plan" value={planId} onChange={(event) => setPlanId(event.target.value)}>
+        <Field label="Plan del paciente" name="alert-plan" error={errors.treatment_plan_id} hint={planHint}>
+          <select
+            id="alert-plan"
+            value={planId}
+            aria-invalid={errors.treatment_plan_id ? true : undefined}
+            aria-describedby={describedBy('alert-plan', errors.treatment_plan_id, planHint)}
+            onChange={(event) => setPlanId(event.target.value)}
+          >
             <option value="">Seleccione…</option>
             {openPlans.map((plan) => (
               <option key={plan.id} value={plan.id}>
@@ -123,23 +138,24 @@ function AcknowledgeDialog({ alert, onClose }) {
               </option>
             ))}
           </select>
+          {planHint && (
+            <Link to={appPath(`/pacientes/${patientId}/planes`)}>Crear un plan en la ficha del paciente</Link>
+          )}
+          {plans.isError && (
+            <span className="error" role="alert">
+              {generalError(plans.error)}
+            </span>
+          )}
         </Field>
       )}
 
       {action === 'cita_control' && (
-        <Field
-          label="Cita de control"
-          name="alert-appointment"
-          error={errors.appointment_id}
-          hint={
-            appointments.isSuccess && activeAppointments.length === 0
-              ? 'El paciente no tiene citas en los próximos 30 días.'
-              : undefined
-          }
-        >
+        <Field label="Cita del paciente" name="alert-appointment" error={errors.appointment_id} hint={appointmentHint}>
           <select
             id="alert-appointment"
             value={appointmentId}
+            aria-invalid={errors.appointment_id ? true : undefined}
+            aria-describedby={describedBy('alert-appointment', errors.appointment_id, appointmentHint)}
             onChange={(event) => setAppointmentId(event.target.value)}
           >
             <option value="">Seleccione…</option>
@@ -149,6 +165,11 @@ function AcknowledgeDialog({ alert, onClose }) {
               </option>
             ))}
           </select>
+          {appointments.isError && (
+            <span className="error" role="alert">
+              {generalError(appointments.error)}
+            </span>
+          )}
         </Field>
       )}
 
@@ -161,6 +182,8 @@ function AcknowledgeDialog({ alert, onClose }) {
         >
           <textarea
             id="alert-justification"
+            aria-invalid={errors.justification ? true : undefined}
+            aria-describedby={describedBy('alert-justification', errors.justification, 'Al menos 20 caracteres.')}
             rows={4}
             maxLength={1000}
             value={justification}
@@ -179,6 +202,7 @@ function AcknowledgeDialog({ alert, onClose }) {
  */
 export function AlertsPage() {
   const { slug, appPath } = useClinic()
+  const timeZone = useTimeZone()
   const [selected, setSelected] = useState(null)
   const alerts = useQuery({
     queryKey: ['risk-alerts', slug],
@@ -187,16 +211,19 @@ export function AlertsPage() {
 
   return (
     <>
-      <PageHeader title="Alertas de riesgo" />
-      <section className="card" aria-labelledby="alerts-title">
-        <h2 id="alerts-title">Alertas de riesgo alto</h2>
+      <PageHeader title="Alertas de riesgo alto" />
+      <section className="card" aria-label="Bandeja de alertas">
         {alerts.isLoading && (
           <div className="empty" role="status">
             Cargando…
           </div>
         )}
-        {alerts.isError && <div className="alert alert-error">{generalError(alerts.error)}</div>}
-        {alerts.isSuccess && alerts.data.length === 0 && <div className="empty">No tiene alertas de riesgo.</div>}
+        {alerts.isError && (
+          <div className="alert alert-error" role="alert">
+            {generalError(alerts.error)}
+          </div>
+        )}
+        {alerts.isSuccess && alerts.data.length === 0 && <div className="empty">No tienes alertas de riesgo.</div>}
         {alerts.isSuccess && alerts.data.length > 0 && (
           <div className="table-wrap">
             <table>
@@ -218,11 +245,19 @@ export function AlertsPage() {
                     <td>
                       <RiskLevelBadge level={alert.prediction.level} />
                     </td>
-                    <td className="tabular-nums">{formatDate(alert.prediction.predicted_at)}</td>
+                    <td className="tabular-nums">{formatDate(alert.prediction.predicted_at, timeZone)}</td>
                     <td>
-                      <span className={alert.status === 'abierta' ? 'badge badge-warning' : 'badge badge-muted'}>
-                        {alert.status === 'abierta' ? 'Abierta' : 'Reconocida'}
-                      </span>
+                      {alert.status === 'abierta' ? (
+                        <span className="badge badge-warning">
+                          <AlertTriangleIcon className="size-4" />
+                          Abierta
+                        </span>
+                      ) : (
+                        <span className="badge badge-muted">
+                          <CheckIcon className="size-4" />
+                          Reconocida
+                        </span>
+                      )}
                     </td>
                     <td>
                       {alert.status === 'abierta' ? (
@@ -235,7 +270,7 @@ export function AlertsPage() {
                           Reconocer
                         </button>
                       ) : (
-                        `${ACTIONS[alert.action] ?? alert.action} · ${formatDate(alert.acknowledged_at)}`
+                        `${ACTIONS[alert.action] ?? alert.action} · ${formatDate(alert.acknowledged_at, timeZone)}`
                       )}
                     </td>
                   </tr>

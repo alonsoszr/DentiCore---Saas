@@ -98,10 +98,47 @@ describe('AlertsPage', () => {
     )
   })
 
+  it('links a control appointment and reports an alert already acknowledged', async () => {
+    const calls = mockApi((config) => {
+      if (key(config) === 'GET /risk-alerts') return { data: { data: [alert()] } }
+      if (key(config) === 'GET /appointments')
+        return {
+          data: {
+            data: [
+              { id: 'ap-1', status: 'programada', starts_at: '2026-11-10T15:00:00+00:00', type: { name: 'Control' } },
+              { id: 'ap-2', status: 'cancelada', starts_at: '2026-11-11T15:00:00+00:00', type: { name: 'Control' } },
+            ],
+          },
+        }
+      if (key(config) === 'POST /risk-alerts/al-1/acknowledge')
+        return { status: 409, data: { rule: 'RN-65', detail: 'La alerta ya fue reconocida.' } }
+      return { status: 404 }
+    })
+    renderPage(<AlertsPage />, { user: dentist })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Reconocer la alerta de Lucía Sintética' }))
+    await userEvent.click(screen.getByRole('radio', { name: 'Cita de control' }))
+    const select = await screen.findByLabelText('Cita del paciente')
+    await waitFor(() => expect(within(select).getAllByRole('option')).toHaveLength(2))
+    await userEvent.selectOptions(select, 'ap-1')
+    await userEvent.click(screen.getByRole('button', { name: 'Reconocer alerta' }))
+
+    expect(await screen.findByText('La alerta ya fue reconocida.')).toBeInTheDocument()
+    expect(calls.find((call) => key(call) === 'GET /appointments').params).toMatchObject({ patient_id: 'p-1' })
+    expect(calls.filter((call) => key(call) === 'GET /risk-alerts').length).toBeGreaterThan(1)
+  })
+
+  it('announces an error loading the alerts', async () => {
+    mockApi(() => ({ status: 500 }))
+    renderPage(<AlertsPage />, { user: dentist })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ocurrió un error inesperado')
+  })
+
   it('shows an empty state without alerts', async () => {
     mockApi(() => ({ data: { data: [] } }))
     renderPage(<AlertsPage />, { user: dentist })
 
-    expect(await screen.findByText('No tiene alertas de riesgo.')).toBeInTheDocument()
+    expect(await screen.findByText('No tienes alertas de riesgo.')).toBeInTheDocument()
   })
 })
