@@ -16,7 +16,8 @@ use Illuminate\Support\Carbon;
 /**
  * Cita (SDD §2.10 `appointments`; CUS-47 a CUS-51; estados de SRS §5.5.4). `period` es la columna
  * generada `[starts_at, ends_at)` sobre la que actúan los EXCLUDE de RN-46 y RN-74.
- * `risk_alert_id` se agrega en TASK-078 y `periodic_control_id` en TASK-151.
+ * `risk_alert_id` vincula la cita de control de una alerta de riesgo (RN-65); `periodic_control_id`
+ * se agrega en TASK-151.
  *
  * @property int $id
  * @property string $uuid
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $ends_at
  * @property string $status
  * @property string $origin
+ * @property int|null $risk_alert_id
  * @property Carbon|null $confirmed_at
  * @property string|null $confirmation_channel
  * @property bool $reconfirmation_pending
