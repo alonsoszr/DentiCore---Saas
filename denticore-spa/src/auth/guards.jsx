@@ -1,5 +1,6 @@
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { homePathFor, loginPathFor } from './paths'
+import { hasFeature } from './features'
 import { useAuth } from './useAuth'
 
 /**
@@ -54,13 +55,13 @@ export function RequireTwoFactor({ children }) {
 
 /**
  * Oculta áreas de funciones que el plan de la clínica no incluye (ai, risk, analytics;
- * DD-16). Lee `user.tenant.features`, que la API expondrá con el plan (TASK-021/024);
- * mientras no exista, la función se considera no incluida.
+ * DD-16). Lee `user.tenant.plan.includes_<función>` de `/auth/me`; sin plan, la función se
+ * considera no incluida. Solo oculta la navegación: la API responde 403 (RN-08).
  */
 export function RequireFeature({ feature, fallbackPath, children }) {
   const { user } = useAuth()
 
-  if (user?.tenant?.features?.[feature] !== true) {
+  if (!hasFeature(user, feature)) {
     return <Navigate to={fallbackPath} replace />
   }
 

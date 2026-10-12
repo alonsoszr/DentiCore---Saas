@@ -104,7 +104,7 @@ describe('RequireFeature', () => {
   })
 
   it('shows the area when the plan includes it', () => {
-    const user = makeUser('dentist', { tenant: { slug: 'clinica-demo', features: { risk: true } } })
+    const user = makeUser('dentist', { tenant: { slug: 'clinica-demo', plan: { includes_risk: true } } })
     renderPage(
       <RequireFeature feature="risk" fallbackPath="/c/clinica-demo/app">
         <p>Riesgo</p>

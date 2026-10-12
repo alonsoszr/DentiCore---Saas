@@ -1,7 +1,11 @@
 import { Link, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { generalError } from '../../api/errors'
+import { hasFeature } from '../../auth/features'
+import { RequireFeature } from '../../auth/guards'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
+import { RiskPage } from '../risk/RiskPage'
+import { RiskVariablesPage } from '../risk/RiskVariablesPage'
 import { NotFoundPage } from '../SimplePages'
 import { PatientPlansPage } from '../treatment/PatientPlansPage'
 import { PendingFindingsPage } from '../treatment/PendingFindingsPage'
@@ -15,6 +19,9 @@ import { RepresentativesPage } from './RepresentativesPage'
 import { usePatient } from './usePatient'
 
 const IDENTITY_ROLES = ['clinic_admin', 'receptionist']
+
+/** Riesgo de caries: CA y OD ven la predicción; OD y RE registran variables (SDD §3.4, §3.5). */
+const RISK_ROLES = ['clinic_admin', 'dentist', 'receptionist']
 
 /**
  * Ficha del paciente (/c/:slug/app/pacientes/:uuid/*; CUS-13 a CUS-17, CUS-21, CUS-24). La cabecera
@@ -36,6 +43,7 @@ export function PatientDetailPage() {
     { to: base, label: 'Ficha', end: true },
     { to: `${base}/hc`, label: 'Historia clínica' },
     { to: `${base}/planes`, label: 'Planes' },
+    ...(hasFeature(user, 'risk') && RISK_ROLES.includes(user?.role) ? [{ to: `${base}/riesgo`, label: 'Riesgo' }] : []),
     ...(user?.role === 'dentist' ? [{ to: `${base}/pendientes`, label: 'Pendientes' }] : []),
     { to: `${base}/antecedentes`, label: 'Antecedentes' },
     { to: `${base}/consentimiento`, label: 'Consentimiento' },
@@ -66,6 +74,22 @@ export function PatientDetailPage() {
         <Route index element={<PatientRecord query={patientQuery} />} />
         <Route path="hc" element={<ClinicalRecordPage patient={patient} />} />
         <Route path="planes" element={<PatientPlansPage patient={patient} />} />
+        <Route
+          path="riesgo"
+          element={
+            <RequireFeature feature="risk" fallbackPath={base}>
+              <RiskPage patient={patient} />
+            </RequireFeature>
+          }
+        />
+        <Route
+          path="riesgo/variables"
+          element={
+            <RequireFeature feature="risk" fallbackPath={base}>
+              <RiskVariablesPage patient={patient} />
+            </RequireFeature>
+          }
+        />
         <Route path="pendientes" element={<PendingFindingsPage patient={patient} />} />
         <Route path="antecedentes" element={<MedicalHistoryPage patient={patient} />} />
         <Route path="consentimiento" element={<ConsentPage patient={patient} />} />

@@ -12,6 +12,16 @@ export function formatCurrency(amount) {
   return currencyFormatter.format(Number(amount))
 }
 
+/** Proporción 0–1 (número o texto decimal) → "64.3 %" (es-PE, un decimal). */
+export function formatPercent(value) {
+  if (value === null || value === undefined || value === '') return '—'
+  return new Intl.NumberFormat('es-PE', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(Number(value))
+}
+
 /** Instante ISO 8601 → "dd/MM/yyyy" en la zona de la clínica. */
 export function formatDate(value, timeZone = DEFAULT_TIME_ZONE) {
   if (!value) return '—'
