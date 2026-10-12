@@ -21,6 +21,11 @@ function describe(notification, slug) {
         text: `Se aceptó el presupuesto ${params.number} por ${formatCurrency(params.total)}.`,
         path: links.budget ? new URL(links.budget).pathname : null,
       }
+    case 'alerta_riesgo_alto':
+      return {
+        text: 'Una predicción que solicitaste resultó de riesgo alto: reconoce la alerta.',
+        path: links.alerts ? new URL(links.alerts).pathname : null,
+      }
     case 'atencion_cierre_incompleto':
       return {
         text: 'Una atención se cerró incompleta: complétala con una adenda.',
