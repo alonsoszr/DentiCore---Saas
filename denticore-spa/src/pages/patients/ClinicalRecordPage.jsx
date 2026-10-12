@@ -3,12 +3,15 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { generalError } from '../../api/errors'
+import { hasFeature } from '../../auth/features'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
 import { Odontogram } from '../../components/odontogram/Odontogram'
 import { ToothHistory } from '../../components/odontogram/ToothHistory'
-import { formatDateTime } from '../../ui/format'
+import { formatDateTime, formatPercent } from '../../ui/format'
+import { AlertTriangleIcon } from '../../ui/icons'
 import { ATTENTION_STATUS, DENTITIONS } from '../attentions/labels'
+import { RiskLevelBadge } from '../risk/RiskLevelBadge'
 
 /**
  * Historia clínica del paciente (CUS-21, CUS-24, CUS-25; RF-076, RF-079, RF-081): atenciones,
@@ -53,6 +56,7 @@ export function ClinicalRecordPage({ patient }) {
   })
 
   const attentions = record.data?.attentions ?? []
+  const risk = record.data?.current_risk_prediction ?? null
   const shownDentition = dentition ?? odontogram.data?.default_dentition ?? 'permanente'
 
   return (
@@ -112,6 +116,32 @@ export function ClinicalRecordPage({ patient }) {
           </div>
         )}
       </section>
+
+      {risk && (
+        <section className="card" aria-labelledby="risk-summary-title">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 id="risk-summary-title" className="m-0">
+                Riesgo de caries
+              </h2>
+              <RiskLevelBadge level={risk.level} />
+              {risk.low_confidence && (
+                <span className="badge badge-warning">
+                  <AlertTriangleIcon className="size-4" />
+                  Baja confianza
+                </span>
+              )}
+            </div>
+            {hasFeature(user, 'risk') && (
+              <Link to={appPath(`/pacientes/${patient.id}/riesgo`)}>Ver la explicación</Link>
+            )}
+          </div>
+          <p className="muted mt-2 mb-0">
+            Confianza {formatPercent(risk.confidence)} · calculada el {formatDateTime(risk.predicted_at)}. Herramienta
+            de apoyo; no constituye diagnóstico.
+          </p>
+        </section>
+      )}
 
       <section className="card" aria-labelledby="odontogram-title">
         <div className="flex flex-wrap items-end justify-between gap-3">

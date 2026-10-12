@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
+import { hasFeature } from '../../auth/features'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
 import { Alert } from '../../components/Alert'
@@ -11,6 +12,7 @@ import { Field } from '../../components/Field'
 import { formatDateTime } from '../../ui/format'
 import { PatientHeader } from '../patients/PatientHeader'
 import { usePatient } from '../patients/usePatient'
+import { RiskPanel } from '../risk/RiskPanel'
 import { ProceduresPanel } from '../treatment/ProceduresPanel'
 import { Cie10Picker } from './Cie10Picker'
 import { DiagnosesList, DiagnosesPanel } from './DiagnosesPanel'
@@ -220,6 +222,7 @@ export function AttentionPage() {
           <DiagnosesPanel attention={attention} queryKey={queryKey} />
           <FindingsWorkspace attention={attention} patient={patient} />
           <ProceduresPanel attention={attention} patient={patient} />
+          {hasFeature(user, 'risk') && <RiskPanel patient={patient} />}
           <CloseAttention attention={attention} queryKey={queryKey} />
         </>
       ) : (

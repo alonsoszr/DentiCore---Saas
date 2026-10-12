@@ -455,6 +455,81 @@
     color: var(--color-status-no-show);
   }
 
+  /* Nivel de riesgo de caries: texto e ícono sobre su contenedor (DESIGN.md › Status palette). */
+  .badge-risk-bajo {
+    background: var(--color-risk-low-container);
+    color: var(--color-risk-low);
+  }
+
+  .badge-risk-medio {
+    background: var(--color-risk-medium-container);
+    color: var(--color-risk-medium);
+  }
+
+  .badge-risk-alto {
+    background: var(--color-risk-high-container);
+    color: var(--color-risk-high);
+  }
+
+  .badge-warning {
+    background: var(--color-warning-container);
+    color: var(--color-on-warning-container);
+  }
+
+  /* Tarjeta de riesgo: datos clave y contribuciones con barras horizontales (DESIGN.md). */
+  .risk-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px 24px;
+    margin: 16px 0;
+  }
+
+  .risk-facts dt {
+    @apply text-label-sm;
+    color: var(--color-on-surface-variant);
+  }
+
+  .risk-facts dd {
+    @apply text-title-md;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .risk-factors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px 32px;
+  }
+
+  .risk-factor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    padding: 6px 0;
+  }
+
+  .risk-bar {
+    grid-column: 1 / -1;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-container-low);
+    overflow: hidden;
+  }
+
+  .risk-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-full);
+  }
+
+  .risk-bar-increasing > span {
+    background: var(--color-risk-high);
+  }
+
+  .risk-bar-decreasing > span {
+    background: var(--color-risk-low);
+  }
+
   .page-header {
     display: flex;
     align-items: center;
