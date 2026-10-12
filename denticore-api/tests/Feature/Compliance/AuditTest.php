@@ -8,7 +8,9 @@
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\AppointmentType;
 use App\Modules\Scheduling\Models\Notification;
+use App\Modules\Scheduling\Models\WorkSchedule;
 use App\Modules\Treatment\Models\Procedure;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLog;
@@ -368,6 +370,54 @@ it('writes the audit events of the MS-03 commercial flows without clinical value
     foreach ([
         'esperar al control', 'cambió de opinión', 'Resina compuesta', 'mudó a otra ciudad', $document, 'autoriza',
     ] as $value) {
+        expect($serialized)->not->toContain($value);
+    }
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
+
+it('writes the audit events of the MS-04 scheduling flows without identification data', function () {
+    $this->travelTo(Carbon::parse('2026-11-02 08:00', 'America/Lima'));
+    $tenant = Tenant::factory()->create(['timezone' => 'America/Lima']);
+    $this->actingAsRole('receptionist', $tenant);
+    $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+    WorkSchedule::factory()->create(['tenant_id' => $tenant->id, 'dentist_id' => $dentist->id, 'weekday' => 1, 'start_time' => '08:00', 'end_time' => '18:00']);
+    $type = AppointmentType::factory()->create(['tenant_id' => $tenant->id]);
+    $patient = ClinicalFixtures::patient($tenant);
+    $key = fn () => ['Idempotency-Key' => (string) Str::uuid()];
+    $book = fn (string $time) => $this->postJson('/api/v1/appointments', [
+        'patient_id' => $patient->uuid, 'dentist_id' => $dentist->uuid, 'appointment_type_id' => $type->uuid,
+        'starts_at' => Carbon::parse("2026-11-02 {$time}", 'America/Lima')->toIso8601String(),
+    ], $key())->assertCreated()->json('data.id');
+
+    // appointment.created, .rescheduled, .confirmed y .checked_in (CUS-47 a CUS-50)
+    $attended = $book('08:30');
+    $this->postJson("/api/v1/appointments/{$attended}/reschedule", [
+        'starts_at' => Carbon::parse('2026-11-02 08:45', 'America/Lima')->toIso8601String(),
+    ], $key())->assertOk();
+    $this->postJson("/api/v1/appointments/{$attended}/confirm")->assertOk();
+    $this->postJson("/api/v1/appointments/{$attended}/check-in", [], $key())->assertOk();
+
+    // appointment.cancelled (CUS-48) y appointment.no_show (CUS-51)
+    $cancelled = $book('11:00');
+    $this->postJson("/api/v1/appointments/{$cancelled}/cancel", ['cancel_reason' => 'otro', 'cancel_detail' => 'Viaje imprevisto al extranjero'])->assertOk();
+    $book('12:00');
+    $this->travelTo(Carbon::parse('2026-11-02 13:05', 'America/Lima'));
+    $this->artisan('appointments:mark-no-shows')->assertSuccessful();
+
+    TenantContext::run($tenant, function () {
+        $actions = AuditLog::query()->pluck('action')->all();
+        foreach ([
+            'appointment.created', 'appointment.rescheduled', 'appointment.confirmed', 'appointment.checked_in',
+            'appointment.cancelled', 'appointment.no_show',
+        ] as $action) {
+            expect($actions)->toContain($action);
+        }
+        expect(AuditLog::query()->where('action', 'appointment.cancelled')->sole()->metadata)->toEqual(['cancel_reason' => 'otro'])
+            ->and(AuditLog::query()->where('action', 'appointment.created')->count())->toBe(3);
+    });
+
+    // RN-67: sin nombre, documento ni correo del paciente ni el detalle de la cancelación.
+    $serialized = json_encode(DB::table('audit_logs')->get());
+    foreach ([$patient->first_name, $patient->last_name, $patient->document_number, 'Viaje imprevisto'] as $value) {
         expect($serialized)->not->toContain($value);
     }
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');

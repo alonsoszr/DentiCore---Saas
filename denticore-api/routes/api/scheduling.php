@@ -9,11 +9,16 @@ use App\Modules\Scheduling\Http\Controllers\NotificationController;
 use App\Modules\Scheduling\Http\Controllers\ScheduleBlockController;
 use App\Modules\Scheduling\Http\Controllers\WaitingRoomController;
 use App\Modules\Scheduling\Http\Controllers\WorkScheduleController;
+use App\Modules\Scheduling\Services\Dentists;
 use Illuminate\Support\Facades\Route;
 
 // M06 — Agenda y notificaciones (SDD §4.3.8). STAFF (SDD §4.2). Las rutas llegan con sus tareas:
 // horario, bloqueos y tipos (TASK-065), disponibilidad (TASK-066), citas (TASK-067, TASK-069) y
 // bandeja in-app (TASK-070).
+
+// `{dentist}`: odontólogo de la clínica actual por su uuid; otro usuario o clínica → 404 antes de
+// validar el cuerpo (RF-003). `users` no tiene Global Scope (DD-03).
+Route::bind('dentist', fn (string $value) => app(Dentists::class)->find($value));
 
 Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant'])->group(function () {
     // CUS-44: horario laboral (RF-142, RF-144). El personal lo consulta; el Administrador lo cambia.

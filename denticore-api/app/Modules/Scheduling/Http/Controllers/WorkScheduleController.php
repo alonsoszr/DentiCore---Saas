@@ -5,7 +5,6 @@ namespace App\Modules\Scheduling\Http\Controllers;
 use App\Modules\Identity\Models\User;
 use App\Modules\Scheduling\Http\Requests\WorkScheduleRequest;
 use App\Modules\Scheduling\Http\Resources\WorkScheduleResource;
-use App\Modules\Scheduling\Services\Dentists;
 use App\Modules\Scheduling\Services\WorkScheduleService;
 use App\Support\Http\Controller;
 use App\Support\Http\ProblemResponse;
@@ -17,14 +16,14 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class WorkScheduleController extends Controller
 {
-    public function __construct(private WorkScheduleService $schedules, private Dentists $dentists) {}
+    public function __construct(private WorkScheduleService $schedules) {}
 
     /**
      * Franjas vigentes hoy o más adelante.
      */
-    public function index(string $dentist): AnonymousResourceCollection
+    public function index(User $dentist): AnonymousResourceCollection
     {
-        return WorkScheduleResource::collection($this->schedules->current($this->dentists->find($dentist)));
+        return WorkScheduleResource::collection($this->schedules->current($dentist));
     }
 
     /**
@@ -32,7 +31,7 @@ class WorkScheduleController extends Controller
      * activa que el horario nuevo deja fuera (RF-144, RN-82).
      */
     #[ProblemResponse(422, 'Franjas solapadas del mismo día (RF-142) o citas activas afectadas sin una decisión por cita (RN-82)')]
-    public function replace(WorkScheduleRequest $request, string $dentist): AnonymousResourceCollection
+    public function replace(WorkScheduleRequest $request, User $dentist): AnonymousResourceCollection
     {
         /** @var array{valid_from: string, slots: list<array{weekday: int, start_time: string, end_time: string}>, decisions?: list<array{appointment_id: string, action: string, new_starts_at?: string|null}>} $data */
         $data = $request->validated();
@@ -40,7 +39,7 @@ class WorkScheduleController extends Controller
         $actor = $request->user();
 
         return WorkScheduleResource::collection(
-            $this->schedules->replace($this->dentists->find($dentist), $data, $actor, $data['decisions'] ?? []),
+            $this->schedules->replace($dentist, $data, $actor, $data['decisions'] ?? []),
         );
     }
 }

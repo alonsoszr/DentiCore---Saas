@@ -10635,8 +10635,9 @@
                         "name": "dentist",
                         "in": "path",
                         "required": true,
+                        "description": "The dentist ID",
                         "schema": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     }
                 ],
@@ -10701,8 +10702,9 @@
                         "name": "dentist",
                         "in": "path",
                         "required": true,
+                        "description": "The dentist ID",
                         "schema": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     }
                 ],
