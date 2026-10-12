@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { ageFrom, formatCivilDate, formatCurrency, formatDate, formatDateTime } from './format'
+import {
+  addDays,
+  ageFrom,
+  formatCivilDate,
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatTime,
+  isoWeekday,
+  localDate,
+  zonedDateTimeToIso,
+} from './format'
 
 // T-167 (SDD §6.3.10; RF-009, RNF-189)
 describe('formats', () => {
@@ -32,5 +43,20 @@ describe('formats', () => {
     expect(ageFrom('2000-10-05', today)).toBe(26)
     expect(ageFrom('2000-10-06', today)).toBe(25)
     expect(ageFrom(null, today)).toBeNull()
+  })
+})
+
+describe('clinic time zone helpers', () => {
+  it('converts between instants and local dates and times of the clinic', () => {
+    expect(formatTime('2026-11-02T14:00:00Z')).toBe('09:00')
+    expect(localDate('2026-11-03T03:30:00Z')).toBe('2026-11-02')
+    expect(zonedDateTimeToIso('2026-11-02', '09:00')).toBe('2026-11-02T14:00:00.000Z')
+    expect(zonedDateTimeToIso('2026-11-02', '23:30', 'Asia/Tokyo')).toBe('2026-11-02T14:30:00.000Z')
+  })
+
+  it('moves civil dates and gets the ISO weekday', () => {
+    expect(addDays('2026-10-31', 2)).toBe('2026-11-02')
+    expect(isoWeekday('2026-11-02')).toBe(1)
+    expect(isoWeekday('2026-11-08')).toBe(7)
   })
 })
