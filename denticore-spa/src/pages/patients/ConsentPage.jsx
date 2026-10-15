@@ -126,10 +126,22 @@ export function ConsentPage({ patient }) {
 
       <div className="card">
         <h2>Registrar consentimiento</h2>
-        {registered && <div className="alert alert-success" role="status">Consentimiento registrado.</div>}
+        {registered && (
+          <div className="alert alert-success" role="status">
+            Consentimiento registrado.
+          </div>
+        )}
         {previewQuery.isLoading && <div className="empty">Cargando…</div>}
-        {previewQuery.isError && <div className="alert alert-error" role="alert">{generalError(previewQuery.error)}</div>}
-        {generalError(grant.error) && <div className="alert alert-error" role="alert">{generalError(grant.error)}</div>}
+        {previewQuery.isError && (
+          <div className="alert alert-error" role="alert">
+            {generalError(previewQuery.error)}
+          </div>
+        )}
+        {generalError(grant.error) && (
+          <div className="alert alert-error" role="alert">
+            {generalError(grant.error)}
+          </div>
+        )}
         {preview && (
           <>
             {preview.granted_by === 'representante' && preview.representative && (

@@ -73,8 +73,16 @@ export function MedicalHistoryPage({ patient }) {
           {consentLink}
         </div>
       )}
-      {saved && <div className="alert alert-success" role="status">Antecedentes guardados.</div>}
-      {generalError(save.error) && <div className="alert alert-error" role="alert">{generalError(save.error)}</div>}
+      {saved && (
+        <div className="alert alert-success" role="status">
+          Antecedentes guardados.
+        </div>
+      )}
+      {generalError(save.error) && (
+        <div className="alert alert-error" role="alert">
+          {generalError(save.error)}
+        </div>
+      )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="form-grid">
           {LISTS.map(([key, label]) => (

@@ -63,8 +63,16 @@ export function PatientEditPage({ patient }) {
     <div className="card">
       <h2>Editar identificación</h2>
       <p className="muted mb-4">El número de historia clínica no cambia: {patient.clinical_record_number}.</p>
-      {saved && <div className="alert alert-success" role="status">Datos actualizados.</div>}
-      {generalError(update.error) && <div className="alert alert-error" role="alert">{generalError(update.error)}</div>}
+      {saved && (
+        <div className="alert alert-success" role="status">
+          Datos actualizados.
+        </div>
+      )}
+      {generalError(update.error) && (
+        <div className="alert alert-error" role="alert">
+          {generalError(update.error)}
+        </div>
+      )}
       <form onSubmit={handleSubmit} noValidate>
         <div className="form-grid">
           <Field label="Tipo de documento" name="document_type" error={errors.document_type}>
