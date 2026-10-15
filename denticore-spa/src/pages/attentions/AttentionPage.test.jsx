@@ -90,6 +90,8 @@ describe('AttentionPage', () => {
 
     const header = await screen.findByRole('region', { name: 'Paciente' })
     expect(within(header).getByText('Penicilina')).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(within(header).getByRole('heading', { level: 2 })).toBeInTheDocument()
     expect(header.compareDocumentPosition(screen.getByLabelText('Motivo de consulta'))).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     )
@@ -164,6 +166,8 @@ describe('AttentionPage', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Corregir la entrada' })
     expect(within(dialog).getByText('Corrige una entrada registrada por Dr. Ramos.')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Hallazgo')).toHaveValue('CARIES')
+    expect(within(dialog).getByLabelText('Estado')).toHaveValue('CD')
     expect(
       within(dialog).getByText('La entrada original se conserva sin cambios y queda marcada como corregida.'),
     ).toBeInTheDocument()
@@ -178,8 +182,26 @@ describe('AttentionPage', () => {
     expect(await screen.findByText('Corrección registrada.')).toBeInTheDocument()
   })
 
-  it('closes the attention only after confirming and shows what is missing (RN-77)', async () => {
-    const calls = api(openAttention, {
+  it('warns what is missing before opening the closing confirmation (RN-77)', async () => {
+    const calls = api()
+    renderPage(<AttentionPage />, ROUTE)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar atención' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const missing = screen.getByText('No se puede cerrar la atención').closest('[role="alert"]')
+    expect(within(missing).getByText('Registre el motivo de consulta.')).toBeInTheDocument()
+    expect(within(missing).getByText('Registre al menos un diagnóstico CIE-10.')).toBeInTheDocument()
+    expect(calls.some((call) => call.url === '/attentions/a-1/close')).toBe(false)
+  })
+
+  it('closes the attention only after confirming and shows what the API rejects (RN-77)', async () => {
+    const complete = {
+      ...openAttention,
+      note: { chief_complaint: 'Dolor al masticar', status: 'borrador' },
+      diagnoses: [{ id: 'd-1', code: 'K02.1', description: 'Caries de la dentina', type: 'presuntivo' }],
+    }
+    const calls = api(complete, {
       'POST /attentions/a-1/close': () => ({
         status: 422,
         data: {

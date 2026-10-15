@@ -32,7 +32,18 @@ function CloseAttention({ attention, queryKey }) {
     },
     onError: () => setConfirming(false),
   })
-  const missing = Object.values(fieldErrors(close.error))
+  const [precheck, setPrecheck] = useState([])
+  const missing = precheck.length > 0 ? precheck : Object.values(fieldErrors(close.error))
+
+  // RN-77: lo que falta se avisa antes de abrir la confirmación; la API lo vuelve a validar.
+  const requestClose = () => {
+    const pending = []
+    if (!attention.note?.chief_complaint?.trim()) pending.push('Registre el motivo de consulta.')
+    if ((attention.diagnoses ?? []).length === 0) pending.push('Registre al menos un diagnóstico CIE-10.')
+    setPrecheck(pending)
+    close.reset()
+    if (pending.length === 0) setConfirming(true)
+  }
 
   return (
     <section className="card flex flex-col gap-3" aria-labelledby="close-title">
@@ -51,7 +62,7 @@ function CloseAttention({ attention, queryKey }) {
         <div className="alert alert-error">{generalError(close.error)}</div>
       )}
       <div className="form-actions">
-        <button type="button" className="btn" onClick={() => setConfirming(true)}>
+        <button type="button" className="btn" onClick={requestClose}>
           Cerrar atención
         </button>
       </div>
@@ -201,9 +212,9 @@ export function AttentionPage() {
         </Link>
       </div>
 
-      <PatientHeader patient={patient} />
+      <PatientHeader patient={patient} headingLevel={2} />
 
-      <p className="muted">
+      <p className="muted mt-0 mb-4">
         Odontólogo a cargo: {attention.dentist.name} · COP {attention.dentist.cop}
         {attention.signer &&
           ` · Firmada por ${attention.signer.name} (COP ${attention.signer.cop}) el ${formatDateTime(attention.signed_at)}`}

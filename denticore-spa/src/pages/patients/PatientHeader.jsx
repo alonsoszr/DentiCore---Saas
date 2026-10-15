@@ -5,15 +5,16 @@ import { PatientConsentBadge } from './ConsentStatusBadge'
  * Cabecera fija del paciente en toda pantalla clínica (RNF-146): nombre, edad, número de HC,
  * estado del consentimiento y aviso permanente de alergias (RF-064, RNF-149).
  */
-export function PatientHeader({ patient }) {
+export function PatientHeader({ patient, headingLevel = 1 }) {
+  const Heading = headingLevel === 1 ? 'h1' : 'h2'
   const allergies = patient.allergies ?? []
 
   return (
     <section className="card patient-header" aria-label="Paciente">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="m-0 text-headline-md">
+        <Heading className="m-0 text-headline-md">
           {patient.first_name} {patient.last_name}
-        </h1>
+        </Heading>
         <span className="muted">{patient.age_years} años</span>
         <span className="muted">HC {patient.clinical_record_number}</span>
         <PatientConsentBadge patient={patient} />
