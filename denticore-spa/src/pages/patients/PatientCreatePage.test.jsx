@@ -81,6 +81,11 @@ describe('PatientCreatePage', () => {
       'href',
       '/c/clinica-demo/app/pacientes/p-1',
     )
+
+    // Al corregir el documento, el aviso y el error del valor anterior desaparecen.
+    await userEvent.type(screen.getByLabelText('Número de documento'), '7')
+    expect(screen.queryByRole('link', { name: 'Ver la ficha existente' })).not.toBeInTheDocument()
+    expect(screen.queryByText('El documento ya está registrado en la clínica.')).not.toBeInTheDocument()
   })
 
   it('detects a minor by the 18th birthday', () => {

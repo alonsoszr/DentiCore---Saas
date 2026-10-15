@@ -34,7 +34,7 @@ export function Alert({ tone = 'info', title, children, className = '' }) {
       <Icon className={`mt-0.5 size-5 shrink-0 ${accent}`} />
       <div className="min-w-0 flex-1">
         {title && <p className={`m-0 text-title-md ${accent}`}>{title}</p>}
-        {children && <p className={title ? 'mt-0.5 mb-0' : 'm-0'}>{children}</p>}
+        {children && <div className={title ? 'mt-0.5' : undefined}>{children}</div>}
       </div>
     </div>
   )

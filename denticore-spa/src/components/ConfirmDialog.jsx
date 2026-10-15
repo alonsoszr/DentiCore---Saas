@@ -1,5 +1,22 @@
 import { useEffect, useId, useRef, useState } from 'react'
 
+/** Mantiene el foco dentro del diálogo modal: Tab y Shift+Tab ciclan entre sus controles. */
+function trapFocus(event, dialog) {
+  const focusable = [...dialog.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')].filter(
+    (element) => !element.disabled && element.tabIndex !== -1,
+  )
+  if (focusable.length === 0) return
+  const first = focusable[0]
+  const last = focusable.at(-1)
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
 /**
  * Diálogo de confirmación de acciones irreversibles (RNF-063; DESIGN.md › Confirmation dialogs):
  * título, consecuencias y el contenido del formulario que la acción necesite. Escape o
@@ -38,7 +55,10 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         className="card dialog"
-        onKeyDown={(event) => event.key === 'Escape' && onCancel()}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') onCancel()
+          if (event.key === 'Tab') trapFocus(event, dialogRef.current)
+        }}
       >
         <h2 id={titleId}>{title}</h2>
         {children}

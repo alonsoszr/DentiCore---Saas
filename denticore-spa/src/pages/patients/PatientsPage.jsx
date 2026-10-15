@@ -52,7 +52,7 @@ export function PatientsPage() {
 
       <div className="card">
         <form
-          className="form-actions"
+          className="search-form"
           role="search"
           onSubmit={(event) => {
             event.preventDefault()
@@ -72,7 +72,7 @@ export function PatientsPage() {
           </button>
         </form>
         {patientsQuery.isLoading && <div className="empty">Cargando…</div>}
-        {patientsQuery.isError && <div className="alert alert-error">{generalError(patientsQuery.error)}</div>}
+        {patientsQuery.isError && <div className="alert alert-error" role="alert">{generalError(patientsQuery.error)}</div>}
         {patientsQuery.isSuccess && patients.length === 0 && (
           <div className="empty">
             {term ? 'Ningún paciente coincide con la búsqueda.' : 'Aún no hay pacientes registrados.'}

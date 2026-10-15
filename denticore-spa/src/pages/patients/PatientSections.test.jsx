@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { makeUser, mockApi, renderPage } from '../../test/utils'
@@ -135,6 +135,14 @@ describe('ConsentPage', () => {
               granted_at: '2026-10-05T15:00:00Z',
               purpose_care: true,
             },
+            {
+              id: 'c-0',
+              status: 'revocado',
+              granted_by: 'titular',
+              channel: 'presencial',
+              granted_at: '2026-09-01T15:00:00Z',
+              purpose_care: true,
+            },
           ],
         },
       }
@@ -143,7 +151,10 @@ describe('ConsentPage', () => {
 
     expect(await screen.findByText('Vigente')).toBeInTheDocument()
     expect(screen.getByText(/versión anterior/)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Constancia' }))
+    // DESIGN.md › Status palette: vigente en tertiary y revocado en error, con texto e ícono.
+    expect(screen.getByText('Vigente')).toHaveClass('badge-success')
+    expect(screen.getByText('Revocado')).toHaveClass('badge-error')
+    await userEvent.click(screen.getAllByRole('button', { name: 'Constancia' })[0])
 
     expect(open).toHaveBeenCalledWith('https://archivos.test/constancia.pdf', '_blank', 'noopener')
   })
@@ -151,7 +162,6 @@ describe('ConsentPage', () => {
 
 describe('RepresentativesPage', () => {
   it('adds a representative and ends a current one after confirmation (CUS-16)', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const current = {
       id: 'r-1',
       first_name: 'Rosa',
@@ -183,6 +193,9 @@ describe('RepresentativesPage', () => {
     expect(JSON.parse(add.data)).toMatchObject({ document_number: '42345678', relationship: 'padre', email: null })
 
     await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
+    const dialog = screen.getByRole('dialog', { name: '¿Terminar la representación de Rosa Mamani?' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Terminar representación' }))
+    await waitFor(() => expect(calls.some((call) => call.url.endsWith('/r-1/end'))).toBe(true))
     const end = calls.find((call) => call.url.endsWith('/r-1/end'))
     expect(JSON.parse(end.data)).toEqual({ reason: 'revocada' })
   })

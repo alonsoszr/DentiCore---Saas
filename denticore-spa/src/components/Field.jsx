@@ -1,19 +1,31 @@
+import { cloneElement, isValidElement } from 'react'
 import { AlertCircleIcon } from '../ui/icons'
+
+const CONTROLS = ['input', 'select', 'textarea']
 
 /**
  * Campo de formulario con etiqueta, ayuda opcional y error de validación. El error queda
  * enlazado al control con aria-describedby (DESIGN.md › Input fields).
+ * - `children`: un control propio (select, textarea). Si no trae `aria-invalid` ni
+ *   `aria-describedby`, Field se los agrega para que el error se asocie y reciba el foco.
  * - `endAdornment`: ícono o botón dentro del campo, a la derecha.
  * - `size="lg"`: controles de 48px (autenticación y portal, DESIGN.md › Density).
  */
 export function Field({ label, name, error, hint, children, endAdornment, size, ...inputProps }) {
   const hintId = hint && !error ? `${name}-hint` : undefined
   const errorId = error ? `${name}-error` : undefined
+  const control =
+    isValidElement(children) && CONTROLS.includes(children.type)
+      ? cloneElement(children, {
+          'aria-invalid': children.props['aria-invalid'] ?? (error ? true : undefined),
+          'aria-describedby': children.props['aria-describedby'] ?? errorId ?? hintId,
+        })
+      : children
 
   return (
     <div className={size === 'lg' ? 'field field-lg' : 'field'}>
       <label htmlFor={name}>{label}</label>
-      {children ?? (
+      {control ?? (
         <div className={endAdornment ? 'field-control has-adornment' : 'field-control'}>
           <input
             id={name}

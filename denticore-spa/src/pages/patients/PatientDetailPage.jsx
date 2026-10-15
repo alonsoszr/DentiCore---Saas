@@ -37,7 +37,7 @@ export function PatientDetailPage() {
   const base = appPath(`/pacientes/${uuid}`)
 
   if (patientQuery.isLoading) return <div className="card empty">Cargando…</div>
-  if (patientQuery.isError) return <div className="alert alert-error">{generalError(patientQuery.error)}</div>
+  if (patientQuery.isError) return <div className="alert alert-error" role="alert">{generalError(patientQuery.error)}</div>
 
   const tabs = [
     { to: base, label: 'Ficha', end: true },
@@ -68,7 +68,7 @@ export function PatientDetailPage() {
 
       <PatientHeader patient={patient} />
 
-      {location.state?.created && <div className="alert alert-success">Paciente registrado correctamente.</div>}
+      {location.state?.created && <div className="alert alert-success" role="status">Paciente registrado correctamente.</div>}
 
       <Routes>
         <Route index element={<PatientRecord query={patientQuery} />} />

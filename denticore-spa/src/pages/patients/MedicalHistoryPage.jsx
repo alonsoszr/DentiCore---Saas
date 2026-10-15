@@ -5,6 +5,7 @@ import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
 import { useClinic } from '../../auth/useClinic'
 import { Field } from '../../components/Field'
+import { useFocusFirstError } from '../../ui/useFocusFirstError'
 
 const LISTS = [
   ['alergias', 'Alergias'],
@@ -60,19 +61,20 @@ export function MedicalHistoryPage({ patient }) {
   }
 
   const errors = fieldErrors(save.error)
+  useFocusFirstError(save.error)
   const consentLink = <Link to={appPath(`/pacientes/${patient.id}/consentimiento`)}>Registrar consentimiento</Link>
 
   return (
     <div className="card">
       <h2>Antecedentes médicos</h2>
       {!patient.has_current_consent && (
-        <div className="alert alert-error">
+        <div className="alert alert-error" role="alert">
           El paciente no tiene un consentimiento vigente para la atención: no se pueden registrar antecedentes.{' '}
           {consentLink}
         </div>
       )}
-      {saved && <div className="alert alert-success">Antecedentes guardados.</div>}
-      {generalError(save.error) && <div className="alert alert-error">{generalError(save.error)}</div>}
+      {saved && <div className="alert alert-success" role="status">Antecedentes guardados.</div>}
+      {generalError(save.error) && <div className="alert alert-error" role="alert">{generalError(save.error)}</div>}
       <form onSubmit={handleSubmit} noValidate>
         <div className="form-grid">
           {LISTS.map(([key, label]) => (

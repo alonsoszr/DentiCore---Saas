@@ -7,6 +7,7 @@ import { fieldErrors, generalError } from '../../api/errors'
 import { Field } from '../../components/Field'
 import { PageHeader } from '../../components/PageHeader'
 import { DOCUMENT_TYPES, isMinor, today } from './patientIdentity'
+import { useFocusFirstError } from '../../ui/useFocusFirstError'
 
 const RELATIONSHIPS = { madre: 'Madre', padre: 'Padre', tutor: 'Tutor', curador: 'Curador', otro: 'Otro' }
 
@@ -52,6 +53,7 @@ export function PatientCreatePage() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState(EMPTY_FORM)
   const [representative, setRepresentative] = useState(EMPTY_REPRESENTATIVE)
+  const [documentEdited, setDocumentEdited] = useState(false)
   const createPatient = useMutation({
     mutationFn: async (payload) => (await apiClient.post('/patients', payload)).data.data,
     onSuccess: (patient) => {
@@ -60,18 +62,27 @@ export function PatientCreatePage() {
     },
   })
 
-  const handleChange = (event) => setForm({ ...form, [event.target.name]: event.target.value })
+  const handleChange = (event) => {
+    setForm({ ...form, [event.target.name]: event.target.value })
+    // El aviso de ficha existente y el error del documento corresponden al valor anterior.
+    if (['document_type', 'document_number'].includes(event.target.name)) setDocumentEdited(true)
+  }
   const handleRepresentativeChange = (event) =>
     setRepresentative({ ...representative, [event.target.name.replace('representative_', '')]: event.target.value })
 
   const handleSubmit = (event) => {
     event.preventDefault()
+    setDocumentEdited(false)
     createPatient.mutate(toPayload(form, representative))
   }
 
-  const errors = fieldErrors(createPatient.error)
+  const serverErrors = fieldErrors(createPatient.error)
+  const errors = documentEdited
+    ? { ...serverErrors, document_type: undefined, document_number: undefined }
+    : serverErrors
+  useFocusFirstError(createPatient.error)
   // RF-056: si el documento ya existe, la API indica la ficha existente.
-  const existingPatientId = createPatient.error?.response?.data?.existing_patient_id
+  const existingPatientId = documentEdited ? null : createPatient.error?.response?.data?.existing_patient_id
   const minor = isMinor(form.birth_date)
 
   return (
@@ -87,13 +98,15 @@ export function PatientCreatePage() {
 
       <div className="card">
         {existingPatientId && (
-          <div className="alert alert-error">
+          <div className="alert alert-error" role="alert">
             Ya existe una ficha con este documento.{' '}
             <Link to={appPath(`/pacientes/${existingPatientId}`)}>Ver la ficha existente</Link>
           </div>
         )}
-        {generalError(createPatient.error) && !existingPatientId && (
-          <div className="alert alert-error">{generalError(createPatient.error)}</div>
+        {generalError(createPatient.error) && !existingPatientId && !documentEdited && (
+          <div className="alert alert-error" role="alert">
+            {generalError(createPatient.error)}
+          </div>
         )}
         <form onSubmit={handleSubmit} noValidate autoComplete="off">
           <div className="form-grid">
@@ -178,7 +191,11 @@ export function PatientCreatePage() {
           {minor && (
             <>
               <h3 className="form-section">Representante legal (paciente menor de 18 años)</h3>
-              {errors.representative && <div className="alert alert-error">{errors.representative}</div>}
+              {errors.representative && (
+                <div className="alert alert-error" role="alert">
+                  {errors.representative}
+                </div>
+              )}
               <div className="form-grid">
                 <Field
                   label="Tipo de documento del representante"
