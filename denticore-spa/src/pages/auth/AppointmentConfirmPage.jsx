@@ -45,7 +45,7 @@ export function AppointmentConfirmPage() {
       ) : status === 404 ? (
         <>
           <h1 className="text-headline-lg-mobile sm:text-headline-lg">Este enlace ya no es válido</h1>
-          <p className="text-body-md text-on-surface-variant">
+          <p className="mt-1.5 mb-5 text-body-md text-on-surface-variant">
             El enlace se usa una sola vez y vence al inicio de la cita. Si necesitas confirmar o cambiar tu cita,
             comunícate con la clínica.
           </p>

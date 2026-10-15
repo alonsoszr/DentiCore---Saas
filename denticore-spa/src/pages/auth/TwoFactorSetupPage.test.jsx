@@ -32,6 +32,7 @@ describe('TwoFactorSetupPage', () => {
     expect(screen.getByTestId('manual-key')).toHaveTextContent('JBSW Y3DP EHPK 3PXP')
 
     await userEvent.click(screen.getByRole('button', { name: 'Continuar a confirmación' }))
+    expect(screen.getByLabelText('Dígito 1 de 6')).toHaveFocus()
     await userEvent.type(screen.getByLabelText('Dígito 1 de 6'), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
 

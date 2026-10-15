@@ -45,6 +45,10 @@ describe('ResetPasswordPage', () => {
 
     const save = screen.getByRole('button', { name: 'Guardar contraseña' })
     expect(screen.getByText('Requisitos de la contraseña (0/4)')).toBeInTheDocument()
+    // La longitud se valida en vivo: x gris sin «se verifica al guardar» hasta cumplirse (ficha A5).
+    const length = screen.getByText('Entre 10 y 128 caracteres').closest('li')
+    expect(length).toHaveClass('requirement-unmet')
+    expect(length).not.toHaveTextContent('se verifica al guardar')
     await userEvent.type(screen.getByLabelText('Nueva contraseña'), GOOD_PASSWORD)
     await userEvent.type(screen.getByLabelText('Confirmar contraseña'), 'otra')
     expect(screen.getByText('Las contraseñas no coinciden')).toBeInTheDocument()

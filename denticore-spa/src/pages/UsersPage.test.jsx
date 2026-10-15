@@ -67,7 +67,6 @@ describe('UsersPage', () => {
   })
 
   it('deactivates a user after confirmation and reactivates another', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const calls = mockApi((config) => {
       if (config.method === 'post') return { data: { data: {} } }
       return {
@@ -84,7 +83,9 @@ describe('UsersPage', () => {
 
     const rosa = (await screen.findByText('Rosa')).closest('tr')
     await userEvent.click(within(rosa).getByRole('button', { name: 'Desactivar' }))
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Se cerrarán todas sus sesiones'))
+    const dialog = screen.getByRole('dialog', { name: '¿Desactivar a Rosa?' })
+    expect(within(dialog).getByText(/Se cerrarán todas sus sesiones/)).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Desactivar' }))
     expect(await screen.findByText('Se desactivó a Rosa y se cerraron sus sesiones.')).toBeInTheDocument()
 
     const luis = screen.getByText('Luis').closest('tr')

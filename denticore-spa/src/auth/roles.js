@@ -1,6 +1,6 @@
 export const ROLE_LABELS = {
-  super_admin: 'Administrador de plataforma',
-  clinic_admin: 'Administrador de clínica',
+  super_admin: 'Súper Administrador',
+  clinic_admin: 'Administrador de Clínica',
   dentist: 'Odontólogo',
   receptionist: 'Recepcionista',
   patient: 'Paciente',

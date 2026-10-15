@@ -5,8 +5,10 @@ import { fieldErrors, generalError } from '../api/errors'
 import { ROLE_LABELS, TENANT_ROLES } from '../auth/roles'
 import { useAuth } from '../auth/useAuth'
 import { useClinic } from '../auth/useClinic'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
+import { useFocusFirstError } from '../ui/useFocusFirstError'
 
 const EMPTY_FORM = {
   name: '',
@@ -38,6 +40,7 @@ export function UsersPage() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [notice, setNotice] = useState(null)
+  const [deactivating, setDeactivating] = useState(null)
 
   const usersQuery = useQuery({
     queryKey: ['users', slug],
@@ -61,6 +64,7 @@ export function UsersPage() {
   const userAction = useMutation({
     mutationFn: async ({ user, action }) => (await apiClient.post(`/users/${user.id}/${action}`)).data?.data,
     onSuccess: (_data, { user, action }) => {
+      setDeactivating(null)
       refresh()
       setNotice(
         {
@@ -118,14 +122,14 @@ export function UsersPage() {
     saveUser.mutate({ id: editing.id, payload })
   }
 
+  // RNF-063: la acción pide confirmación con sus efectos.
   const deactivate = (user) => {
-    // RNF-063: la acción pide confirmación con sus efectos.
-    if (window.confirm(`¿Desactivar a ${user.name}? Se cerrarán todas sus sesiones abiertas.`)) {
-      userAction.mutate({ user, action: 'deactivate' })
-    }
+    userAction.reset()
+    setDeactivating(user)
   }
 
   const errors = fieldErrors(saveUser.error)
+  useFocusFirstError(saveUser.error)
   const users = usersQuery.data ?? []
   const isEditing = Boolean(editing?.id)
   const actionError = generalError(userAction.error)
@@ -140,13 +144,25 @@ export function UsersPage() {
         )}
       </PageHeader>
 
-      {notice && <div className="alert alert-success">{notice}</div>}
-      {actionError && <div className="alert alert-error">{actionError}</div>}
+      {notice && (
+        <div className="alert alert-success" role="status">
+          {notice}
+        </div>
+      )}
+      {!deactivating && actionError && (
+        <div className="alert alert-error" role="alert">
+          {actionError}
+        </div>
+      )}
 
       {editing && (
         <div className="card">
           <h2>{isEditing ? 'Editar usuario' : 'Nuevo usuario'}</h2>
-          {generalError(saveUser.error) && <div className="alert alert-error">{generalError(saveUser.error)}</div>}
+          {generalError(saveUser.error) && (
+            <div className="alert alert-error" role="alert">
+              {generalError(saveUser.error)}
+            </div>
+          )}
           <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-grid">
               <Field
@@ -210,7 +226,11 @@ export function UsersPage() {
                 Oficial de Datos Personales
               </label>
             )}
-            {errors.is_data_officer && <div className="alert alert-error">{errors.is_data_officer}</div>}
+            {errors.is_data_officer && (
+              <div className="alert alert-error" role="alert">
+                {errors.is_data_officer}
+              </div>
+            )}
             <div className="form-actions">
               <button type="submit" className="btn" disabled={saveUser.isPending}>
                 {saveUser.isPending ? 'Guardando…' : 'Guardar'}
@@ -225,7 +245,11 @@ export function UsersPage() {
 
       <div className="card">
         {usersQuery.isLoading && <div className="empty">Cargando…</div>}
-        {usersQuery.isError && <div className="alert alert-error">{generalError(usersQuery.error)}</div>}
+        {usersQuery.isError && (
+          <div className="alert alert-error" role="alert">
+            {generalError(usersQuery.error)}
+          </div>
+        )}
         {users.length > 0 && (
           <div className="table-wrap">
             <table>
@@ -289,6 +313,20 @@ export function UsersPage() {
           </div>
         )}
       </div>
+
+      {deactivating && (
+        <ConfirmDialog
+          title={`¿Desactivar a ${deactivating.name}?`}
+          confirmLabel="Desactivar"
+          destructive
+          busy={userAction.isPending}
+          error={actionError}
+          onCancel={() => setDeactivating(null)}
+          onConfirm={() => userAction.mutate({ user: deactivating, action: 'deactivate' })}
+        >
+          <p>Se cerrarán todas sus sesiones abiertas. Podrás reactivar la cuenta después.</p>
+        </ConfirmDialog>
+      )}
     </>
   )
 }

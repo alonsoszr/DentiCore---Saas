@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { z } from 'zod'
 import { fieldErrors, generalError } from '../api/errors'
 import { retryAfterSeconds } from '../api/retryAfter'
-import { homePathFor, loginPathFor, PLATFORM_LOGIN_PATH, twoFactorSetupPath, twoFactorVerifyPath } from '../auth/paths'
+import { homePathFor, twoFactorSetupPath, twoFactorVerifyPath } from '../auth/paths'
 import { useAuth } from '../auth/useAuth'
 import { usePublicClinic } from '../auth/usePublicClinic'
 import { Alert } from '../components/Alert'
@@ -11,7 +11,7 @@ import { AuthLayout } from '../components/auth/AuthLayout'
 import { ClinicHeader } from '../components/auth/ClinicHeader'
 import { PasswordField } from '../components/auth/PasswordField'
 import { Field } from '../components/Field'
-import { MailIcon, Spinner } from '../ui/icons'
+import { LockIcon, MailIcon, Spinner } from '../ui/icons'
 
 // Validación en cliente (ficha auth-login › Formulario). La contraseña solo se limita a
 // 1–128 caracteres: la política de 10 caracteres es para crear contraseñas.
@@ -182,8 +182,6 @@ export function LoginPage() {
           )}
         </button>
       </form>
-
-      {variant === 'platform' && <ClinicCodeForm />}
     </AuthLayout>
   )
 }
@@ -216,8 +214,16 @@ function StatusAlert({ error, status, lockedMinutes }) {
 function PlatformHeader() {
   return (
     <div className="mb-7 flex items-center justify-between gap-3 border-b border-outline-variant pb-6">
-      <p className="m-0 min-w-0 text-title-md font-bold text-on-surface">DentiCore · Administración de la plataforma</p>
-      <span className="shrink-0 rounded-full bg-primary-container px-2.5 py-1 text-label-sm text-on-primary-container">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary">
+          <LockIcon className="size-5" />
+        </span>
+        <p className="m-0 min-w-0 text-title-md font-bold text-on-surface">
+          DentiCore · Administración de la plataforma
+        </p>
+      </div>
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary-container px-2.5 py-1 text-label-sm text-on-primary-container">
+        <LockIcon className="size-3.5" />
         Acceso restringido
       </span>
     </div>
@@ -237,44 +243,6 @@ function LoginFooter({ variant }) {
     <>
       <p className="m-0">¿Problemas para ingresar? Contacta al administrador de tu clínica.</p>
       <p className="mt-1.5 mb-0">Las cuentas del personal se crean solo por invitación.</p>
-      <p className="mt-4 mb-0">
-        ¿No es tu clínica?{' '}
-        <Link to={PLATFORM_LOGIN_PATH} className="font-semibold text-secondary">
-          Cambiar de clínica
-        </Link>
-      </p>
     </>
-  )
-}
-
-/** Lleva al login de una clínica (/c/:slug/login) a partir de su código de acceso. */
-function ClinicCodeForm() {
-  const navigate = useNavigate()
-  const [code, setCode] = useState('')
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    const slug = code.trim().toLowerCase()
-    if (slug) {
-      navigate(loginPathFor(slug))
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-4 border-t border-outline-variant pt-6">
-      <Field
-        label="¿Trabajas en una clínica? Escribe su código de acceso"
-        name="clinicCode"
-        size="lg"
-        value={code}
-        onChange={(event) => setCode(event.target.value)}
-        autoComplete="off"
-        autoCapitalize="none"
-        spellCheck={false}
-      />
-      <button type="submit" className="btn btn-secondary min-h-12 w-full">
-        Ir al acceso de la clínica
-      </button>
-    </form>
   )
 }

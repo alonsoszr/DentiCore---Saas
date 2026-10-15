@@ -50,7 +50,7 @@ export function ResetPasswordPage() {
     content = (
       <>
         <h1 className="text-headline-lg-mobile sm:text-headline-lg">Este enlace ya no es válido</h1>
-        <p className="text-body-md text-on-surface-variant">
+        <p className="mt-1.5 mb-5 text-body-md text-on-surface-variant">
           Los enlaces vencen a los 60 minutos y se usan una sola vez.
         </p>
         <Link to={`/c/${slug}/restablecer`} className="btn w-full">

@@ -93,13 +93,13 @@ describe('LoginPage', () => {
     expect(await screen.findByText('Credenciales inválidas')).toBeInTheDocument()
   })
 
-  it('takes the platform login to the login of a clinic by its code', async () => {
+  it('keeps the platform login as in A2: lock header and no clinic access code (DD-29)', () => {
     renderPage(<LoginPage />, { route: '/login', path: '/login' })
 
-    await userEvent.type(screen.getByLabelText(/código de acceso/), ' Clinica-Demo ')
-    await userEvent.click(screen.getByRole('button', { name: 'Ir al acceso de la clínica' }))
-
-    expect(screen.getByTestId('location')).toHaveTextContent('/c/clinica-demo/login')
+    expect(screen.getByText('DentiCore · Administración de la plataforma')).toBeInTheDocument()
+    expect(screen.getByText('Acceso restringido')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/código de acceso/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ir al acceso de la clínica' })).not.toBeInTheDocument()
   })
 
   it('redirects a user with a session to their home', () => {
@@ -128,7 +128,7 @@ describe('LoginPage', () => {
       expect((await screen.findAllByText('clinica-demo')).length).toBeGreaterThan(0)
     })
 
-    it('shows the recovery link, the footer and the link to change the clinic', () => {
+    it('shows the recovery link and the footer of A1', () => {
       renderPage(<LoginPage />, CLINIC_ROUTE)
 
       expect(screen.getByRole('link', { name: '¿Olvidaste tu contraseña?' })).toHaveAttribute(
@@ -138,7 +138,7 @@ describe('LoginPage', () => {
       expect(screen.getByText('¿Problemas para ingresar? Contacta al administrador de tu clínica.')).toBeInTheDocument()
       expect(screen.getByText('Las cuentas del personal se crean solo por invitación.')).toBeInTheDocument()
       expect(screen.queryByRole('link', { name: /Contacta/ })).not.toBeInTheDocument()
-      expect(screen.getByRole('link', { name: 'Cambiar de clínica' })).toHaveAttribute('href', '/login')
+      expect(screen.queryByRole('link', { name: 'Cambiar de clínica' })).not.toBeInTheDocument()
       expect(screen.getByPlaceholderText('nombre@correo.com')).toBeInTheDocument()
     })
   })

@@ -44,11 +44,14 @@ export function ActivateAccountPage() {
   const invitation = invitationQuery.data
   const status = error?.response?.status
   const messages = status === 422 ? (error.response.data?.errors?.password ?? []) : []
+  // Regla validada en vivo con el nombre y el correo de la invitación (ficha A6).
   const identityState = containsIdentity(password, invitation)
     ? 'failed'
-    : password.length > 0 && !messages.some((message) => /correo ni tu nombre/.test(message))
-      ? 'ok'
-      : serverState(messages, /correo ni tu nombre/)
+    : password.length === 0
+      ? 'unmet'
+      : !messages.some((message) => /correo ni tu nombre/.test(message))
+        ? 'ok'
+        : serverState(messages, /correo ni tu nombre/)
   const mismatch = confirmation !== '' && confirmation !== password
   const canSubmit =
     lengthState(password) === 'ok' && identityState !== 'failed' && password === confirmation && accepted && !submitting
