@@ -20,3 +20,4 @@ Route::group([], base_path('routes/api/scheduling.php'));
 Route::group([], base_path('routes/api/risk.php'));
 Route::group([], base_path('routes/api/compliance.php'));
 Route::group([], base_path('routes/api/files.php'));
+Route::group([], base_path('routes/api/portal.php'));

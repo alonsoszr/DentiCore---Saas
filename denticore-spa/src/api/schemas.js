@@ -489,6 +489,15 @@ export const planItemsRequestSchema = z
     'Ítems nuevos de un plan (CUS-33; RF-110, RF-111, RN-26): procedimiento activo del catálogo,\npieza, superficies, cantidad (1–32), sesión opcional, observaciones y hallazgos que atiende.\nLa pieza y las superficies según el procedimiento las valida ClinicalValidator en el servicio.',
   )
 
+export const portalSubjectResourceSchema = z.object({
+  id: z.string(),
+  first_name: z.string(),
+  last_name: z.string(),
+  age_years: z.number().int(),
+  is_minor: z.boolean(),
+  relationship: z.enum(['titular', 'representado']),
+})
+
 export const problemDetailsSchema = z.object({
   type: z.string(),
   title: z.string(),
