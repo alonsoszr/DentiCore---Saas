@@ -7,6 +7,9 @@ use App\Modules\Patients\Models\LegalRepresentative;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\LegalRepresentativeService;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Treatment\Models\PlanItem;
+use App\Modules\Treatment\Models\Procedure;
+use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -81,6 +84,35 @@ final class PortalFixtures
         return ClinicalFixtures::recordFinding(ClinicalFixtures::attention($tenant, $attention), ['note' => 'Lesión cavitada'])
             ->assertCreated()
             ->json('data.id');
+    }
+
+    /**
+     * Presupuesto emitido por una recepcionista para un plan `propuesto` del paciente, con un ítem
+     * de S/ 150.00 (vence a los 30 días de la clínica).
+     *
+     * @return string Uuid del presupuesto.
+     */
+    public static function issuedBudget(Tenant $tenant, Patient $patient): string
+    {
+        test()->actingAsRole('receptionist', $tenant);
+        $plan = TenantContext::run($tenant, function () use ($tenant, $patient): TreatmentPlan {
+            $dentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+            $plan = TreatmentPlan::factory()->create(['tenant_id' => $tenant->id, 'patient_id' => $patient->id, 'created_by' => $dentist->id, 'status' => 'propuesto']);
+            PlanItem::factory()->create([
+                'tenant_id' => $tenant->id,
+                'treatment_plan_id' => $plan->id,
+                'procedure_id' => Procedure::factory()->create(['tenant_id' => $tenant->id, 'price' => '150.00'])->id,
+            ]);
+
+            return $plan;
+        });
+
+        $budget = test()->postJson("/api/v1/treatment-plans/{$plan->uuid}/budgets", [], ['Idempotency-Key' => (string) Str::uuid()])
+            ->assertCreated()
+            ->json('data.id');
+        test()->postJson("/api/v1/budgets/{$budget}/issue", [], ['Idempotency-Key' => (string) Str::uuid()])->assertOk();
+
+        return $budget;
     }
 
     public static function representation(Tenant $tenant, Patient $patient): LegalRepresentative

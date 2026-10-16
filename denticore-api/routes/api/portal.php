@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Portal\Http\Controllers\PortalBudgetController;
 use App\Modules\Portal\Http\Controllers\PortalConsentController;
 use App\Modules\Portal\Http\Controllers\PortalOdontogramController;
 use App\Modules\Portal\Http\Controllers\PortalSubjectController;
@@ -21,6 +22,13 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
             Route::get('/patients/{patient}/consents', [PortalConsentController::class, 'index']);
             Route::get('/patients/{patient}/consents/preview', [PortalConsentController::class, 'preview']);
             Route::post('/patients/{patient}/consents', [PortalConsentController::class, 'store'])
+                ->middleware(['portal.adult', 'idempotent']);
+
+            // CUS-36, CUS-37: presupuestos y decisión con el canal `portal`.
+            Route::get('/patients/{patient}/budgets', [PortalBudgetController::class, 'index']);
+            Route::get('/budgets/{budget}', [PortalBudgetController::class, 'show']);
+            Route::get('/budgets/{budget}/pdf', [PortalBudgetController::class, 'pdf']);
+            Route::post('/budgets/{budget}/decision', [PortalBudgetController::class, 'decide'])
                 ->middleware(['portal.adult', 'idempotent']);
         });
     });

@@ -227,3 +227,29 @@ it('lets only the reception and the clinic administrator register a decision', f
     $this->actingAsRole('clinic_admin', $tenant);
     decideBudget($budget)->assertOk();
 })->group('RN-06', 'CUS-37');
+
+it('stores channel, user, timestamp and IP of a portal decision', function () {
+    ['tenant' => $tenant, 'patient' => $patient, 'budgets' => [$budget]] = decisionScenario();
+    $portalUser = User::factory()->for($tenant)->create(['role' => 'patient']);
+    TenantContext::run($tenant, fn () => $patient->forceFill(['user_id' => $portalUser->id])->save());
+
+    $this->actingWithToken($portalUser)
+        ->postJson("/api/v1/portal/budgets/{$budget}/decision", ['decision' => 'aceptado'], ['Idempotency-Key' => (string) Str::uuid()])
+        ->assertOk()
+        ->assertJsonPath('data.decision.channel', 'portal')
+        ->assertJsonPath('data.decision.ip', '127.0.0.1');
+
+    $decided = decidedBudget($tenant, $budget);
+    $payload = TenantContext::run($tenant, fn () => $decided->decisionEvidencePayload());
+
+    expect($decided->decision_channel)->toBe('portal')
+        ->and($decided->decision_by_user_id)->toBe($portalUser->id)
+        ->and($decided->decided_at->toIso8601String())->toBe(Carbon::now()->toIso8601String())
+        ->and($decided->decision_ip)->toBe('127.0.0.1')
+        ->and($decided->decision_signer)->toBe('titular')
+        ->and($decided->decision_signer_document_hash)->toBeNull()
+        ->and(app(EvidenceSealer::class)->verify($payload, (string) $decided->decision_evidence_hmac))->toBeTrue();
+
+    TenantContext::run($tenant, fn () => expect(AuditLog::query()->where('action', 'budget.decided')->sole()->metadata)
+        ->toEqual(['decision' => 'aceptado', 'channel' => 'portal']));
+})->group('T-091', 'CA-37.3', 'RN-36', 'CUS-37');

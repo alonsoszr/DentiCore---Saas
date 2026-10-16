@@ -586,6 +586,17 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->getJson("{$portalBase}/teeth/36/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
     $check($this->getJson("{$portalBase}/teeth/19/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
 
+    // Presupuestos en el portal (TASK-086).
+    $portalBudget = PortalFixtures::issuedBudget($tenant, $portalPatient);
+    $this->actingWithToken($portalUser);
+    $check($this->getJson("{$portalBase}/budgets"), 'GET', '/portal/patients/{patient}/budgets');
+    $check($this->getJson("/api/v1/portal/budgets/{$portalBudget}"), 'GET', '/portal/budgets/{budget}');
+    $check($this->getJson("/api/v1/portal/budgets/{$portalBudget}/pdf"), 'GET', '/portal/budgets/{budget}/pdf');
+    $check($this->postJson("/api/v1/portal/budgets/{$portalBudget}/decision", ['decision' => 'quizá'], $idempotent()), 'POST', '/portal/budgets/{budget}/decision');
+    $check($this->postJson("/api/v1/portal/budgets/{$portalBudget}/decision", ['decision' => 'aceptado'], $idempotent()), 'POST', '/portal/budgets/{budget}/decision');
+    $check($this->postJson("/api/v1/portal/budgets/{$portalBudget}/decision", ['decision' => 'aceptado'], $idempotent()), 'POST', '/portal/budgets/{budget}/decision');
+    $check($this->getJson('/api/v1/portal/budgets/'.fake()->uuid()), 'GET', '/portal/budgets/{budget}');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');

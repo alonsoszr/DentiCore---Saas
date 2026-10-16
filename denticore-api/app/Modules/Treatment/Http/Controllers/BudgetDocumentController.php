@@ -5,7 +5,7 @@ namespace App\Modules\Treatment\Http\Controllers;
 use App\Modules\Identity\Models\User;
 use App\Modules\Treatment\Models\Budget;
 use App\Modules\Treatment\Services\BudgetIssuer;
-use App\Support\Files\FileStorage;
+use App\Modules\Treatment\Services\BudgetPdfLink;
 use App\Support\Http\Controller;
 use App\Support\Http\ProblemResponse;
 use Illuminate\Http\JsonResponse;
@@ -18,20 +18,13 @@ use Illuminate\Support\Facades\Gate;
  */
 class BudgetDocumentController extends Controller
 {
-    public function __construct(private BudgetIssuer $issuer, private FileStorage $files) {}
+    public function __construct(private BudgetIssuer $issuer, private BudgetPdfLink $pdfLink) {}
 
     public function show(Request $request, Budget $budget): JsonResponse
     {
         Gate::authorize('view', $budget);
 
-        $document = $budget->pdfDocument;
-        $file = $document?->status === 'listo' ? $document->storedFile : null;
-
-        return response()->json(['data' => [
-            /** @var 'pendiente'|'generando'|'listo'|'fallido'|null */
-            'status' => $document?->status,
-            'url' => $file === null ? null : $this->files->temporaryUrl($file, $request->user()),
-        ]]);
+        return response()->json(['data' => $this->pdfLink->for($budget, $request->user())]);
     }
 
     /**
