@@ -8,9 +8,10 @@ import { useClinic } from '../../auth/useClinic'
 import { Alert } from '../../components/Alert'
 import { Field } from '../../components/Field'
 import { formatDate } from '../../ui/format'
-import { EMPTY_ITEM, PLAN_STATUS, itemPayload, itemsFromFindings, progressText, statusBadge } from './labels'
+import { EMPTY_ITEM, itemPayload, itemsFromFindings, progressText } from './labels'
 import { ItemsEditor } from './ItemsEditor'
 import { usePatientPlans, useProcedures } from './useTreatment'
+import { PlanStatusBadge } from './TreatmentStatusBadges'
 
 /**
  * Planes de tratamiento del paciente (/c/:slug/app/pacientes/:uuid/planes; CUS-33; RF-110, RF-111,
@@ -127,7 +128,7 @@ export function PatientPlansPage({ patient }) {
                     <Link to={appPath(`/planes/${plan.id}`)}>{plan.title}</Link>
                   </td>
                   <td>
-                    <span className={statusBadge(plan.status)}>{PLAN_STATUS[plan.status]}</span>
+                    <PlanStatusBadge status={plan.status} />
                   </td>
                   <td>{progressText(plan.progress)}</td>
                   <td>{formatDate(plan.created_at)}</td>

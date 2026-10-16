@@ -13,18 +13,9 @@ import { usePatient } from '../patients/usePatient'
 import { ItemFields } from './ItemFields'
 import { ItemsEditor } from './ItemsEditor'
 import { PlanBudgets } from './PlanBudgets'
-import {
-  EMPTY_ITEM,
-  FINAL_PLAN_STATUSES,
-  ITEM_STATUS,
-  PLAN_STATUS,
-  itemPayload,
-  itemsFromFindings,
-  progressText,
-  siteText,
-  statusBadge,
-} from './labels'
+import { EMPTY_ITEM, FINAL_PLAN_STATUSES, itemPayload, itemsFromFindings, progressText, siteText } from './labels'
 import { usePlan, useProcedures } from './useTreatment'
+import { ItemStatusBadge, PlanStatusBadge } from './TreatmentStatusBadges'
 
 const CANCEL_ROLES = ['clinic_admin', 'dentist']
 
@@ -204,7 +195,7 @@ export function PlanDetailPage() {
       <div className="card">
         <div className="page-header">
           <h2 className="m-0">{data.title}</h2>
-          <span className={statusBadge(data.status)}>{PLAN_STATUS[data.status]}</span>
+          <PlanStatusBadge status={data.status} />
         </div>
 
         {editingTitle && (
@@ -234,25 +225,29 @@ export function PlanDetailPage() {
         )}
 
         <dl className="details">
-          <dt>Avance</dt>
-          <dd>{progressText(data.progress)}</dd>
-          <dt>Elaborado por</dt>
-          <dd>
-            {data.created_by.name} · {formatDate(data.created_at)}
-          </dd>
+          <div>
+            <dt>Avance</dt>
+            <dd>{progressText(data.progress)}</dd>
+          </div>
+          <div>
+            <dt>Elaborado por</dt>
+            <dd>
+              {data.created_by.name} · {formatDate(data.created_at)}
+            </dd>
+          </div>
           {data.status === 'cancelado' && (
-            <>
+            <div>
               <dt>Cancelado</dt>
               <dd>
                 {formatDate(data.cancelled_at)} · {data.cancel_reason}
               </dd>
-            </>
+            </div>
           )}
           {data.status === 'completado' && (
-            <>
+            <div>
               <dt>Completado</dt>
               <dd>{formatDate(data.completed_at)}</dd>
-            </>
+            </div>
           )}
         </dl>
 
@@ -422,7 +417,7 @@ export function PlanDetailPage() {
                     </td>
                     <td>{item.session_number ?? '—'}</td>
                     <td>
-                      <span className={statusBadge(item.status)}>{ITEM_STATUS[item.status]}</span>
+                      <ItemStatusBadge status={item.status} />
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-3">
@@ -517,18 +512,24 @@ export function PlanDetailPage() {
         >
           <p>El plan quedará cancelado y no admitirá más cambios. Lo realizado hasta hoy:</p>
           <dl className="details">
-            <dt>Ítems realizados</dt>
-            <dd>
-              {cancelPreview.items_performed} de {cancelPreview.items_total}
-            </dd>
-            <dt>Valor realizado</dt>
-            <dd>{formatCurrency(cancelPreview.performed_amount)}</dd>
-            <dt>Monto aceptado</dt>
-            <dd>
-              {cancelPreview.accepted_amount === null
-                ? 'Sin presupuesto aceptado'
-                : formatCurrency(cancelPreview.accepted_amount)}
-            </dd>
+            <div>
+              <dt>Ítems realizados</dt>
+              <dd>
+                {cancelPreview.items_performed} de {cancelPreview.items_total}
+              </dd>
+            </div>
+            <div>
+              <dt>Valor realizado</dt>
+              <dd>{formatCurrency(cancelPreview.performed_amount)}</dd>
+            </div>
+            <div>
+              <dt>Monto aceptado</dt>
+              <dd>
+                {cancelPreview.accepted_amount === null
+                  ? 'Sin presupuesto aceptado'
+                  : formatCurrency(cancelPreview.accepted_amount)}
+              </dd>
+            </div>
           </dl>
         </ReasonDialog>
       )}

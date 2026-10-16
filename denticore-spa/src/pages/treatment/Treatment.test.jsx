@@ -128,7 +128,7 @@ describe('CatalogPage', () => {
 
     expect(await screen.findByText('S/ 150.00')).toBeInTheDocument()
     expect(screen.getByText('pieza, superficie')).toBeInTheDocument()
-    expect(screen.getByText('Activo')).toBeInTheDocument()
+    expect(screen.getByText('Activo').querySelector('svg')).not.toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: 'Nuevo procedimiento' }))
     await userEvent.type(screen.getByLabelText('Código'), 'PRF-01')
@@ -209,6 +209,14 @@ describe('PendingFindingsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Crear ítems del plan (1)' }))
 
     expect(screen.getByTestId('location')).toHaveTextContent('/c/clinica-demo/app/pacientes/p-1/planes')
+  })
+
+  it('hides the plan action when nothing is pending', async () => {
+    mockApi(() => ({ data: { data: [] } }))
+    renderPage(<PendingFindingsPage patient={PATIENT} />, { user: makeUser('dentist'), ...PATIENT_ROUTE })
+
+    expect(await screen.findByText('No hay hallazgos pendientes de decisión.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Crear ítems del plan/ })).not.toBeInTheDocument()
   })
 })
 
@@ -291,6 +299,11 @@ describe('PlanDetailPage', () => {
     for (const name of ['Proponer al paciente', 'Cancelar plan', 'Agregar ítems', 'Editar título', 'Descartar']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
+    // Cada dato va en su propio grupo dt/dd, y el estado lleva texto e ícono.
+    for (const list of document.querySelectorAll('dl.details')) {
+      expect([...list.children].every((child) => child.tagName === 'DIV')).toBe(true)
+    }
+    expect(document.querySelector('.badge svg')).not.toBeNull()
   })
 
   it('previews what was performed and cancels the plan with a reason (RF-129)', async () => {

@@ -20,11 +20,6 @@ export const ITEM_STATUS = {
 /** Estados finales: el plan ya no admite cambios (SRS §5.5.2). */
 export const FINAL_PLAN_STATUSES = ['completado', 'cancelado']
 
-/** Clase del badge: los estados finales o detenidos se muestran atenuados (siempre con texto). */
-export function statusBadge(status) {
-  return ['cancelado', 'descartado', 'borrador'].includes(status) ? 'badge badge-muted' : 'badge'
-}
-
 /** Avance del plan (RF-130): ítems realizados sobre total y monto realizado sobre aceptado. */
 export function progressText(progress) {
   if (!progress) return '—'
@@ -119,7 +114,3 @@ export const DECISION_CHANNELS = {
 /** Roles que gestionan presupuestos (CUS-35) y que registran la decisión presencial (CUS-37). */
 export const BUDGET_ROLES = ['clinic_admin', 'dentist', 'receptionist']
 export const DECISION_ROLES = ['clinic_admin', 'receptionist']
-
-export function budgetBadge(status) {
-  return ['rechazado', 'vencido', 'reemplazado', 'borrador'].includes(status) ? 'badge badge-muted' : 'badge'
-}

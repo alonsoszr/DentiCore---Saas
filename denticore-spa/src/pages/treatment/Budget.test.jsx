@@ -159,6 +159,11 @@ describe('BudgetDetailPage', () => {
     renderPage(<BudgetDetailPage />, { ...BUDGET_ROUTE, user: makeUser('dentist') })
 
     await userEvent.click(await screen.findByRole('button', { name: 'Descuento de Restauración con resina' }))
+    // Cada dato va en su propio grupo dt/dd, y el estado lleva texto e ícono.
+    for (const list of document.querySelectorAll('dl.details')) {
+      expect([...list.children].every((child) => child.tagName === 'DIV')).toBe(true)
+    }
+    expect(document.querySelector('.badge svg')).not.toBeNull()
     await userEvent.clear(screen.getByLabelText('Descuento (%)'))
     await userEvent.type(screen.getByLabelText('Descuento (%)'), '20')
     await userEvent.type(screen.getByLabelText('Motivo del descuento'), 'Paciente frecuente')

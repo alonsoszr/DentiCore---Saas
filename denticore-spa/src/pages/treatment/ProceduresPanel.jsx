@@ -175,7 +175,7 @@ function UrgentForm({ attention, patient, procedures, onDone, onCancel }) {
         setConfirming(true)
       }}
     >
-      <h3>Procedimiento de urgencia</h3>
+      <h3 className="mb-3">Procedimiento de urgencia</h3>
       {generalError(urgent.error) && (
         <div className="alert alert-error" role="alert">
           {generalError(urgent.error)}
