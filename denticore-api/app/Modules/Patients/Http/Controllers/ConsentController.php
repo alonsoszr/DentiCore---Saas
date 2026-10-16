@@ -2,10 +2,10 @@
 
 namespace App\Modules\Patients\Http\Controllers;
 
+use App\Modules\Patients\Http\Resources\ConsentPreviewResource;
 use App\Modules\Patients\Http\Resources\ConsentResource;
 use App\Modules\Patients\Models\Consent;
 use App\Modules\Patients\Models\Patient;
-use App\Modules\Patients\Services\ConsentRenderer;
 use App\Modules\Patients\Services\ConsentService;
 use App\Support\Files\FileStorage;
 use App\Support\Http\Controller;
@@ -16,7 +16,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 /**
  * Consentimiento de datos (SDD §4.3.3; CUS-17; RF-047, RF-065, RF-066, RF-067). El paciente y
@@ -24,7 +23,7 @@ use Illuminate\Validation\ValidationException;
  */
 class ConsentController extends Controller
 {
-    public function __construct(private ConsentService $consents, private ConsentRenderer $renderer) {}
+    public function __construct(private ConsentService $consents) {}
 
     /**
      * RF-065, RF-067: consentimientos del paciente, del más reciente al más antiguo.
@@ -43,29 +42,11 @@ class ConsentController extends Controller
      * finalidades que la clínica puede ofrecer; las opcionales se presentan sin marcar (CA-17.1).
      */
     #[ProblemResponse(422, 'Paciente menor sin representante legal vigente (RN-12)')]
-    public function preview(Patient $patient): JsonResponse
+    public function preview(Patient $patient): ConsentPreviewResource
     {
         Gate::authorize('create', [Consent::class, $patient]);
 
-        $preview = $this->consents->preview($patient);
-        $representative = $preview['representative'];
-
-        return response()->json(['data' => [
-            /** @var int */
-            'template_version' => $preview['template_version'],
-            'text' => $preview['text'],
-            'text_sha256' => $preview['text_sha256'],
-            'granted_by' => $preview['granted_by'],
-            'representative' => $representative === null ? null : [
-                'id' => $representative->uuid,
-                'first_name' => $representative->first_name,
-                'last_name' => $representative->last_name,
-                /** @var 'madre'|'padre'|'tutor'|'curador'|'otro' */
-                'relationship' => $representative->relationship,
-            ],
-            /** @var list<'purpose_care'|'purpose_notifications'|'purpose_ai'|'purpose_risk'|'purpose_surveys'> */
-            'available_purposes' => $preview['available_purposes'],
-        ]]);
+        return ConsentPreviewResource::make($this->consents->preview($patient));
     }
 
     /**
@@ -88,40 +69,17 @@ class ConsentController extends Controller
             'purpose_surveys' => ['nullable', 'boolean'],
             'confirmation_document_number' => ['exclude_unless:channel,presencial', 'required', 'string', 'max:12'],
             'scanned_file' => ['exclude_unless:channel,papel', 'required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png'],
-        ], [
-            'purpose_care.accepted' => 'La finalidad (a) atención odontológica es obligatoria.',
-            'purpose_care.required' => 'La finalidad (a) atención odontológica es obligatoria.',
-        ], [
+        ], ConsentService::PURPOSE_CARE_MESSAGES, [
             'channel' => 'canal',
             'confirmation_document_number' => 'documento de confirmación',
             'scanned_file' => 'formulario firmado',
         ]);
 
-        $this->ensurePurposesAreOffered($patient, $data);
+        $this->consents->ensurePurposesOffered($patient, $data);
 
         $consent = $this->consents->grant($patient, $data, $request->user(), $request->ip());
 
         return ConsentResource::make($consent)->response()->setStatusCode(201);
-    }
-
-    /**
-     * CA-17.5: (c) y (d) solo se otorgan si la clínica las ofrece (plan e IA activada).
-     *
-     * @param  array<string, mixed>  $data
-     *
-     * @throws ValidationException
-     */
-    private function ensurePurposesAreOffered(Patient $patient, array $data): void
-    {
-        $available = $this->renderer->availablePurposes($patient->tenant);
-        $unavailable = collect(['purpose_ai', 'purpose_risk'])
-            ->filter(fn (string $column) => filter_var($data[$column] ?? false, FILTER_VALIDATE_BOOLEAN) && ! in_array($column, $available, true));
-
-        if ($unavailable->isNotEmpty()) {
-            throw ValidationException::withMessages(
-                $unavailable->mapWithKeys(fn (string $column) => [$column => 'La clínica no ofrece esta finalidad.'])->all(),
-            );
-        }
     }
 
     /**

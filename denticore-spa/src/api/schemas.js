@@ -260,6 +260,25 @@ export const clinicalNoteResourceSchema = z.object({
   signed_at: z.union([z.string().datetime({ offset: true }), z.null()]),
 })
 
+export const consentPreviewResourceSchema = z.object({
+  template_version: z.number().int(),
+  text: z.string(),
+  text_sha256: z.string(),
+  granted_by: z.enum(['titular', 'representante']),
+  representative: z.union([
+    z.object({
+      id: z.string(),
+      first_name: z.string(),
+      last_name: z.string(),
+      relationship: z.enum(['madre', 'padre', 'tutor', 'curador', 'otro']),
+    }),
+    z.null(),
+  ]),
+  available_purposes: z.array(
+    z.enum(['purpose_care', 'purpose_notifications', 'purpose_ai', 'purpose_risk', 'purpose_surveys']),
+  ),
+})
+
 export const consentResourceSchema = z.object({
   id: z.string(),
   template_version: z.number().int(),

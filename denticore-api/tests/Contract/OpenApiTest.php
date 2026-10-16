@@ -574,8 +574,17 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($riskDentist)->postJson('/api/v1/risk-alerts/'.fake()->uuid().'/acknowledge', $justified), 'POST', '/risk-alerts/{alert}/acknowledge');
 
     // Portal del paciente (TASK-085).
-    [$portalUser] = PortalFixtures::holder($tenant);
+    [$portalUser, $portalPatient] = PortalFixtures::holder($tenant, withConsent: false);
     $check($this->actingWithToken($portalUser)->getJson('/api/v1/portal/subjects'), 'GET', '/portal/subjects');
+
+    // Consentimiento e historial por pieza en el portal (TASK-088).
+    $portalBase = "/api/v1/portal/patients/{$portalPatient->uuid}";
+    $check($this->getJson("{$portalBase}/consents/preview"), 'GET', '/portal/patients/{patient}/consents/preview');
+    $check($this->postJson("{$portalBase}/consents", ['purpose_care' => false], $idempotent()), 'POST', '/portal/patients/{patient}/consents');
+    $check($this->postJson("{$portalBase}/consents", ['purpose_care' => true], $idempotent()), 'POST', '/portal/patients/{patient}/consents');
+    $check($this->getJson("{$portalBase}/consents"), 'GET', '/portal/patients/{patient}/consents');
+    $check($this->getJson("{$portalBase}/teeth/36/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
+    $check($this->getJson("{$portalBase}/teeth/19/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

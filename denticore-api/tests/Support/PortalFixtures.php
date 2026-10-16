@@ -9,6 +9,7 @@ use App\Modules\Patients\Services\LegalRepresentativeService;
 use App\Modules\Platform\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Cuentas de portal sintéticas (SDD §3.3; RES-08): el titular con su ficha vinculada y el
@@ -61,6 +62,25 @@ final class PortalFixtures
         }));
 
         return $user;
+    }
+
+    /**
+     * Hallazgo de `ClinicalFixtures::cariesFinding()` con nota en la pieza 36 del paciente,
+     * registrado por su odontóloga (Dra. Pérez, COP 12345) en una atención nueva.
+     *
+     * @return string Uuid de la entrada.
+     */
+    public static function recordedFinding(Tenant $tenant, Patient $patient): string
+    {
+        ClinicalFixtures::cariesFinding();
+        test()->actingAsRole('dentist', $tenant, ['name' => 'Dra. Pérez', 'cop_number' => '12345']);
+        $attention = test()->postJson("/api/v1/patients/{$patient->uuid}/attentions", [], ['Idempotency-Key' => (string) Str::uuid()])
+            ->assertCreated()
+            ->json('data.id');
+
+        return ClinicalFixtures::recordFinding(ClinicalFixtures::attention($tenant, $attention), ['note' => 'Lesión cavitada'])
+            ->assertCreated()
+            ->json('data.id');
     }
 
     public static function representation(Tenant $tenant, Patient $patient): LegalRepresentative
