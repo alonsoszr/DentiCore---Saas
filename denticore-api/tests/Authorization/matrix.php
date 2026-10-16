@@ -169,6 +169,9 @@ return [
     ['method' => 'GET', 'uri' => 'api/v1/risk-alerts', 'cus' => 'CUS-58', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/risk-alerts/{alert}/acknowledge', 'cus' => 'CUS-58', 'denied' => ['super_admin', 'clinic_admin', 'receptionist', 'dentist', 'patient']],
 
+    // Portal del paciente (SDD §4.3.10; DI-13): solo PA y REP (TASK-085 a TASK-088).
+    ['method' => 'GET', 'uri' => 'api/v1/portal/subjects', 'cus' => 'CUS-21', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],
 ];

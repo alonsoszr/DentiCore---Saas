@@ -33,6 +33,7 @@ use PragmaRX\Google2FA\Google2FA;
 use Tests\Support\ClinicalFixtures;
 use Tests\Support\MlEngine;
 use Tests\Support\OpenApiContract;
+use Tests\Support\PortalFixtures;
 use Tests\Support\RiskFixtures;
 
 it('keeps openapi.json in sync with the code', function () {
@@ -571,6 +572,10 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($riskDentist)->postJson($acknowledgePath, $justified), 'POST', '/risk-alerts/{alert}/acknowledge');
     $check($this->actingWithToken($riskDentist)->postJson($acknowledgePath, $justified), 'POST', '/risk-alerts/{alert}/acknowledge');
     $check($this->actingWithToken($riskDentist)->postJson('/api/v1/risk-alerts/'.fake()->uuid().'/acknowledge', $justified), 'POST', '/risk-alerts/{alert}/acknowledge');
+
+    // Portal del paciente (TASK-085).
+    [$portalUser] = PortalFixtures::holder($tenant);
+    $check($this->actingWithToken($portalUser)->getJson('/api/v1/portal/subjects'), 'GET', '/portal/subjects');
 
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {

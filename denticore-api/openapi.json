@@ -7326,6 +7326,60 @@
                 }
             }
         },
+        "/portal/subjects": {
+            "get": {
+                "operationId": "portalSubject.index",
+                "tags": [
+                    "PortalSubject"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `PortalSubjectResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PortalSubjectResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/procedures": {
             "get": {
                 "operationId": "procedureCatalog.index",
@@ -13703,6 +13757,42 @@
                     "items"
                 ],
                 "title": "PlanItemsRequest"
+            },
+            "PortalSubjectResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "last_name": {
+                        "type": "string"
+                    },
+                    "age_years": {
+                        "type": "integer"
+                    },
+                    "is_minor": {
+                        "type": "boolean"
+                    },
+                    "relationship": {
+                        "type": "string",
+                        "enum": [
+                            "titular",
+                            "representado"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "first_name",
+                    "last_name",
+                    "age_years",
+                    "is_minor",
+                    "relationship"
+                ],
+                "title": "PortalSubjectResource"
             },
             "ProblemDetails": {
                 "type": "object",

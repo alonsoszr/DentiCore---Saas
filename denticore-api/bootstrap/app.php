@@ -1,6 +1,9 @@
 <?php
 
 use App\Modules\Patients\Http\Middleware\EnsurePatientConsent;
+use App\Modules\Portal\Http\Middleware\EnsurePortalDecisionMaker;
+use App\Modules\Portal\Http\Middleware\EnsureSelfBookingEnabled;
+use App\Modules\Portal\Http\Middleware\ResolvePortalSubject;
 use App\Support\Http\CorrelationId;
 use App\Support\Http\EnforceTokenFreshness;
 use App\Support\Http\EnsureDentistLicense;
@@ -57,6 +60,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.exportable' => AllowCancelledExport::class,
             'plan.feature' => EnsurePlanFeature::class,
             'consent' => EnsurePatientConsent::class,
+            'portal.subject' => ResolvePortalSubject::class,
+            'portal.adult' => EnsurePortalDecisionMaker::class,
+            'portal.self_booking' => EnsureSelfBookingEnabled::class,
             'cop' => EnsureDentistLicense::class,
             'token.fresh' => EnforceTokenFreshness::class,
             '2fa' => EnsureTwoFactorPassed::class,
