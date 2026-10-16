@@ -593,6 +593,209 @@
     }
   }
 
+  /* ---------- Portal del paciente (DESIGN.md › Patient portal) ----------
+     Una columna desde 360 px con márgenes de 1rem, texto de 16 px, controles de 48 px y pestañas
+     inferiores (Inicio, Citas, Presupuestos, Mi salud); desde 1024 px las pestañas van arriba. */
+
+  .portal {
+    @apply text-body-lg;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    background: var(--color-background);
+  }
+
+  .portal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--color-surface-container-lowest);
+    border-bottom: 1px solid var(--color-outline-variant);
+  }
+
+  .portal-header .brand {
+    padding: 0;
+  }
+
+  /* Salto al contenido: las pestañas van antes del contenido en el orden del teclado. */
+  .portal-skip {
+    position: absolute;
+    left: 16px;
+    top: -64px;
+    z-index: 30;
+    padding: 12px 16px;
+    background: var(--color-surface-container-lowest);
+    border-radius: var(--radius);
+  }
+
+  .portal-skip:focus {
+    top: 8px;
+  }
+
+  /* Enlace principal de una tarjeta: objetivo táctil de 44 px (DESIGN.md › Accessibility). */
+  .portal-card-link {
+    @apply text-title-md;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .portal .amount {
+    white-space: nowrap;
+  }
+
+  .portal-main {
+    flex: 1;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    /* Reserva el alto de las pestañas fijas para que no tapen el contenido ni el foco. */
+    padding: 16px 16px calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .portal-tabs {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(var(--portal-tabs, 4), minmax(0, 1fr));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-surface-container-lowest);
+    border-top: 1px solid var(--color-outline-variant);
+  }
+
+  .portal-tabs a {
+    @apply text-label-md;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 64px;
+    padding: 8px 4px;
+    color: var(--color-on-surface-variant);
+    text-decoration: none;
+    text-transform: none;
+  }
+
+  .portal-tabs a.active {
+    color: var(--color-primary);
+    font-weight: 600;
+    box-shadow: inset 0 3px 0 var(--color-primary);
+  }
+
+  .portal .btn {
+    min-height: 48px;
+  }
+
+  .portal .card {
+    padding: 1.5rem;
+  }
+
+  .portal .page-header {
+    flex-wrap: wrap;
+  }
+
+  .portal-section {
+    margin-top: 24px;
+  }
+
+  .portal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .portal-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .portal-back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 8px;
+  }
+
+  .portal-lines {
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .portal-lines li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-outline-variant);
+  }
+
+  .portal-totals {
+    margin: 0 0 8px;
+  }
+
+  .portal-totals div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 4px 0;
+  }
+
+  .portal-totals dd {
+    margin: 0;
+  }
+
+  .portal-total {
+    @apply text-title-md;
+  }
+
+  .portal-decision {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Las pestañas fijas no deben tapar el control que recibe el foco al tabular (WCAG 2.4.11). */
+  @media (max-width: 1023px) {
+    html:has(.portal) {
+      scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .portal-tabs {
+      position: static;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px;
+      border-top: 0;
+      border-bottom: 1px solid var(--color-outline-variant);
+    }
+
+    .portal-tabs a {
+      flex-direction: row;
+      min-height: 48px;
+      padding: 8px 16px;
+    }
+
+    .portal-tabs a.active {
+      box-shadow: inset 0 -3px 0 var(--color-primary);
+    }
+
+    .portal-main {
+      padding-bottom: 32px;
+    }
+  }
+
   /* ---------- Componentes ---------- */
 
   .card {
@@ -751,7 +954,8 @@
 
   /* Controles de 48px en autenticación y portal (DESIGN.md › Density). */
   .field-lg input,
-  .field-lg select {
+  .field-lg select,
+  .field-lg textarea {
     @apply text-body-lg;
     min-height: 48px;
     padding-inline: 14px;
