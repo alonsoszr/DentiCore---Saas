@@ -64,7 +64,8 @@ export function AppointmentNewPage() {
         })
       ).data.data,
     onSuccess: (appointment) => {
-      queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      // La agenda en caché se descarta: al volver muestra «Cargando…», no el día sin la cita nueva.
+      queryClient.resetQueries({ queryKey: ['appointments'] })
       navigate(appPath(`/agenda/${appointment.id}`))
     },
     onError: (error) => {
@@ -116,7 +117,7 @@ export function AppointmentNewPage() {
         ) : (
           <>
             <form
-              className="flex flex-wrap items-end gap-3"
+              className="search-form"
               onSubmit={(event) => {
                 event.preventDefault()
                 setTerm(search.trim())

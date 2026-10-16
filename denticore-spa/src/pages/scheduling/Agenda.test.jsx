@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { makeUser, mockApi, renderPage } from '../../test/utils'
+import { makeUser, mockApi, renderPage, testQueryClient } from '../../test/utils'
 import { AppointmentConfirmPage } from '../auth/AppointmentConfirmPage'
 import { AgendaPage } from './AgendaPage'
 import { AppointmentDetailPage } from './AppointmentDetailPage'
@@ -128,10 +128,15 @@ describe('AppointmentNewPage', () => {
       }
       return { status: 201, data: { data: appointment() } }
     })
+    // La agenda del día quedó en caché sin la cita nueva.
+    const queryClient = testQueryClient()
+    const agendaKey = ['appointments', 'clinica-demo', '2026-11-02', '2026-11-02', null]
+    queryClient.setQueryData(agendaKey, [])
     renderPage(<AppointmentNewPage />, {
       user: makeUser('receptionist'),
       route: '/c/clinica-demo/app/agenda/nueva',
       path: '/c/:slug/app/agenda/nueva',
+      queryClient,
     })
 
     await userEvent.type(screen.getByLabelText('Buscar paciente'), 'Lucía')
@@ -154,6 +159,7 @@ describe('AppointmentNewPage', () => {
       appointment_type_id: 't-1',
       starts_at: '2026-11-02T15:00:00+00:00',
     })
+    expect(queryClient.getQueryData(agendaKey)).toBeUndefined()
   })
 })
 
@@ -253,19 +259,34 @@ describe('AppointmentDetailPage', () => {
       }
       return { data: { data: appointment({ status: 'cancelada', cancel_reason: 'paciente' }) } }
     })
-    renderPage(<AppointmentDetailPage />, { ...route, user: makeUser('receptionist') })
+    const queryClient = testQueryClient()
+    const waitingKey = ['waiting-room', 'clinica-demo', null]
+    queryClient.setQueryData(waitingKey, [])
+    renderPage(<AppointmentDetailPage />, { ...route, user: makeUser('receptionist'), queryClient })
 
     await userEvent.click(await screen.findByRole('button', { name: 'Confirmar por teléfono' }))
     expect(await screen.findByText(/Confirmada por teléfono el 02\/11\/2026 09:05/)).toBeInTheDocument()
+
+    // «Volver» cierra el diálogo sin efectos y devuelve el foco a «Cancelar cita».
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar cita' }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Volver' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar cita' })).toHaveFocus()
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar cita' }))
     const dialog = screen.getByRole('dialog', { name: '¿Cancelar la cita?' })
     const confirm = within(dialog).getByRole('button', { name: 'Cancelar cita' })
     expect(confirm).toBeDisabled()
+    expect(confirm).toHaveClass('btn-danger')
+    expect(within(dialog).getByRole('button', { name: 'Volver' })).toBeInTheDocument()
     await userEvent.selectOptions(within(dialog).getByLabelText('Motivo'), 'paciente')
     await userEvent.click(confirm)
 
     expect(await screen.findByText('A pedido del paciente')).toBeInTheDocument()
+    expect(queryClient.getQueryData(waitingKey)).toBeUndefined()
+    // Cada dato va en su propio grupo dt/dd.
+    const details = document.querySelector('dl.details')
+    expect([...details.children].every((child) => child.tagName === 'DIV')).toBe(true)
     expect(body(calls, 'POST /appointments/a-1/cancel')).toEqual({ cancel_reason: 'paciente', cancel_detail: null })
   })
 

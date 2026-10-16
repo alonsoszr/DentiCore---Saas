@@ -40,8 +40,15 @@ export function mockApi(handler) {
   return calls
 }
 
-export function renderPage(ui, { user = null, route = '/', path = '*', auth = {} } = {}) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+/** Cliente de consultas sin reintentos; una prueba puede crearlo antes para sembrar la caché. */
+export function testQueryClient() {
+  return new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+}
+
+export function renderPage(
+  ui,
+  { user = null, route = '/', path = '*', auth = {}, queryClient = testQueryClient() } = {},
+) {
   const value = {
     user,
     isLoading: false,

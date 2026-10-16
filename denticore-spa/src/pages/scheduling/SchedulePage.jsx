@@ -55,7 +55,7 @@ function WorkScheduleSection({ dentist, canEdit }) {
       setAffected(null)
       setEditing(false)
       queryClient.invalidateQueries({ queryKey })
-      queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      queryClient.resetQueries({ queryKey: ['appointments'] })
     },
     onError: async (error) => {
       setConfirming(false)
@@ -289,7 +289,7 @@ function BlocksSection({ dentist, isAdmin }) {
     setForm(null)
     setAffected(null)
     queryClient.invalidateQueries({ queryKey })
-    queryClient.invalidateQueries({ queryKey: ['appointments'] })
+    queryClient.resetQueries({ queryKey: ['appointments'] })
   }
   const create = useMutation({
     mutationFn: async (decisions = []) =>
@@ -333,7 +333,7 @@ function BlocksSection({ dentist, isAdmin }) {
         {form === null && (
           <button
             type="button"
-            className="btn"
+            className="btn btn-secondary"
             onClick={() => {
               check.reset()
               create.reset()

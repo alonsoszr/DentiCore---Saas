@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
 import { useClinic } from '../../auth/useClinic'
+import { ActiveBadge } from '../../components/ActiveBadge'
 import { Field } from '../../components/Field'
-import { CheckIcon, XIcon } from '../../ui/icons'
 import { useAppointmentTypes } from './useScheduling'
 
 /** Color inicial de un tipo nuevo: el token secundario de DESIGN.md (los tipos guardan su propio color). */
@@ -192,10 +192,7 @@ export function AppointmentTypesPage() {
                   <td className="text-right tabular-nums">{type.default_duration_min} min</td>
                   <td>{type.portal_visible ? 'Visible' : 'No visible'}</td>
                   <td>
-                    <span className={type.is_active ? 'badge' : 'badge badge-muted'}>
-                      {type.is_active ? <CheckIcon className="size-4" /> : <XIcon className="size-4" />}
-                      {type.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
+                    <ActiveBadge active={type.is_active} />
                   </td>
                   <td>
                     <div className="flex flex-wrap gap-3">

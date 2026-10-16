@@ -22,6 +22,7 @@ function trapFocus(event, dialog) {
  * título, consecuencias y el contenido del formulario que la acción necesite. Escape o
  * «Cancelar» lo cierran sin efectos; el foco entra al diálogo al abrirse. Con `destructive` el botón
  * de confirmar usa el estilo destructivo; `confirmDisabled` lo bloquea mientras falten datos.
+ * `cancelLabel` cambia «Cancelar» cuando la acción misma es cancelar algo (por ejemplo, «Volver»).
  */
 export function ConfirmDialog({
   title,
@@ -33,6 +34,7 @@ export function ConfirmDialog({
   error = null,
   destructive = false,
   confirmDisabled = false,
+  cancelLabel = 'Cancelar',
 }) {
   const titleId = useId()
   const dialogRef = useRef(null)
@@ -77,7 +79,7 @@ export function ConfirmDialog({
             {confirmLabel}
           </button>
           <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={busy}>
-            Cancelar
+            {cancelLabel}
           </button>
         </div>
       </div>

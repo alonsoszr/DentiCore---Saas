@@ -328,6 +328,7 @@ describe('PlanDetailPage', () => {
     expect(within(dialog).getByText('1 de 3')).toBeInTheDocument()
 
     // Sin motivo no se puede confirmar (RF-129); el botón es destructivo y distinto de «Cancelar».
+    expect(within(dialog).getByRole('button', { name: 'Volver' })).toBeInTheDocument()
     const confirm = within(dialog).getByRole('button', { name: 'Confirmar cancelación' })
     expect(confirm).toBeDisabled()
     expect(confirm).toHaveClass('btn-danger')
