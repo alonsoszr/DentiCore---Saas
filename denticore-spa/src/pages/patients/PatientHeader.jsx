@@ -3,7 +3,8 @@ import { PatientConsentBadge } from './ConsentStatusBadge'
 
 /**
  * Cabecera fija del paciente en toda pantalla clínica (RNF-146): nombre, edad, número de HC,
- * estado del consentimiento y aviso permanente de alergias (RF-064, RNF-149).
+ * estado del consentimiento y aviso permanente de alergias (RF-064, RNF-149). `headingLevel` es 1
+ * (el paciente es el título de la página) o 2 (bajo el título de otra página, como la atención).
  */
 export function PatientHeader({ patient, headingLevel = 1 }) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2'

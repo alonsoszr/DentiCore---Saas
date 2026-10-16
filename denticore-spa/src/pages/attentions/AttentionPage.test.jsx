@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { makeUser, mockApi, renderPage } from '../../test/utils'
@@ -182,6 +182,48 @@ describe('AttentionPage', () => {
     expect(await screen.findByText('Corrección registrada.')).toBeInTheDocument()
   })
 
+  it('preloads the original finding and its span when replacing an entry', async () => {
+    const bridge = {
+      code: 'PUENTE',
+      name: 'Prótesis dental fija',
+      acronym: 'PPF',
+      level: 'tramo',
+      dentition: 'ambas',
+      states: [{ code: 'BUENO', name: 'Buen estado', color: 'azul', acronym: null }],
+    }
+    const span = {
+      ...entry,
+      tooth_end: 37,
+      surfaces: [],
+      finding: { code: 'PUENTE', name: 'Prótesis dental fija', acronym: 'PPF' },
+      state: { code: 'BUENO', name: 'Buen estado', acronym: null },
+      color: 'azul',
+    }
+    const calls = api(openAttention, {
+      'GET /finding-catalog': () => ({ data: { data: [...catalog, bridge] } }),
+      'GET /patients/p-1/teeth/36/history': () => ({ data: { data: [span] } }),
+    })
+    renderPage(<AttentionPage />, ROUTE)
+
+    await userEvent.click(await screen.findByRole('button', { name: /^Pieza 36/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Corregir la entrada del 06/10/2026 10:10' }))
+    const dialog = screen.getByRole('dialog', { name: 'Corregir la entrada' })
+    expect(within(dialog).getByLabelText('Pieza final')).toHaveValue(37)
+    await userEvent.type(within(dialog).getByLabelText('Motivo de la corrección'), 'Estado mal registrado')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Confirmar corrección' }))
+
+    expect(await screen.findByText('Corrección registrada.')).toBeInTheDocument()
+    expect(body(calls, 'POST /odontogram-entries/e-1/corrections')).toEqual({
+      kind: 'reemplazo',
+      reason: 'Estado mal registrado',
+      tooth: 36,
+      tooth_end: 37,
+      surfaces: [],
+      finding_code: 'PUENTE',
+      state_code: 'BUENO',
+    })
+  })
+
   it('warns what is missing before opening the closing confirmation (RN-77)', async () => {
     const calls = api()
     renderPage(<AttentionPage />, ROUTE)
@@ -193,6 +235,34 @@ describe('AttentionPage', () => {
     expect(within(missing).getByText('Registre el motivo de consulta.')).toBeInTheDocument()
     expect(within(missing).getByText('Registre al menos un diagnóstico CIE-10.')).toBeInTheDocument()
     expect(calls.some((call) => call.url === '/attentions/a-1/close')).toBe(false)
+  })
+
+  it('updates the RN-77 warning as the missing data is recorded', async () => {
+    let current = openAttention
+    api(openAttention, {
+      'GET /attentions/a-1': () => ({ data: { data: current } }),
+      'POST /attentions/a-1/diagnoses': () => {
+        current = {
+          ...current,
+          diagnoses: [{ id: 'd-1', code: 'K02.1', description: 'Caries de la dentina', type: 'definitivo' }],
+        }
+        return { status: 201, data: { data: {} } }
+      },
+    })
+    renderPage(<AttentionPage />, ROUTE)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar atención' }))
+    const missing = screen.getByText('No se puede cerrar la atención').closest('[role="alert"]')
+    expect(within(missing).getByText('Registre al menos un diagnóstico CIE-10.')).toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText('Buscar diagnóstico CIE-10'), 'caries')
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar' }))
+    await userEvent.selectOptions(await screen.findByLabelText('Diagnóstico'), 'K02.1')
+    await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'definitivo')
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar diagnóstico' }))
+
+    await waitFor(() => expect(screen.queryByText('Registre al menos un diagnóstico CIE-10.')).not.toBeInTheDocument())
+    expect(screen.getByText('Registre el motivo de consulta.')).toBeInTheDocument()
   })
 
   it('closes the attention only after confirming and shows what the API rejects (RN-77)', async () => {

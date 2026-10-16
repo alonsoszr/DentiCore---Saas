@@ -287,6 +287,7 @@ export function FindingsWorkspace({ attention, patient }) {
               surfaces: entry.surfaces ?? [],
               finding_code: entry.finding?.code ?? '',
               state_code: entry.state?.code ?? '',
+              tooth_end: entry.tooth_end ? String(entry.tooth_end) : '',
             })
             setCorrecting(entry)
           }}
