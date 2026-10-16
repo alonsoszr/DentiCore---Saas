@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AlertCircleIcon } from '../ui/icons'
 import { PURPOSES } from './consentPurposes'
 
 /**
@@ -33,7 +34,7 @@ export function ConsentForm({
       <fieldset className="consent-purposes">
         <legend className="form-section">Finalidades que otorga</legend>
         {offered.map((purpose) => (
-          <div key={purpose.field}>
+          <div key={purpose.field} className="field">
             <label className="checkbox">
               <input
                 type="checkbox"
@@ -47,6 +48,7 @@ export function ConsentForm({
             </label>
             {errors[purpose.field] && (
               <span className="error" role="alert">
+                <AlertCircleIcon className="size-4 shrink-0" />
                 {errors[purpose.field]}
               </span>
             )}

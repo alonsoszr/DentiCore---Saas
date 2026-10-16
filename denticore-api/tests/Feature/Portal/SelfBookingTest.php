@@ -90,3 +90,22 @@ it('forbids self booking when the clinic has not enabled it', function () {
     portalBook($clinic, limaAt('14:00'))->assertForbidden();
     $this->getJson('/api/v1/portal/availability?from=2026-11-02&to=2026-11-02&appointment_type_id='.$clinic['type']->uuid)->assertForbidden();
 })->group('RF-148', 'RF-026');
+
+it('lists the active portal appointment types when no type is given', function () {
+    $clinic = PortalFixtures::bookingClinic();
+    TenantContext::run($clinic['tenant'], fn () => $clinic['type']->replicate()->forceFill([
+        'uuid' => (string) Str::uuid(), 'name' => 'Limpieza', 'is_active' => false,
+    ])->save());
+    $this->actingWithToken($clinic['user']);
+
+    $this->getJson('/api/v1/portal/availability')
+        ->assertOk()
+        ->assertJsonPath('data', [])
+        ->assertJsonCount(1, 'types')
+        ->assertJsonPath('types.0.id', $clinic['type']->uuid)
+        ->assertJsonPath('types.0.name', 'Control')
+        ->assertJsonPath('types.0.duration_min', 30);
+    $this->getJson('/api/v1/portal/availability?'.http_build_query([
+        'appointment_type_id' => $clinic['type']->uuid,
+    ]))->assertUnprocessable()->assertJsonValidationErrors(['from', 'to']);
+})->group('CUS-46', 'RF-148');
