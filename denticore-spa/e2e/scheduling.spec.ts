@@ -118,7 +118,7 @@ test('books an appointment, confirms it by email, checks in and opens the attent
   const dialog = page.getByRole('dialog', { name: '¿Cancelar la cita?' })
   await expect(dialog.getByRole('button', { name: 'Cancelar cita' })).toBeDisabled()
   await expectNoAxeViolations(page)
-  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Volver' }).click()
   await expect(dialog).toBeHidden()
 
   // Check-in (CUS-50): abre la atención y el paciente pasa a la sala de espera.
