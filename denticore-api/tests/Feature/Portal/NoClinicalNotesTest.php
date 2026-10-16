@@ -49,6 +49,7 @@ it('serves no clinical note keys from the portal routes', function () {
         "/api/v1/portal/patients/{$patient->uuid}/budgets",
         "/api/v1/portal/budgets/{$budget}",
         "/api/v1/portal/budgets/{$budget}/pdf",
+        "/api/v1/portal/patients/{$patient->uuid}/appointments",
     ];
 
     foreach ($uris as $uri) {
