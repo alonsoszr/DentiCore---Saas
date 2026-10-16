@@ -604,6 +604,7 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $portalDay = now('America/Lima')->addDays(7)->next('Monday');
     $availability = ['appointment_type_id' => $portalClinic['type']->uuid, 'from' => $portalDay->toDateString(), 'to' => $portalDay->toDateString()];
     $check($this->getJson('/api/v1/portal/availability?'.http_build_query($availability)), 'GET', '/portal/availability');
+    $check($this->getJson('/api/v1/portal/availability'), 'GET', '/portal/availability');
     $check($this->getJson('/api/v1/portal/availability?'.http_build_query([...$availability, 'appointment_type_id' => $portalClinic['internalType']->uuid])), 'GET', '/portal/availability');
     $portalAppointments = "/api/v1/portal/patients/{$portalClinic['patient']->uuid}/appointments";
     $portalBooking = ['appointment_type_id' => $portalClinic['type']->uuid, 'dentist_id' => $portalClinic['dentist']->uuid, 'starts_at' => $portalDay->setTime(10, 0)->toIso8601String()];

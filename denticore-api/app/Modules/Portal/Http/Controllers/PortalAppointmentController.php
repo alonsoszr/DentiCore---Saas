@@ -51,19 +51,31 @@ class PortalAppointmentController extends Controller
     }
 
     /**
-     * CUS-46: inicios libres de un tipo visible en el portal, desde 2 horas después (RN-48).
+     * CUS-46: los tipos activos visibles en el portal (`types`) y, con un tipo y un rango de fechas,
+     * sus inicios libres desde 2 horas después (RN-48). El SDD no define una ruta para listar los
+     * tipos del portal: sin `appointment_type_id` esta ruta solo responde `types` (vacío resuelto
+     * de MS-06, decisión del usuario).
      */
     #[ProblemResponse(422, 'Tipo no disponible en el portal o rango de fechas inválido (RN-48)')]
     public function availability(Request $request, AvailabilityCalculator $calculator, PortalSubjectResolver $subjects): JsonResponse
     {
         $today = ClinicClock::for(TenantContext::tenantOrFail())->now()->toDateString();
         $data = $request->validate([
-            'appointment_type_id' => ['required', 'uuid'],
+            'appointment_type_id' => ['sometimes', 'uuid'],
             'dentist_id' => ['sometimes', 'uuid'],
             'patient_id' => ['sometimes', 'uuid'],
-            'from' => ['required', 'date_format:Y-m-d', "after_or_equal:{$today}"],
-            'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from', 'before_or_equal:'.CarbonImmutable::parse($today)->addDays(30)->toDateString()],
+            'from' => ['required_with:appointment_type_id', 'date_format:Y-m-d', "after_or_equal:{$today}"],
+            'to' => ['required_with:appointment_type_id', 'date_format:Y-m-d', 'after_or_equal:from', 'before_or_equal:'.CarbonImmutable::parse($today)->addDays(30)->toDateString()],
         ], [], ['appointment_type_id' => 'tipo de cita', 'dentist_id' => 'odontólogo', 'patient_id' => 'paciente', 'from' => 'desde', 'to' => 'hasta']);
+
+        $types = AppointmentType::query()->where('is_active', true)->where('portal_visible', true)->orderBy('name')->get()
+            ->map(fn (AppointmentType $type) => ['id' => $type->uuid, 'name' => $type->name, 'duration_min' => $type->default_duration_min])
+            ->values()
+            ->all();
+
+        if (! isset($data['appointment_type_id'])) {
+            return response()->json(['data' => [], 'types' => $types]);
+        }
 
         $type = $this->portalType($data['appointment_type_id']);
         /** @var User $user */
@@ -85,6 +97,7 @@ class PortalAppointmentController extends Controller
                 $patientId,
                 portal: true,
             ),
+            'types' => $types,
         ]);
     }
 

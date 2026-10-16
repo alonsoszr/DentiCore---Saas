@@ -1,4 +1,5 @@
 import { formatDateTime } from '../../ui/format'
+import { AlertTriangleIcon, SparklesIcon } from '../../ui/icons'
 import { FINDING_COLORS, SURFACE_NAMES, acronymOf } from './teeth'
 
 const ENTRY_TYPES = { inicial: 'Inicial', evolucion: 'Evolución', correccion: 'Corrección' }
@@ -10,9 +11,10 @@ const CORRECTION_KINDS = { anulacion: 'anulación', reemplazo: 'reemplazo' }
  * hallazgo, sigla y color, superficies, tipo, origen, autor con su COP y fecha. La entrada
  * corregida se muestra tachada, con la etiqueta «Corregida», el motivo y un enlace a su
  * corrección; los datos originales se conservan. Con `onCorrect`, cada entrada aún no corregida
- * ofrece «Corregir» (CUS-23).
+ * ofrece «Corregir» (CUS-23). `size="lg"` usa el texto de 16 px del portal.
  */
-export function ToothHistory({ tooth, entries, onCorrect }) {
+export function ToothHistory({ tooth, entries, onCorrect, size }) {
+  const text = size === 'lg' ? 'text-body-lg' : 'text-body-md'
   const byId = new Map(entries.map((entry) => [entry.id, entry]))
 
   return (
@@ -20,7 +22,7 @@ export function ToothHistory({ tooth, entries, onCorrect }) {
       <h3 id={`tooth-history-${tooth}`}>Historial de la pieza {tooth}</h3>
 
       {entries.length === 0 ? (
-        <p className="text-body-md text-on-surface-variant">La pieza {tooth} no tiene registros.</p>
+        <p className={`${text} text-on-surface-variant`}>La pieza {tooth} no tiene registros.</p>
       ) : (
         <ol className="m-0 flex list-none flex-col gap-2 p-0">
           {entries.map((entry) => {
@@ -36,7 +38,7 @@ export function ToothHistory({ tooth, entries, onCorrect }) {
               <li
                 key={entry.id}
                 id={`entry-${entry.id}`}
-                className="rounded-lg border border-outline-variant bg-surface-bright p-3 text-body-md"
+                className={`rounded-lg border border-outline-variant bg-surface-bright p-3 ${text}`}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   {acronym && entry.color && (
@@ -46,12 +48,16 @@ export function ToothHistory({ tooth, entries, onCorrect }) {
                     {entry.finding ? `${entry.finding.name} · ${entry.state?.name ?? ''}` : 'Anulación del hallazgo'}
                   </span>
                   {corrected && (
-                    <span className="rounded-full bg-warning-container px-2 text-label-sm text-on-warning-container">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-warning-container px-2 text-label-sm text-on-warning-container">
+                      <AlertTriangleIcon className="size-3.5" />
                       Corregida
                     </span>
                   )}
                   {entry.origin === 'ia' && (
-                    <span className="rounded-full bg-ai-origin-container px-2 text-label-sm text-ai-origin">IA</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-ai-origin-container px-2 text-label-sm text-ai-origin">
+                      <SparklesIcon className="size-3.5" />
+                      IA
+                    </span>
                   )}
                 </div>
 

@@ -7714,7 +7714,7 @@
         "/portal/availability": {
             "get": {
                 "operationId": "portalAppointment.availability",
-                "summary": "CUS-46: inicios libres de un tipo visible en el portal, desde 2 horas despu\u00e9s (RN-48)",
+                "summary": "CUS-46: los tipos activos visibles en el portal (`types`) y, con un tipo y un rango de fechas,\nsus inicios libres desde 2 horas despu\u00e9s (RN-48). El SDD no define una ruta para listar los\ntipos del portal: sin `appointment_type_id` esta ruta solo responde `types` (vac\u00edo resuelto\nde MS-06, decisi\u00f3n del usuario)",
                 "tags": [
                     "PortalAppointment"
                 ],
@@ -7722,7 +7722,6 @@
                     {
                         "name": "appointment_type_id",
                         "in": "query",
-                        "required": true,
                         "schema": {
                             "type": "string",
                             "format": "uuid"
@@ -7747,7 +7746,6 @@
                     {
                         "name": "from",
                         "in": "query",
-                        "required": true,
                         "schema": {
                             "type": "string",
                             "format": "date"
@@ -7756,7 +7754,6 @@
                     {
                         "name": "to",
                         "in": "query",
-                        "required": true,
                         "schema": {
                             "type": "string",
                             "format": "date"
@@ -7769,14 +7766,48 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "dentist": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "dentist": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "name"
+                                                                ]
+                                                            },
+                                                            "duration_min": {
+                                                                "type": "integer"
+                                                            },
+                                                            "slots": {
+                                                                "type": "array",
+                                                                "items": {}
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "dentist",
+                                                            "duration_min",
+                                                            "slots"
+                                                        ]
+                                                    }
+                                                },
+                                                "types": {
+                                                    "type": "array",
+                                                    "items": {
                                                         "type": "object",
                                                         "properties": {
                                                             "id": {
@@ -7784,31 +7815,63 @@
                                                             },
                                                             "name": {
                                                                 "type": "string"
+                                                            },
+                                                            "duration_min": {
+                                                                "type": "integer"
                                                             }
                                                         },
                                                         "required": [
                                                             "id",
-                                                            "name"
+                                                            "name",
+                                                            "duration_min"
                                                         ]
-                                                    },
-                                                    "duration_min": {
-                                                        "type": "integer"
-                                                    },
-                                                    "slots": {
-                                                        "type": "array",
-                                                        "items": {}
                                                     }
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "types"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0
                                                 },
-                                                "required": [
-                                                    "dentist",
-                                                    "duration_min",
-                                                    "slots"
-                                                ]
-                                            }
+                                                "types": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "duration_min": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "name",
+                                                            "duration_min"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "types"
+                                            ]
                                         }
-                                    },
-                                    "required": [
-                                        "data"
                                     ]
                                 }
                             }

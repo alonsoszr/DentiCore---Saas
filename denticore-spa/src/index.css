@@ -668,6 +668,10 @@
 
   .portal-tabs a {
     @apply text-label-md;
+    /* Con cuatro pestañas a 360 px o con zoom, la etiqueta se parte en lugar de desbordar. */
+    text-align: center;
+    overflow-wrap: anywhere;
+    hyphens: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -692,6 +696,11 @@
 
   .portal .card {
     padding: 1.5rem;
+  }
+
+  /* Casillas del portal: la fila completa es el objetivo táctil de 44 px. */
+  .portal .checkbox {
+    min-height: 44px;
   }
 
   .portal .page-header {

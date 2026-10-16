@@ -16,15 +16,24 @@ function availabilityError(error) {
  * Horarios libres de un día agrupados por odontólogo (CUS-46; RF-146; SRS §11.13 pasos 1 a 3):
  * inicios cada 15 minutos sin cruces con bloqueos ni con citas activas del odontólogo o del
  * paciente. Con `chooseDentist` se elige un odontólogo o «Cualquiera». Cada inicio es un botón
- * con `aria-pressed`; el elegido además cambia de relleno, no solo de color.
+ * con `aria-pressed`; el elegido además cambia de relleno, no solo de color. El portal usa
+ * `endpoint="/portal/availability"` (solo tipos visibles en el portal, desde 2 horas después) y
+ * `fieldSize="lg"` (controles de 48 px).
  */
-export function SlotPicker({ params, selected, onSelect, chooseDentist = false }) {
+export function SlotPicker({
+  params,
+  selected,
+  onSelect,
+  chooseDentist = false,
+  endpoint = '/availability',
+  fieldSize,
+}) {
   const { slug } = useClinic()
   const timeZone = useTimeZone()
   const [dentistId, setDentistId] = useState('')
   const availability = useQuery({
-    queryKey: ['availability', slug, params],
-    queryFn: async () => (await apiClient.get('/availability', { params })).data.data,
+    queryKey: ['availability', slug, endpoint, params],
+    queryFn: async () => (await apiClient.get(endpoint, { params })).data.data,
     enabled: Boolean(params),
   })
 
@@ -50,7 +59,7 @@ export function SlotPicker({ params, selected, onSelect, chooseDentist = false }
   return (
     <div className="flex flex-col gap-4">
       {chooseDentist && all.length > 1 && (
-        <Field label="Odontólogo" name="slot-dentist">
+        <Field label="Odontólogo" name="slot-dentist" size={fieldSize}>
           <select id="slot-dentist" value={dentistId} onChange={(event) => setDentistId(event.target.value)}>
             <option value="">Cualquiera</option>
             {all.map((group) => (
