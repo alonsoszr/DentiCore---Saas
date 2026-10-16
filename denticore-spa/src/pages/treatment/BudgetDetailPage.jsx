@@ -19,10 +19,10 @@ import {
   DECISION_ROLES,
   REJECTION_REASONS,
   SIGNERS,
-  budgetBadge,
   siteText,
 } from './labels'
 import { useFocusOnMount } from './useTreatment'
+import { BudgetStatusBadge } from './TreatmentStatusBadges'
 
 const PDF_STATUS = {
   pendiente: 'PDF en generación…',
@@ -366,32 +366,36 @@ export function BudgetDetailPage() {
       <div className="card">
         <div className="page-header">
           <h2 className="m-0">{data.number ? `Presupuesto ${data.number}` : 'Presupuesto en borrador'}</h2>
-          <span className={budgetBadge(data.status)}>{BUDGET_STATUS[data.status]}</span>
+          <BudgetStatusBadge status={data.status} />
         </div>
         <dl className="details">
           {data.issued_at && (
             <>
-              <dt>Fecha de emisión</dt>
-              <dd>{formatDate(data.issued_at)}</dd>
-              <dt>Vence</dt>
-              <dd>{formatDate(data.expires_at)} a las 23:59</dd>
+              <div>
+                <dt>Fecha de emisión</dt>
+                <dd>{formatDate(data.issued_at)}</dd>
+              </div>
+              <div>
+                <dt>Vence</dt>
+                <dd>{formatDate(data.expires_at)} a las 23:59</dd>
+              </div>
             </>
           )}
           {data.dentist && (
-            <>
+            <div>
               <dt>Odontólogo</dt>
               <dd>
                 {data.dentist.name} · COP {data.dentist.cop}
               </dd>
-            </>
+            </div>
           )}
           {data.corrects_budget_id && (
-            <>
+            <div>
               <dt>Corrige a</dt>
               <dd>
                 <Link to={appPath(`/presupuestos/${data.corrects_budget_id}`)}>el presupuesto anterior</Link>
               </dd>
-            </>
+            </div>
           )}
         </dl>
 
@@ -472,18 +476,28 @@ export function BudgetDetailPage() {
         )}
 
         <dl className="details tabular-nums">
-          <dt>Suma de subtotales</dt>
-          <dd>{formatCurrency(data.subtotal)}</dd>
-          <dt>Descuentos</dt>
-          <dd>{formatCurrency(data.discount_total)}</dd>
-          <dt>Base imponible</dt>
-          <dd>{formatCurrency(data.base_amount)}</dd>
-          <dt>IGV</dt>
-          <dd>{formatCurrency(data.igv_amount)}</dd>
-          <dt>Total</dt>
-          <dd>
-            <strong>{formatCurrency(data.total)}</strong>
-          </dd>
+          <div>
+            <dt>Suma de subtotales</dt>
+            <dd>{formatCurrency(data.subtotal)}</dd>
+          </div>
+          <div>
+            <dt>Descuentos</dt>
+            <dd>{formatCurrency(data.discount_total)}</dd>
+          </div>
+          <div>
+            <dt>Base imponible</dt>
+            <dd>{formatCurrency(data.base_amount)}</dd>
+          </div>
+          <div>
+            <dt>IGV</dt>
+            <dd>{formatCurrency(data.igv_amount)}</dd>
+          </div>
+          <div>
+            <dt>Total</dt>
+            <dd>
+              <strong>{formatCurrency(data.total)}</strong>
+            </dd>
+          </div>
         </dl>
         <p className="muted">
           {data.prices_include_igv ? 'Los precios incluyen IGV.' : 'Los precios no incluyen IGV.'}
@@ -558,24 +572,32 @@ export function BudgetDetailPage() {
         <section className="card" aria-labelledby="decided-title">
           <h2 id="decided-title">Decisión registrada</h2>
           <dl className="details">
-            <dt>Decisión</dt>
-            <dd>{BUDGET_STATUS[data.status]}</dd>
-            <dt>Canal</dt>
-            <dd>{DECISION_CHANNELS[data.decision.channel] ?? data.decision.channel}</dd>
-            <dt>Decidió</dt>
-            <dd>{SIGNERS[data.decision.signer]}</dd>
-            <dt>Registrado por</dt>
-            <dd>
-              {data.decision.by?.name ?? '—'} · {formatDateTime(data.decision.decided_at)}
-            </dd>
+            <div>
+              <dt>Decisión</dt>
+              <dd>{BUDGET_STATUS[data.status]}</dd>
+            </div>
+            <div>
+              <dt>Canal</dt>
+              <dd>{DECISION_CHANNELS[data.decision.channel] ?? data.decision.channel}</dd>
+            </div>
+            <div>
+              <dt>Decidió</dt>
+              <dd>{SIGNERS[data.decision.signer]}</dd>
+            </div>
+            <div>
+              <dt>Registrado por</dt>
+              <dd>
+                {data.decision.by?.name ?? '—'} · {formatDateTime(data.decision.decided_at)}
+              </dd>
+            </div>
             {data.decision.rejection_reason && (
-              <>
+              <div>
                 <dt>Motivo</dt>
                 <dd>
                   {REJECTION_REASONS[data.decision.rejection_reason]}
                   {data.decision.rejection_detail ? ` · ${data.decision.rejection_detail}` : ''}
                 </dd>
-              </>
+              </div>
             )}
           </dl>
         </section>

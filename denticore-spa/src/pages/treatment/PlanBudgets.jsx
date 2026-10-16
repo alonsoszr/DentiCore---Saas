@@ -5,7 +5,8 @@ import { generalError } from '../../api/errors'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
 import { formatCurrency, formatDate } from '../../ui/format'
-import { BUDGET_ROLES, BUDGET_STATUS, budgetBadge } from './labels'
+import { BUDGET_ROLES } from './labels'
+import { BudgetStatusBadge } from './TreatmentStatusBadges'
 
 /**
  * Presupuestos del plan (CUS-35, CUS-36; RF-121): número, estado, total y vencimiento. Desde un plan
@@ -66,7 +67,7 @@ export function PlanBudgets({ plan, needsConsent }) {
                     <Link to={appPath(`/presupuestos/${budget.id}`)}>{budget.number ?? 'Borrador sin número'}</Link>
                   </td>
                   <td>
-                    <span className={budgetBadge(budget.status)}>{BUDGET_STATUS[budget.status]}</span>
+                    <BudgetStatusBadge status={budget.status} />
                   </td>
                   <td className="text-right tabular-nums">{formatCurrency(budget.total)}</td>
                   <td>{budget.expires_at ? formatDate(budget.expires_at) : '—'}</td>

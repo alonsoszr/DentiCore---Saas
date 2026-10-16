@@ -53,12 +53,14 @@ export function PendingFindingsPage({ patient }) {
     <div className="card">
       <div className="page-header">
         <h2 className="m-0">Hallazgos pendientes de decisión</h2>
-        <button type="button" className="btn" onClick={createItems} disabled={selected.length === 0}>
-          Crear ítems del plan ({selected.length})
-        </button>
+        {entries.length > 0 && (
+          <button type="button" className="btn" onClick={createItems} disabled={selected.length === 0}>
+            Crear ítems del plan ({selected.length})
+          </button>
+        )}
       </div>
       <p className="muted">
-        Todo hallazgo rojo vigente debe quedar en un ítem del plan o marcado «no tratar» con su motivo (RN-27).
+        Todo hallazgo rojo vigente debe quedar en un ítem del plan o marcado «no tratar» con su motivo.
       </p>
 
       {pending.isLoading && <div className="empty">Cargando…</div>}

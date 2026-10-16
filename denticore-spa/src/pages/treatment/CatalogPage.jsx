@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
 import { useClinic } from '../../auth/useClinic'
+import { ActiveBadge } from '../../components/ActiveBadge'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field } from '../../components/Field'
 import { formatCurrency } from '../../ui/format'
@@ -259,7 +260,7 @@ export function CatalogPage() {
                 <th>Código</th>
                 <th>Procedimiento</th>
                 <th>Categoría</th>
-                <th>Precio</th>
+                <th className="text-right">Precio</th>
                 <th>Requiere</th>
                 <th>Hallazgo resultante</th>
                 <th>Estado</th>
@@ -271,23 +272,21 @@ export function CatalogPage() {
             <tbody>
               {procedures.map((procedure) => (
                 <tr key={procedure.id}>
-                  <td className="mono">{procedure.code}</td>
-                  <td>{procedure.name}</td>
+                  <td>{procedure.code}</td>
+                  <td className="whitespace-normal">{procedure.name}</td>
                   <td>{procedure.category ?? '—'}</td>
-                  <td>{formatCurrency(procedure.price)}</td>
-                  <td>{requirementsText(procedure)}</td>
-                  <td>
+                  <td className="text-right tabular-nums">{formatCurrency(procedure.price)}</td>
+                  <td className="whitespace-normal">{requirementsText(procedure)}</td>
+                  <td className="whitespace-normal">
                     {procedure.resulting_finding
                       ? `${procedure.resulting_finding.name} · ${procedure.resulting_state?.name ?? ''}`
                       : '—'}
                   </td>
                   <td>
-                    <span className={procedure.is_active ? 'badge' : 'badge badge-muted'}>
-                      {procedure.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
+                    <ActiveBadge active={procedure.is_active} />
                   </td>
                   <td>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
                       <button type="button" className="btn-link" onClick={() => open(procedure)}>
                         Editar
                       </button>

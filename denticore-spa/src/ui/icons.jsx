@@ -184,3 +184,44 @@ export function LockIcon(props) {
     </Icon>
   )
 }
+
+export function FileTextIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M10 9H8M16 13H8M16 17H8" />
+    </Icon>
+  )
+}
+
+export function FileCheckIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="m9 15 2 2 4-4" />
+    </Icon>
+  )
+}
+
+export function FileXIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="m14.5 12.5-5 5M9.5 12.5l5 5" />
+    </Icon>
+  )
+}
+
+export function FileClockIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <circle cx="8" cy="16" r="6" />
+      <path d="M9.5 17.5 8 16.25V14" />
+    </Icon>
+  )
+}
