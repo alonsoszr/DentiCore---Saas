@@ -22,6 +22,7 @@ use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Tests\Support\PortalFixtures;
 
 /**
  * @return list<array{method: string, uri: string, cus: string, denied: list<string>}>
@@ -33,7 +34,10 @@ function authMatrix(): array
 
 dataset('forbidden cells', function () {
     foreach (authMatrix() as $route) {
-        foreach ($route['denied'] as $role) {
+        // REP (representante, SDD §3.4): las mismas capacidades que PA, limitadas a sus representados.
+        $denied = in_array('patient', $route['denied'], true) ? [...$route['denied'], 'representative'] : $route['denied'];
+
+        foreach ($denied as $role) {
             yield "{$route['cus']} {$route['method']} {$route['uri']} as {$role}" => [$route['method'], $route['uri'], $role];
         }
     }
@@ -41,7 +45,9 @@ dataset('forbidden cells', function () {
 
 it('denies every forbidden cell of the Must use cases', function (string $method, string $uri, string $role) {
     $tenant = Tenant::factory()->create();
-    $this->actingAsRole($role, $tenant);
+    $role === 'representative'
+        ? $this->actingWithToken(PortalFixtures::representative($tenant, PortalFixtures::minor($tenant)))
+        : $this->actingAsRole($role, $tenant);
 
     // Parámetros de ruta de la propia clínica del usuario (o de una clínica cualquiera para SA).
     $bindings = [
@@ -137,5 +143,17 @@ it('covers the use cases of MS-04 in AUTH_MATRIX', function () {
     // appointments:send-reminders).
     foreach (['CUS-44', 'CUS-45', 'CUS-46', 'CUS-47', 'CUS-48', 'CUS-49', 'CUS-50', 'CUS-53', 'CUS-77'] as $cus) {
         expect($covered)->toContain($cus);
+    }
+})->group('T-019', 'RN-06', 'RF-004');
+
+it('covers the portal use cases of MS-06 in AUTH_MATRIX and opens them only to PA and REP', function () {
+    $portal = collect(authMatrix())->filter(fn ($route) => str_starts_with($route['uri'], 'api/v1/portal/'));
+
+    foreach (['CUS-17', 'CUS-24', 'CUS-36', 'CUS-37', 'CUS-46', 'CUS-47', 'CUS-48', 'CUS-49', 'CUS-77'] as $cus) {
+        expect($portal->pluck('cus'))->toContain($cus);
+    }
+
+    foreach ($portal as $route) {
+        expect($route['denied'])->toEqualCanonicalizing(['super_admin', 'clinic_admin', 'dentist', 'receptionist']);
     }
 })->group('T-019', 'RN-06', 'RF-004');
