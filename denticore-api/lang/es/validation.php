@@ -5,6 +5,10 @@
  * la API (tests/Unit/ValidationMessagesTest.php lo verifica). Una regla nueva sin traducción caería
  * al inglés (APP_FALLBACK_LOCALE=en) y la prueba falla.
  */
+
+/** Mensajes de una regla con tamaño según el tipo del valor: arreglo, archivo, número o texto. */
+$bySize = fn (string $array, string $file, string $numeric, string $string): array => compact('array', 'file', 'numeric', 'string');
+
 return [
     'accepted' => 'Debes aceptar el campo :attribute.',
     'after' => 'El campo :attribute debe ser una fecha posterior a :date.',
@@ -12,12 +16,7 @@ return [
     'alpha_dash' => 'El campo :attribute solo puede contener letras, números, guiones y guiones bajos.',
     'array' => 'El campo :attribute debe ser un conjunto de datos.',
     'before_or_equal' => 'El campo :attribute debe ser una fecha anterior o igual a :date.',
-    'between' => [
-        'array' => 'El campo :attribute debe tener entre :min y :max elementos.',
-        'file' => 'El archivo :attribute debe pesar entre :min y :max kilobytes.',
-        'numeric' => 'El campo :attribute debe estar entre :min y :max.',
-        'string' => 'El campo :attribute debe tener entre :min y :max caracteres.',
-    ],
+    'between' => $bySize('El campo :attribute debe tener entre :min y :max elementos.', 'El archivo :attribute debe pesar entre :min y :max kilobytes.', 'El campo :attribute debe estar entre :min y :max.', 'El campo :attribute debe tener entre :min y :max caracteres.'),
     'boolean' => 'El campo :attribute debe ser verdadero o falso.',
     'confirmed' => 'La confirmación de :attribute no coincide.',
     'date' => 'El campo :attribute no es una fecha válida.',
@@ -28,48 +27,18 @@ return [
     'exists' => 'El valor de :attribute no es válido.',
     'extensions' => 'El archivo :attribute debe tener una de estas extensiones: :values.',
     'file' => 'El campo :attribute debe ser un archivo.',
-    'gt' => [
-        'array' => 'El campo :attribute debe tener más de :value elementos.',
-        'file' => 'El archivo :attribute debe pesar más de :value kilobytes.',
-        'numeric' => 'El campo :attribute debe ser mayor que :value.',
-        'string' => 'El campo :attribute debe tener más de :value caracteres.',
-    ],
-    'gte' => [
-        'array' => 'El campo :attribute debe tener :value elementos o más.',
-        'file' => 'El archivo :attribute debe pesar :value kilobytes o más.',
-        'numeric' => 'El campo :attribute debe ser mayor o igual que :value.',
-        'string' => 'El campo :attribute debe tener :value caracteres o más.',
-    ],
+    'gt' => $bySize('El campo :attribute debe tener más de :value elementos.', 'El archivo :attribute debe pesar más de :value kilobytes.', 'El campo :attribute debe ser mayor que :value.', 'El campo :attribute debe tener más de :value caracteres.'),
+    'gte' => $bySize('El campo :attribute debe tener :value elementos o más.', 'El archivo :attribute debe pesar :value kilobytes o más.', 'El campo :attribute debe ser mayor o igual que :value.', 'El campo :attribute debe tener :value caracteres o más.'),
     'in' => 'El valor de :attribute no es válido.',
     'integer' => 'El campo :attribute debe ser un número entero.',
     'ip' => 'El campo :attribute debe ser una dirección IP válida.',
     'list' => 'El campo :attribute debe ser una lista.',
-    'lt' => [
-        'array' => 'El campo :attribute debe tener menos de :value elementos.',
-        'file' => 'El archivo :attribute debe pesar menos de :value kilobytes.',
-        'numeric' => 'El campo :attribute debe ser menor que :value.',
-        'string' => 'El campo :attribute debe tener menos de :value caracteres.',
-    ],
-    'lte' => [
-        'array' => 'El campo :attribute no debe tener más de :value elementos.',
-        'file' => 'El archivo :attribute debe pesar :value kilobytes o menos.',
-        'numeric' => 'El campo :attribute debe ser menor o igual que :value.',
-        'string' => 'El campo :attribute debe tener :value caracteres o menos.',
-    ],
-    'max' => [
-        'array' => 'El campo :attribute no debe tener más de :max elementos.',
-        'file' => 'El archivo :attribute no debe pesar más de :max kilobytes.',
-        'numeric' => 'El campo :attribute no debe ser mayor que :max.',
-        'string' => 'El campo :attribute no debe superar los :max caracteres.',
-    ],
+    'lt' => $bySize('El campo :attribute debe tener menos de :value elementos.', 'El archivo :attribute debe pesar menos de :value kilobytes.', 'El campo :attribute debe ser menor que :value.', 'El campo :attribute debe tener menos de :value caracteres.'),
+    'lte' => $bySize('El campo :attribute no debe tener más de :value elementos.', 'El archivo :attribute debe pesar :value kilobytes o menos.', 'El campo :attribute debe ser menor o igual que :value.', 'El campo :attribute debe tener :value caracteres o menos.'),
+    'max' => $bySize('El campo :attribute no debe tener más de :max elementos.', 'El archivo :attribute no debe pesar más de :max kilobytes.', 'El campo :attribute no debe ser mayor que :max.', 'El campo :attribute no debe superar los :max caracteres.'),
     'mimes' => 'El archivo :attribute debe ser de tipo: :values.',
     'mimetypes' => 'El archivo :attribute debe ser de tipo: :values.',
-    'min' => [
-        'array' => 'El campo :attribute debe tener al menos :min elementos.',
-        'file' => 'El archivo :attribute debe pesar al menos :min kilobytes.',
-        'numeric' => 'El campo :attribute debe ser al menos :min.',
-        'string' => 'El campo :attribute debe tener al menos :min caracteres.',
-    ],
+    'min' => $bySize('El campo :attribute debe tener al menos :min elementos.', 'El archivo :attribute debe pesar al menos :min kilobytes.', 'El campo :attribute debe ser al menos :min.', 'El campo :attribute debe tener al menos :min caracteres.'),
     'missing' => 'El campo :attribute no debe enviarse.',
     'numeric' => 'El campo :attribute debe ser un número.',
     'present' => 'El campo :attribute debe estar presente.',
@@ -80,12 +49,7 @@ return [
     'required_with' => 'El campo :attribute es obligatorio cuando se indica :values.',
     'required_without' => 'El campo :attribute es obligatorio cuando no se indica :values.',
     'required_without_all' => 'El campo :attribute es obligatorio cuando no se indica ninguno de :values.',
-    'size' => [
-        'array' => 'El campo :attribute debe tener :size elementos.',
-        'file' => 'El archivo :attribute debe pesar :size kilobytes.',
-        'numeric' => 'El campo :attribute debe ser :size.',
-        'string' => 'El campo :attribute debe tener :size caracteres.',
-    ],
+    'size' => $bySize('El campo :attribute debe tener :size elementos.', 'El archivo :attribute debe pesar :size kilobytes.', 'El campo :attribute debe ser :size.', 'El campo :attribute debe tener :size caracteres.'),
     'string' => 'El campo :attribute debe ser un texto.',
     'unique' => 'El :attribute ya está en uso.',
     'url' => 'El campo :attribute debe ser una dirección web válida.',
