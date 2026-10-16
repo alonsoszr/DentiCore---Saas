@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
+use App\Modules\Patients\Services\ConsentService;
 use App\Modules\Platform\Services\TenantService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
@@ -61,9 +62,14 @@ class DatabaseSeeder extends Seeder
 
         Patient::factory()->for($clinic)->count(20)->create();
 
+        // Titular adulto del portal con consentimiento de datos (T-171 decide desde el portal).
         $portalPatient = Patient::factory()->for($clinic)->create([
+            'document_type' => 'dni',
+            'document_number' => '70000077',
             'first_name' => 'Pablo',
             'last_name' => 'Paciente',
+            'birth_date' => '1985-06-20',
+            'sex' => 'masculino',
             'email' => 'paciente@clinica-demo.test',
             'medical_history' => [
                 'alergias' => ['Penicilina'],
@@ -75,6 +81,12 @@ class DatabaseSeeder extends Seeder
         TenantContext::run($clinic, function () use ($portalPatient, $users): void {
             $portalPatient->user_id = $users['patient']->id;
             $portalPatient->save();
+            app(ConsentService::class)->grant(
+                $portalPatient,
+                ['channel' => 'presencial', 'confirmation_document_number' => '70000077', 'purpose_notifications' => true],
+                $users['receptionist'],
+                '127.0.0.1',
+            );
         });
         // Catálogo de procedimientos para planes y presupuestos (MS-03).
         $this->call(DemoProcedureSeeder::class);

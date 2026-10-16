@@ -129,7 +129,7 @@ class PatientControllerTest extends TestCase
         }
     }
 
-    public function test_patient_can_only_view_own_records(): void
+    public function test_portal_account_cannot_read_records_through_the_staff_route(): void
     {
         $tenant = Tenant::factory()->create();
         $patientUser = User::factory()->for($tenant)->create(['role' => 'patient']);
@@ -140,9 +140,10 @@ class PatientControllerTest extends TestCase
         });
         $otherRecord = Patient::factory()->for($tenant)->create();
 
+        // TASK-089 (DI-13): ni su propia ficha; el portal la lee en /portal/* sin notas clínicas.
         $this->actingWithToken($patientUser)
             ->getJson("/api/v1/patients/{$ownRecord->uuid}")
-            ->assertOk();
+            ->assertForbidden();
 
         $this->actingWithToken($patientUser)
             ->getJson("/api/v1/patients/{$otherRecord->uuid}")

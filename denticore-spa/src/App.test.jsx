@@ -60,7 +60,7 @@ describe('App', () => {
     renderApp('/admin/clinicas')
 
     expect(await screen.findByText(/Tu cuenta aún no está vinculada/, {}, { timeout: 5000 })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Mi ficha' })).toHaveAttribute('href', `/c/${CLINIC.slug}/portal`)
+    expect(screen.getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', `/c/${CLINIC.slug}/portal`)
   })
 
   it('sends the visitor to the login and back to the clinic login after the session expires', async () => {
