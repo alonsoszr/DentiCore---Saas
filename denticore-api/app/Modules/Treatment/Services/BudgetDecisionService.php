@@ -25,14 +25,30 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Decisión sobre el presupuesto (SDD §5.4.3; CUS-37; RF-011, RF-122, RF-123, RN-12, RN-35 a RN-37,
- * DD-46). Este canal es el presencial: la recepción o el administrador registra la decisión del
- * titular o de su representante, verificando su documento contra la ficha. El portal y el enlace
- * con OTP llegan en MS-06.
+ * DD-46). Canal presencial: la recepción o el administrador registra la decisión del titular o de
+ * su representante, verificando su documento contra la ficha. Canal portal: decide la cuenta
+ * autenticada (titular adulto o representante, SDD §3.3), sin documento. El enlace con OTP es de E2.
  *
- * @phpstan-type DecisionData array{decision: 'aceptado'|'rechazado', signer: 'titular'|'representante', signer_document_number: string, rejection_reason?: string|null, rejection_detail?: string|null, signed_file?: UploadedFile|null}
+ * @phpstan-type DecisionData array{decision: 'aceptado'|'rechazado', signer: 'titular'|'representante', channel?: 'presencial'|'portal', signer_document_number?: string, rejection_reason?: string|null, rejection_detail?: string|null, signed_file?: UploadedFile|null}
  */
 class BudgetDecisionService
 {
+    /** SRS §11.10 FA-1: motivo y detalle opcionales del rechazo, en todo canal. */
+    public const REJECTION_RULES = [
+        'rejection_reason' => ['exclude_unless:decision,rechazado', 'nullable', 'in:precio,segunda_opinion,momento_no_oportuno,otro'],
+        'rejection_detail' => ['exclude_unless:decision,rechazado', 'nullable', 'string', 'max:200'],
+    ];
+
+    /** Nombres de los campos de la decisión en los mensajes de validación. */
+    public const ATTRIBUTES = [
+        'decision' => 'decisión',
+        'signer' => 'quién decide',
+        'signer_document_number' => 'documento de quien decide',
+        'rejection_reason' => 'motivo del rechazo',
+        'rejection_detail' => 'detalle del rechazo',
+        'signed_file' => 'presupuesto firmado',
+    ];
+
     public function __construct(
         private TreatmentPlanService $plans,
         private ExpireBudgetAction $expire,
@@ -145,13 +161,16 @@ class BudgetDecisionService
      */
     private function record(Budget $budget, array $data, User $actor, ?string $ip, ?string $userAgent): Budget
     {
-        $signerDocumentHash = $this->verifiedSignerHash($budget->patient, $data);
+        // Paso 4: en el portal el firmante es la sesión (titular adulto o representante, que
+        // `portal.adult` ya verificó); en el presencial, el documento contra la ficha.
+        $channel = $data['channel'] ?? 'presencial';
+        $signerDocumentHash = $channel === 'portal' ? null : $this->verifiedSignerHash($budget->patient, $data);
         $signedFile = isset($data['signed_file']) ? $this->files->storeUpload($data['signed_file'], $actor) : null;
 
         $budget->forceFill([
             'status' => $data['decision'],
             'decided_at' => now(),
-            'decision_channel' => 'presencial',
+            'decision_channel' => $channel,
             'decision_by_user_id' => $actor->id,
             'decision_signer' => $data['signer'],
             'decision_signer_document_hash' => $signerDocumentHash,
@@ -163,7 +182,7 @@ class BudgetDecisionService
         $budget->decision_evidence_hmac = $this->sealer->seal($budget->decisionEvidencePayload());
         $budget->save();
 
-        $this->audit->record(AuditEvent::BudgetDecided, $budget, ['status'], ['decision' => $data['decision'], 'channel' => 'presencial']);
+        $this->audit->record(AuditEvent::BudgetDecided, $budget, ['status'], ['decision' => $data['decision'], 'channel' => $channel]);
 
         return $budget;
     }
@@ -201,7 +220,7 @@ class BudgetDecisionService
             $mismatch = 'El documento no coincide con el del representante legal vigente.';
         }
 
-        if ($expected === null || PatientIdentity::normalizedNumber($data['signer_document_number']) !== PatientIdentity::normalizedNumber($expected)) {
+        if ($expected === null || PatientIdentity::normalizedNumber((string) ($data['signer_document_number'] ?? '')) !== PatientIdentity::normalizedNumber($expected)) {
             throw ValidationException::withMessages(['signer_document_number' => $mismatch]);
         }
 

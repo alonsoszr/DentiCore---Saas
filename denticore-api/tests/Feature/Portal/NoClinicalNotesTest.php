@@ -38,6 +38,7 @@ it('serves no clinical note keys from the portal routes', function () {
     $tenant = Tenant::factory()->create();
     [$user, $patient] = PortalFixtures::holder($tenant);
     PortalFixtures::recordedFinding($tenant, $patient);
+    $budget = PortalFixtures::issuedBudget($tenant, $patient);
     $this->actingWithToken($user);
 
     $uris = [
@@ -45,6 +46,9 @@ it('serves no clinical note keys from the portal routes', function () {
         "/api/v1/portal/patients/{$patient->uuid}/consents",
         "/api/v1/portal/patients/{$patient->uuid}/consents/preview",
         "/api/v1/portal/patients/{$patient->uuid}/teeth/36/history",
+        "/api/v1/portal/patients/{$patient->uuid}/budgets",
+        "/api/v1/portal/budgets/{$budget}",
+        "/api/v1/portal/budgets/{$budget}/pdf",
     ];
 
     foreach ($uris as $uri) {

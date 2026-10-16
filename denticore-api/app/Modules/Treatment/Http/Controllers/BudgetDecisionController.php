@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Registrar la decisión presencial sobre el presupuesto (SDD §4.3, §5.4.3; CUS-37; RF-122,
- * RF-123, RN-35 a RN-37). La decisión desde el portal y por enlace llega en MS-06.
+ * RF-123, RN-35 a RN-37). La del portal está en `PortalBudgetController`; la del enlace es de E2.
  */
 class BudgetDecisionController extends Controller
 {
@@ -35,17 +35,9 @@ class BudgetDecisionController extends Controller
             'decision' => ['required', Rule::in(['aceptado', 'rechazado'])],
             'signer' => ['required', Rule::in(['titular', 'representante'])],
             'signer_document_number' => ['required', 'string', 'max:12'],
-            'rejection_reason' => ['exclude_unless:decision,rechazado', 'nullable', Rule::in(['precio', 'segunda_opinion', 'momento_no_oportuno', 'otro'])],
-            'rejection_detail' => ['exclude_unless:decision,rechazado', 'nullable', 'string', 'max:200'],
+            ...BudgetDecisionService::REJECTION_RULES,
             'signed_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
-        ], [], [
-            'decision' => 'decisión',
-            'signer' => 'quién decide',
-            'signer_document_number' => 'documento de quien decide',
-            'rejection_reason' => 'motivo del rechazo',
-            'rejection_detail' => 'detalle del rechazo',
-            'signed_file' => 'presupuesto firmado',
-        ]);
+        ], [], BudgetDecisionService::ATTRIBUTES);
 
         $budget = $this->decisions->decide($budget, $data, $actor, $request->ip(), $request->userAgent());
 
