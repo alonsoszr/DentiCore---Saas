@@ -35,9 +35,11 @@ function ConsentSummary({ subject }) {
         </div>
       )}
       {consents.isSuccess && (
-        <PatientConsentBadge
-          patient={{ has_current_consent: Boolean(current), consent_outdated: Boolean(current?.outdated) }}
-        />
+        <div>
+          <PatientConsentBadge
+            patient={{ has_current_consent: Boolean(current), consent_outdated: Boolean(current?.outdated) }}
+          />
+        </div>
       )}
       <Link to={portalPath('/consentimiento')} className="portal-card-link">
         Otorgar o renovar mi consentimiento
