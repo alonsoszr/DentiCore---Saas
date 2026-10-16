@@ -28,10 +28,10 @@ async function issueBudgetForPablo(browser: Browser): Promise<string> {
   const page = await context.newPage()
   await login(page, 'dentista@clinica-demo.test', /\/c\/clinica-demo\/app\/pacientes$/)
 
-  await page.getByLabel('Buscar paciente').fill('Pablo Paciente')
+  await page.getByLabel('Buscar paciente').fill('70000077')
   await page.getByRole('button', { name: 'Buscar' }).click()
   await page
-    .getByRole('row', { name: /Pablo Paciente/ })
+    .getByRole('row', { name: /Paciente, Pablo/ })
     .getByRole('link', { name: 'Ver ficha' })
     .click()
   await page.getByRole('link', { name: 'Planes', exact: true }).click()
