@@ -280,7 +280,15 @@ export function FindingsWorkspace({ attention, patient }) {
           entries={history.data}
           onCorrect={(entry) => {
             correct.reset()
-            setCorrection({ kind: 'reemplazo', reason: '', ...emptyFinding, surfaces: entry.surfaces ?? [] })
+            setCorrection({
+              kind: 'reemplazo',
+              reason: '',
+              ...emptyFinding,
+              surfaces: entry.surfaces ?? [],
+              finding_code: entry.finding?.code ?? '',
+              state_code: entry.state?.code ?? '',
+              tooth_end: entry.tooth_end ? String(entry.tooth_end) : '',
+            })
             setCorrecting(entry)
           }}
         />

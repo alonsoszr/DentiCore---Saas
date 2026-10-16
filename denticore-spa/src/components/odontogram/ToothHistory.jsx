@@ -17,9 +17,7 @@ export function ToothHistory({ tooth, entries, onCorrect }) {
 
   return (
     <section aria-labelledby={`tooth-history-${tooth}`} className="flex flex-col gap-3">
-      <h2 id={`tooth-history-${tooth}`} className="text-headline-md">
-        Historial de la pieza {tooth}
-      </h2>
+      <h3 id={`tooth-history-${tooth}`}>Historial de la pieza {tooth}</h3>
 
       {entries.length === 0 ? (
         <p className="text-body-md text-on-surface-variant">La pieza {tooth} no tiene registros.</p>

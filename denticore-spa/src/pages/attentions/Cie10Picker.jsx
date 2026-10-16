@@ -28,14 +28,16 @@ export function Cie10Picker({ onAdd, busy = false, error = null }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-2">
-        <Field
-          label="Buscar diagnóstico CIE-10"
-          name={`${id}-cie10`}
-          value={term}
-          onChange={(event) => setTerm(event.target.value)}
-          onKeyDown={(event) => event.key === 'Enter' && search(event)}
-          placeholder="Código o texto, p. ej. caries"
-        />
+        <div className="max-w-md min-w-0 flex-1 basis-72">
+          <Field
+            label="Buscar diagnóstico CIE-10"
+            name={`${id}-cie10`}
+            value={term}
+            onChange={(event) => setTerm(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && search(event)}
+            placeholder="Código o texto, p. ej. caries"
+          />
+        </div>
         <button type="button" className="btn btn-secondary" onClick={search} disabled={term.trim() === ''}>
           Buscar
         </button>

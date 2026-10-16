@@ -4,7 +4,7 @@ import { fieldErrors, generalError } from '../../api/errors'
 import { Cie10Picker } from './Cie10Picker'
 
 const TYPES = { presuntivo: 'Presuntivo', definitivo: 'Definitivo' }
-const ORIGINS = { nota: 'Nota', adenda: 'Adenda' }
+const ORIGINS = { nota: 'Origen: nota', adenda: 'Origen: adenda' }
 
 /** Lista de diagnósticos CIE-10 de la atención; con `onRemove`, cada uno se puede quitar. */
 export function DiagnosesList({ diagnoses, onRemove }) {

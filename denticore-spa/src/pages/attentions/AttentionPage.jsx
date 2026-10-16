@@ -20,6 +20,14 @@ import { FindingsWorkspace } from './FindingsWorkspace'
 import { ATTENTION_STATUS } from './labels'
 import { NotePanel, NoteView } from './NotePanel'
 
+/** Lo que RN-77 exige para cerrar: motivo de consulta y al menos un diagnóstico CIE-10. */
+function missingForClose(attention) {
+  const pending = []
+  if (!attention.note?.chief_complaint?.trim()) pending.push('Registre el motivo de consulta.')
+  if ((attention.diagnoses ?? []).length === 0) pending.push('Registre al menos un diagnóstico CIE-10.')
+  return pending
+}
+
 /** Cierre con confirmación de sus consecuencias (CUS-26; RF-094, RN-77, RN-78, RNF-063). */
 function CloseAttention({ attention, queryKey }) {
   const queryClient = useQueryClient()
@@ -32,7 +40,17 @@ function CloseAttention({ attention, queryKey }) {
     },
     onError: () => setConfirming(false),
   })
-  const missing = Object.values(fieldErrors(close.error))
+  const [attempted, setAttempted] = useState(false)
+  // RN-77: lo que falta se avisa antes de abrir la confirmación y se recalcula con la atención
+  // vigente (desaparece al guardar el motivo o agregar el diagnóstico); la API lo vuelve a validar.
+  const pending = attempted ? missingForClose(attention) : []
+  const missing = pending.length > 0 ? pending : Object.values(fieldErrors(close.error))
+
+  const requestClose = () => {
+    setAttempted(true)
+    close.reset()
+    if (missingForClose(attention).length === 0) setConfirming(true)
+  }
 
   return (
     <section className="card flex flex-col gap-3" aria-labelledby="close-title">
@@ -51,7 +69,7 @@ function CloseAttention({ attention, queryKey }) {
         <div className="alert alert-error">{generalError(close.error)}</div>
       )}
       <div className="form-actions">
-        <button type="button" className="btn" onClick={() => setConfirming(true)}>
+        <button type="button" className="btn" onClick={requestClose}>
           Cerrar atención
         </button>
       </div>
@@ -192,22 +210,23 @@ export function AttentionPage() {
   return (
     <>
       <div className="page-header">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="m-0 text-headline-md">Atención del {formatDateTime(attention.opened_at)}</h1>
-          <span className={open ? 'badge' : 'badge badge-muted'}>{ATTENTION_STATUS[attention.status]}</span>
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="m-0 text-headline-md">Atención del {formatDateTime(attention.opened_at)}</h1>
+            <span className={open ? 'badge' : 'badge badge-muted'}>{ATTENTION_STATUS[attention.status]}</span>
+          </div>
+          <p>
+            Odontólogo a cargo: {attention.dentist.name} · COP {attention.dentist.cop}
+            {attention.signer &&
+              ` · Firmada por ${attention.signer.name} (COP ${attention.signer.cop}) el ${formatDateTime(attention.signed_at)}`}
+          </p>
         </div>
         <Link to={appPath(`/pacientes/${patient.id}/hc`)} className="btn btn-secondary">
           Volver a la historia clínica
         </Link>
       </div>
 
-      <PatientHeader patient={patient} />
-
-      <p className="muted">
-        Odontólogo a cargo: {attention.dentist.name} · COP {attention.dentist.cop}
-        {attention.signer &&
-          ` · Firmada por ${attention.signer.name} (COP ${attention.signer.cop}) el ${formatDateTime(attention.signed_at)}`}
-      </p>
+      <PatientHeader patient={patient} headingLevel={2} />
 
       {open && consentWarning && (
         <Alert tone="warning" title="Registro clínico bloqueado">
