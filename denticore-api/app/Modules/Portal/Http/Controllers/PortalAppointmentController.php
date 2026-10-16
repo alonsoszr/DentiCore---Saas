@@ -5,6 +5,7 @@ namespace App\Modules\Portal\Http\Controllers;
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Portal\Services\PortalAppointmentRules;
+use App\Modules\Portal\Services\PortalBookingService;
 use App\Modules\Portal\Services\PortalSubjectResolver;
 use App\Modules\Scheduling\Http\Resources\AppointmentResource;
 use App\Modules\Scheduling\Models\Appointment;
@@ -20,7 +21,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -36,6 +36,7 @@ class PortalAppointmentController extends Controller
     public function __construct(
         private AppointmentService $appointments,
         private PortalAppointmentRules $rules,
+        private PortalBookingService $booking,
         private Dentists $dentists,
     ) {}
 
@@ -107,19 +108,7 @@ class PortalAppointmentController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
-        // Bloquear al paciente serializa sus reservas simultáneas y mantiene el límite de RN-48.
-        $appointment = DB::transaction(function () use ($patient, $dentist, $type, $startsAt, $actor): Appointment {
-            Patient::query()->whereKey($patient->id)->lockForUpdate()->first();
-            $this->rules->ensureBookable($patient, $startsAt);
-
-            return $this->appointments->book([
-                'patient' => $patient,
-                'dentist' => $dentist,
-                'type' => $type,
-                'starts_at' => $startsAt,
-                'duration_min' => $type->default_duration_min,
-            ], $actor, 'portal');
-        });
+        $appointment = $this->booking->book($patient, $dentist, $type, $startsAt, $actor);
 
         return AppointmentResource::make($appointment->load(self::RELATIONS))->response()->setStatusCode(201);
     }
