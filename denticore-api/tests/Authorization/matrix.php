@@ -6,7 +6,9 @@
  * lista los roles que deben recibir 403 (o 404 si no pueden ver el registro).
  *
  * Roles: super_admin (SA), clinic_admin (CA), dentist (OD), receptionist (RE), patient (PA).
- * La columna REP (representante) se agrega con el portal (TASK-090).
+ * REP (representante legal en el portal, SDD §3.4) tiene las mismas capacidades que PA, limitadas
+ * a sus representados vigentes: MatrixTest le niega toda celda que niega a PA (TASK-090), y el
+ * aislamiento entre pacientes de cada ruta PORT está en Isolation/PortalIsolationTest.
  */
 
 return [
