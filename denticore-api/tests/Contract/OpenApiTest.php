@@ -597,6 +597,27 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->postJson("/api/v1/portal/budgets/{$portalBudget}/decision", ['decision' => 'aceptado'], $idempotent()), 'POST', '/portal/budgets/{budget}/decision');
     $check($this->getJson('/api/v1/portal/budgets/'.fake()->uuid()), 'GET', '/portal/budgets/{budget}');
 
+    // Citas en el portal (TASK-087), con su propia clínica en Lima y el autoagendamiento activo.
+    $portalClinic = PortalFixtures::bookingClinic();
+    $portalAppointment = PortalFixtures::clinicAppointment($portalClinic, now('America/Lima')->addDays(3)->setTime(9, 0)->toDateTimeString());
+    $this->actingWithToken($portalClinic['user']);
+    $portalDay = now('America/Lima')->addDays(7)->next('Monday');
+    $availability = ['appointment_type_id' => $portalClinic['type']->uuid, 'from' => $portalDay->toDateString(), 'to' => $portalDay->toDateString()];
+    $check($this->getJson('/api/v1/portal/availability?'.http_build_query($availability)), 'GET', '/portal/availability');
+    $check($this->getJson('/api/v1/portal/availability?'.http_build_query([...$availability, 'appointment_type_id' => $portalClinic['internalType']->uuid])), 'GET', '/portal/availability');
+    $portalAppointments = "/api/v1/portal/patients/{$portalClinic['patient']->uuid}/appointments";
+    $portalBooking = ['appointment_type_id' => $portalClinic['type']->uuid, 'dentist_id' => $portalClinic['dentist']->uuid, 'starts_at' => $portalDay->setTime(10, 0)->toIso8601String()];
+    $check($this->postJson($portalAppointments, $portalBooking, $idempotent()), 'POST', '/portal/patients/{patient}/appointments');
+    $check($this->postJson($portalAppointments, $portalBooking, $idempotent()), 'POST', '/portal/patients/{patient}/appointments');
+    $check($this->postJson($portalAppointments, [...$portalBooking, 'starts_at' => now()->addHour()->toIso8601String()], $idempotent()), 'POST', '/portal/patients/{patient}/appointments');
+    $check($this->getJson($portalAppointments), 'GET', '/portal/patients/{patient}/appointments');
+    $portalAppointmentPath = "/api/v1/portal/appointments/{$portalAppointment->uuid}";
+    $check($this->postJson("{$portalAppointmentPath}/confirm"), 'POST', '/portal/appointments/{appointment}/confirm');
+    $check($this->postJson("{$portalAppointmentPath}/reschedule", ['starts_at' => $portalDay->setTime(11, 0)->toIso8601String()], $idempotent()), 'POST', '/portal/appointments/{appointment}/reschedule');
+    $check($this->postJson("{$portalAppointmentPath}/reschedule", ['starts_at' => 'mañana'], $idempotent()), 'POST', '/portal/appointments/{appointment}/reschedule');
+    $check($this->postJson("{$portalAppointmentPath}/cancel", ['cancel_detail' => 'Viaje']), 'POST', '/portal/appointments/{appointment}/cancel');
+    $check($this->postJson("{$portalAppointmentPath}/cancel"), 'POST', '/portal/appointments/{appointment}/cancel');
+
     // Archivos (URL firmada)
     $url = TenantContext::run($tenant, function () {
         $file = app(FileStorage::class)->storeGenerated('%PDF-1.4', 'reporte.pdf', 'application/pdf');

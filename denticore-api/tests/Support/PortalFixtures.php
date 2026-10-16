@@ -6,11 +6,16 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\LegalRepresentative;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\LegalRepresentativeService;
+use App\Modules\Platform\Models\ClinicSetting;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Scheduling\Models\Appointment;
+use App\Modules\Scheduling\Models\AppointmentType;
+use App\Modules\Scheduling\Models\WorkSchedule;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -113,6 +118,48 @@ final class PortalFixtures
         test()->postJson("/api/v1/budgets/{$budget}/issue", [], ['Idempotency-Key' => (string) Str::uuid()])->assertOk();
 
         return $budget;
+    }
+
+    /**
+     * Clínica en Lima con autoagendamiento, un odontólogo de lunes y martes 09:00–18:00, un tipo de
+     * 30 min visible en el portal y otro solo para la clínica, y la cuenta de un paciente adulto.
+     *
+     * @return array{tenant: Tenant, dentist: User, type: AppointmentType, internalType: AppointmentType, user: User, patient: Patient}
+     */
+    public static function bookingClinic(): array
+    {
+        $tenant = Tenant::factory()->create(['timezone' => 'America/Lima']);
+        TenantContext::run($tenant, fn () => ClinicSetting::query()->sole()->forceFill(['self_booking_enabled' => true])->save());
+        $dentist = User::factory()->for($tenant)->create(['role' => 'dentist', 'name' => 'Dra. Ana Torres']);
+        foreach ([1, 2] as $weekday) {
+            WorkSchedule::factory()->create(['tenant_id' => $tenant->id, 'dentist_id' => $dentist->id, 'weekday' => $weekday, 'start_time' => '09:00', 'end_time' => '18:00']);
+        }
+        $type = AppointmentType::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Control', 'default_duration_min' => 30, 'portal_visible' => true]);
+        $internalType = AppointmentType::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Cirugía', 'default_duration_min' => 60, 'portal_visible' => false]);
+        [$user, $patient] = self::holder($tenant);
+
+        return compact('tenant', 'dentist', 'type', 'internalType', 'user', 'patient');
+    }
+
+    /**
+     * Cita del paciente reservada por la clínica (origen `clinica`) a la hora local indicada.
+     *
+     * @param  array{tenant: Tenant, dentist: User, type: AppointmentType, patient: Patient}  $clinic
+     */
+    public static function clinicAppointment(array $clinic, string $localStart): Appointment
+    {
+        $start = Carbon::parse($localStart, 'America/Lima')->utc();
+
+        return TenantContext::run($clinic['tenant'], fn () => Appointment::factory()->create([
+            'tenant_id' => $clinic['tenant']->id,
+            'patient_id' => $clinic['patient']->id,
+            'dentist_id' => $clinic['dentist']->id,
+            'appointment_type_id' => $clinic['type']->id,
+            'starts_at' => $start,
+            'ends_at' => $start->copy()->addMinutes(30),
+            'status' => 'programada',
+            'origin' => 'clinica',
+        ]));
     }
 
     public static function representation(Tenant $tenant, Patient $patient): LegalRepresentative

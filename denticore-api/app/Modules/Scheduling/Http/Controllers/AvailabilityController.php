@@ -2,10 +2,10 @@
 
 namespace App\Modules\Scheduling\Http\Controllers;
 
-use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Scheduling\Models\AppointmentType;
 use App\Modules\Scheduling\Services\AvailabilityCalculator;
+use App\Modules\Scheduling\Services\Dentists;
 use App\Support\Http\Controller;
 use App\Support\Http\ProblemResponse;
 use App\Support\Tenancy\TenantContext;
@@ -25,7 +25,7 @@ class AvailabilityController extends Controller
     /** Días que abarca como máximo una consulta. */
     private const MAX_DAYS = 31;
 
-    public function __construct(private AvailabilityCalculator $calculator) {}
+    public function __construct(private AvailabilityCalculator $calculator, private Dentists $dentists) {}
 
     #[ProblemResponse(422, 'Tipo de cita inactivo, duración fuera de 10–240 min o no múltiplo de 5, o rango de fechas inválido (RN-47, RN-48)')]
     public function index(Request $request): JsonResponse
@@ -48,13 +48,7 @@ class AvailabilityController extends Controller
         }
 
         $duration = $this->duration($data);
-        $dentists = User::query()
-            ->where('tenant_id', TenantContext::id())
-            ->where('role', 'dentist')
-            ->where('status', 'activo')
-            ->when(isset($data['dentist_id']), fn ($query) => $query->where('uuid', $data['dentist_id']))
-            ->orderBy('name')
-            ->get();
+        $dentists = $this->dentists->active($data['dentist_id'] ?? null);
 
         if (isset($data['dentist_id']) && $dentists->isEmpty()) {
             throw ValidationException::withMessages(['dentist_id' => 'El odontólogo indicado no existe o no está activo en la clínica.']);
@@ -66,15 +60,8 @@ class AvailabilityController extends Controller
                 ?? throw ValidationException::withMessages(['patient_id' => 'El paciente indicado no existe en la clínica.']);
         }
 
-        $slots = $this->calculator->slots($dentists, $duration, $data['from'], $data['to'], $patientId);
-
         return response()->json([
-            'data' => $dentists->map(fn (User $dentist) => [
-                'dentist' => ['id' => $dentist->uuid, 'name' => $dentist->name],
-                'duration_min' => $duration,
-                /** @var list<string> */
-                'slots' => array_map(fn ($start) => $start->toIso8601String(), $slots[$dentist->id] ?? []),
-            ])->values()->all(),
+            'data' => $this->calculator->byDentist($dentists, $duration, $data['from'], $data['to'], $patientId),
         ]);
     }
 

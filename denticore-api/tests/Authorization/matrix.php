@@ -179,6 +179,12 @@ return [
     ['method' => 'GET', 'uri' => 'api/v1/portal/budgets/{budget}', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
     ['method' => 'GET', 'uri' => 'api/v1/portal/budgets/{budget}/pdf', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
     ['method' => 'POST', 'uri' => 'api/v1/portal/budgets/{budget}/decision', 'cus' => 'CUS-37', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    ['method' => 'GET', 'uri' => 'api/v1/portal/patients/{patient}/appointments', 'cus' => 'CUS-77', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    ['method' => 'POST', 'uri' => 'api/v1/portal/patients/{patient}/appointments', 'cus' => 'CUS-47', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    ['method' => 'POST', 'uri' => 'api/v1/portal/appointments/{appointment}/reschedule', 'cus' => 'CUS-48', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    ['method' => 'POST', 'uri' => 'api/v1/portal/appointments/{appointment}/cancel', 'cus' => 'CUS-48', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    ['method' => 'POST', 'uri' => 'api/v1/portal/appointments/{appointment}/confirm', 'cus' => 'CUS-49', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    ['method' => 'GET', 'uri' => 'api/v1/portal/availability', 'cus' => 'CUS-46', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
 
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],

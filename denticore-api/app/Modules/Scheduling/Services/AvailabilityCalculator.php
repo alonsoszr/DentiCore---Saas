@@ -27,6 +27,23 @@ class AvailabilityCalculator
     public const PORTAL_NOTICE_HOURS = 2;
 
     /**
+     * Inicios libres agrupados por odontólogo, como los presenta la API (SRS §11.13, pasos 2 y 3).
+     *
+     * @param  Collection<int, User>  $dentists
+     * @return list<array{dentist: array{id: string, name: string}, duration_min: int, slots: list<string>}>
+     */
+    public function byDentist(Collection $dentists, int $durationMin, string $from, string $to, ?int $patientId = null, bool $portal = false): array
+    {
+        $slots = $this->slots($dentists, $durationMin, $from, $to, $patientId, $portal);
+
+        return $dentists->map(fn (User $dentist) => [
+            'dentist' => ['id' => $dentist->uuid, 'name' => $dentist->name],
+            'duration_min' => $durationMin,
+            'slots' => array_map(fn (CarbonImmutable $start) => $start->toIso8601String(), $slots[$dentist->id] ?? []),
+        ])->values()->all();
+    }
+
+    /**
      * @param  Collection<int, User>  $dentists
      * @return array<int, list<CarbonImmutable>> Inicios en UTC por id de odontólogo.
      */

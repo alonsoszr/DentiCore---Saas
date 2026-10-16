@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Portal\Http\Controllers\PortalAppointmentController;
 use App\Modules\Portal\Http\Controllers\PortalBudgetController;
 use App\Modules\Portal\Http\Controllers\PortalConsentController;
 use App\Modules\Portal\Http\Controllers\PortalOdontogramController;
@@ -30,5 +31,17 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
             Route::get('/budgets/{budget}/pdf', [PortalBudgetController::class, 'pdf']);
             Route::post('/budgets/{budget}/decision', [PortalBudgetController::class, 'decide'])
                 ->middleware(['portal.adult', 'idempotent']);
+
+            // CUS-47 a CUS-49, CUS-77: citas del paciente con los límites del portal (RN-48, RN-49).
+            Route::get('/patients/{patient}/appointments', [PortalAppointmentController::class, 'index']);
+            Route::post('/patients/{patient}/appointments', [PortalAppointmentController::class, 'store'])
+                ->middleware(['portal.self_booking', 'idempotent']);
+            Route::post('/appointments/{appointment}/reschedule', [PortalAppointmentController::class, 'reschedule'])
+                ->middleware('idempotent');
+            Route::post('/appointments/{appointment}/cancel', [PortalAppointmentController::class, 'cancel']);
+            Route::post('/appointments/{appointment}/confirm', [PortalAppointmentController::class, 'confirm']);
         });
+
+        // CUS-46: disponibilidad para el autoagendamiento (RF-146, RF-148).
+        Route::get('/availability', [PortalAppointmentController::class, 'availability'])->middleware('portal.self_booking');
     });
