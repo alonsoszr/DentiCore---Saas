@@ -5,6 +5,7 @@ import { fieldErrors, generalError } from '../api/errors'
 import { useClinic } from '../auth/useClinic'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
+import { useFocusFirstError } from '../ui/useFocusFirstError'
 
 const NUMBER_FIELDS = ['discount_cap_pct', 'budget_validity_days', 'portal_cancel_hours']
 const NULLABLE_FIELDS = ['phone', 'contact_email', 'budget_terms']
@@ -70,9 +71,16 @@ export function ClinicSettingsPage() {
     },
     onSuccess: onSaved('Logotipo recibido.'),
   })
+  useFocusFirstError(save.error)
+  useFocusFirstError(uploadLogo.error)
 
   if (settingsQuery.isLoading) return <div className="empty">Cargando…</div>
-  if (settingsQuery.isError) return <div className="alert alert-error">{generalError(settingsQuery.error)}</div>
+  if (settingsQuery.isError)
+    return (
+      <div className="alert alert-error" role="alert">
+        {generalError(settingsQuery.error)}
+      </div>
+    )
 
   const settings = uploadLogo.data ?? save.data ?? settingsQuery.data
   const values = form ?? formFrom(settingsQuery.data)
@@ -94,7 +102,11 @@ export function ClinicSettingsPage() {
     <>
       <PageHeader title="Configuración de la clínica" description="Datos de contacto, presupuestos y portal." />
 
-      {notice && <div className="alert alert-success">{notice}</div>}
+      {notice && (
+        <div className="alert alert-success" role="status">
+          {notice}
+        </div>
+      )}
 
       <div className="card">
         <h2>Logotipo</h2>
@@ -102,7 +114,11 @@ export function ClinicSettingsPage() {
         {settings.logo && LOGO_STATUS[settings.logo.status] && (
           <p className="muted">{LOGO_STATUS[settings.logo.status]}</p>
         )}
-        {generalError(uploadLogo.error) && <div className="alert alert-error">{generalError(uploadLogo.error)}</div>}
+        {generalError(uploadLogo.error) && (
+          <div className="alert alert-error" role="alert">
+            {generalError(uploadLogo.error)}
+          </div>
+        )}
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -127,7 +143,11 @@ export function ClinicSettingsPage() {
       </div>
 
       <div className="card">
-        {generalError(save.error) && <div className="alert alert-error">{generalError(save.error)}</div>}
+        {generalError(save.error) && (
+          <div className="alert alert-error" role="alert">
+            {generalError(save.error)}
+          </div>
+        )}
         <form onSubmit={handleSubmit} noValidate>
           <h2>Datos de la clínica</h2>
           <div className="form-grid">
@@ -208,7 +228,7 @@ export function ClinicSettingsPage() {
           </label>
 
           <h3 className="form-section">Portal del paciente</h3>
-          <div className="form-grid">
+          <div className="form-grid max-w-xs">
             <Field
               label="Plazo para cancelar desde el portal (horas)"
               name="portal_cancel_hours"
@@ -220,7 +240,7 @@ export function ClinicSettingsPage() {
               error={errors.portal_cancel_hours}
             />
           </div>
-          <label className="checkbox">
+          <label className="checkbox mt-4">
             <input
               type="checkbox"
               name="self_booking_enabled"
@@ -229,7 +249,7 @@ export function ClinicSettingsPage() {
             />
             Permitir que el paciente reserve citas desde el portal
           </label>
-          <p className="muted">Asistencia de IA: {settings.ai_enabled ? 'activada' : 'desactivada'}.</p>
+          <p className="muted mt-3 mb-0">Asistencia de IA: {settings.ai_enabled ? 'activada' : 'desactivada'}.</p>
 
           <div className="form-actions">
             <button type="submit" className="btn" disabled={save.isPending}>

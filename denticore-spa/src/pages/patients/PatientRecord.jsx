@@ -16,7 +16,12 @@ const HISTORY_LISTS = [
  */
 export function PatientRecord({ query }) {
   if (query.isLoading) return <div className="card empty">Cargando…</div>
-  if (query.isError) return <div className="alert alert-error">{generalError(query.error)}</div>
+  if (query.isError)
+    return (
+      <div className="alert alert-error" role="alert">
+        {generalError(query.error)}
+      </div>
+    )
 
   const patient = query.data
   if (!patient) return null

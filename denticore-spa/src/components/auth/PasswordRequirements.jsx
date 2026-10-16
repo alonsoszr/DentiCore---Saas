@@ -1,9 +1,10 @@
-import { AlertCircleIcon, CheckCircleIcon, InfoIcon } from '../../ui/icons'
+import { AlertCircleIcon, CheckCircleIcon, InfoIcon, XIcon } from '../../ui/icons'
 
 /**
  * Requisitos de contraseña de RF-040 (docs/design/screens/README.md › PasswordRequirements).
- * Cada requisito es `{ label, state }` con `state`: 'ok', 'pending' (se verifica al guardar)
- * o 'failed'. El estado se comunica con ícono y texto, no solo con color.
+ * Cada requisito es `{ label, state }` con `state`: 'ok', 'unmet' (regla del cliente que aún no
+ * se cumple: x gris), 'pending' (se verifica al guardar) o 'failed'. El estado se comunica con
+ * ícono y texto, no solo con color.
  */
 export function PasswordRequirements({ items }) {
   const met = items.filter((item) => item.state === 'ok').length
@@ -19,10 +20,12 @@ export function PasswordRequirements({ items }) {
             {item.state === 'ok' && <CheckCircleIcon className="size-4 shrink-0" />}
             {item.state === 'failed' && <AlertCircleIcon className="size-4 shrink-0" />}
             {item.state === 'pending' && <InfoIcon className="size-4 shrink-0" />}
+            {item.state === 'unmet' && <XIcon className="size-4 shrink-0" />}
             <span>
               {item.label}
               {item.state === 'pending' && ' (se verifica al guardar)'}
               {item.state === 'failed' && ' (no se cumple)'}
+              {item.state === 'unmet' && <span className="sr-only"> (aún no se cumple)</span>}
             </span>
           </li>
         ))}

@@ -4,11 +4,12 @@ import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
 import { useClinic } from '../../auth/useClinic'
 import { Field } from '../../components/Field'
+import { ConsentStatusBadge } from './ConsentStatusBadge'
 import { ConsentForm } from '../../portal/ConsentForm'
 import { PURPOSES } from '../../portal/consentPurposes'
 import { formatDateTime } from '../../ui/format'
+import { useFocusFirstError } from '../../ui/useFocusFirstError'
 
-const STATUS_LABELS = { vigente: 'Vigente', sustituido: 'Sustituido', revocado: 'Revocado' }
 const CHANNEL_LABELS = { presencial: 'Presencial', portal: 'Portal', papel: 'Papel' }
 
 /**
@@ -67,6 +68,7 @@ export function ConsentPage({ patient }) {
   }
 
   const errors = fieldErrors(grant.error)
+  useFocusFirstError(grant.error)
   const preview = previewQuery.data
   const consents = consentsQuery.data ?? []
 
@@ -96,9 +98,7 @@ export function ConsentPage({ patient }) {
                   <tr key={consent.id}>
                     <td>{formatDateTime(consent.granted_at)}</td>
                     <td>
-                      <span className={consent.status === 'vigente' ? 'badge' : 'badge badge-muted'}>
-                        {STATUS_LABELS[consent.status]}
-                      </span>
+                      <ConsentStatusBadge status={consent.status} />
                       {consent.outdated && <span className="muted"> · versión anterior</span>}
                     </td>
                     <td>{consent.granted_by === 'representante' ? 'Representante' : 'Titular'}</td>
@@ -126,10 +126,22 @@ export function ConsentPage({ patient }) {
 
       <div className="card">
         <h2>Registrar consentimiento</h2>
-        {registered && <div className="alert alert-success">Consentimiento registrado.</div>}
+        {registered && (
+          <div className="alert alert-success" role="status">
+            Consentimiento registrado.
+          </div>
+        )}
         {previewQuery.isLoading && <div className="empty">Cargando…</div>}
-        {previewQuery.isError && <div className="alert alert-error">{generalError(previewQuery.error)}</div>}
-        {generalError(grant.error) && <div className="alert alert-error">{generalError(grant.error)}</div>}
+        {previewQuery.isError && (
+          <div className="alert alert-error" role="alert">
+            {generalError(previewQuery.error)}
+          </div>
+        )}
+        {generalError(grant.error) && (
+          <div className="alert alert-error" role="alert">
+            {generalError(grant.error)}
+          </div>
+        )}
         {preview && (
           <>
             {preview.granted_by === 'representante' && preview.representative && (

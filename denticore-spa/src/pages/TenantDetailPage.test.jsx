@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { makeUser, mockApi, renderPage } from '../test/utils'
@@ -48,8 +48,19 @@ describe('TenantDetailPage', () => {
     expect(screen.getByText('3 de 10')).toBeInTheDocument()
   })
 
+  it('pairs each label with its value and names the plan in Spanish', async () => {
+    api({ 'get /platform/tenants/t-1': () => ({ data: { data: { ...TENANT, plan: PLANS[0] } } }) })
+    renderPage(<TenantDetailPage />, ROUTE)
+
+    // Cada rótulo y su valor van juntos en su propio grupo: la grilla no puede cruzarlos.
+    const ruc = (await screen.findByText('RUC')).parentElement
+    expect(ruc.tagName).toBe('DIV')
+    expect(within(ruc).getByText('20600000013')).toBeInTheDocument()
+    expect(within(screen.getByText('Plan').parentElement).getByText('Básico')).toBeInTheDocument()
+    expect(within(screen.getAllByText('Estado')[0].parentElement).getByText('Activa')).toBeInTheDocument()
+  })
+
   it('asks for confirmation with the effects before suspending and sends the reason', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
     const calls = api({
       'post /platform/tenants/t-1/suspend': () => ({ data: { data: { ...TENANT, status: 'suspendida' } } }),
     })
@@ -57,17 +68,22 @@ describe('TenantDetailPage', () => {
 
     await userEvent.type(await screen.findByLabelText('Motivo de la suspensión'), 'Falta de pago')
     await userEvent.click(screen.getByRole('button', { name: 'Suspender clínica' }))
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('solo podrá consultar'))
+    // RNF-063 con el diálogo del sistema de diseño, no con window.confirm.
+    let dialog = screen.getByRole('dialog', { name: '¿Suspender «Clínica Demo»?' })
+    expect(within(dialog).getByText(/solo podrá consultar/)).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(calls.some((call) => call.method === 'post')).toBe(false)
 
     await userEvent.click(screen.getByRole('button', { name: 'Suspender clínica' }))
+    dialog = screen.getByRole('dialog', { name: '¿Suspender «Clínica Demo»?' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Suspender clínica' }))
     expect(await screen.findByText('Clínica suspendida.')).toBeInTheDocument()
     const post = calls.find((call) => call.method === 'post')
     expect(JSON.parse(post.data)).toEqual({ reason: 'Falta de pago' })
   })
 
   it('reactivates a suspended clinic after confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const calls = mockApi((config) => {
       if (config.url === '/platform/plans') return { data: { data: PLANS } }
       if (config.method === 'post') return { data: { data: { ...TENANT, status: 'activa' } } }
@@ -78,6 +94,8 @@ describe('TenantDetailPage', () => {
     expect(await screen.findByText('Falta de pago')).toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Motivo de la reactivación'), 'Pago regularizado')
     await userEvent.click(screen.getByRole('button', { name: 'Reactivar clínica' }))
+    const dialog = screen.getByRole('dialog', { name: '¿Reactivar «Clínica Demo»?' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Reactivar clínica' }))
 
     expect(await screen.findByText('Clínica reactivada.')).toBeInTheDocument()
     expect(calls.find((call) => call.method === 'post').url).toBe('/platform/tenants/t-1/reactivate')

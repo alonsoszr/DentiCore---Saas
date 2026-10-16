@@ -147,6 +147,7 @@ export function TwoFactorVerifyPage() {
           className="flex flex-col gap-4"
         >
           <OtpInput
+            autoFocus
             value={code}
             onChange={setCode}
             onComplete={(full) => verify({ code: full })}

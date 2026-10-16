@@ -67,6 +67,7 @@ describe('ClinicSettingsPage', () => {
 
     expect(await screen.findByText('El tope de descuento no debe ser mayor que 100.')).toBeInTheDocument()
     expect(cap).toHaveValue(150)
+    expect(cap).toHaveFocus()
   })
 
   it('uploads the logo and shows that it is under review', async () => {

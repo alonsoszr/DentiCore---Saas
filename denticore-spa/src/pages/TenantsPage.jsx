@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { apiClient } from '../api/client'
-import { adminPath } from '../auth/paths'
+import { adminPath, loginPathFor } from '../auth/paths'
 import { fieldErrors, generalError } from '../api/errors'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { formatDate } from '../ui/format'
-
-const PLAN_LABELS = { basic: 'Básico', pro: 'Pro', enterprise: 'Enterprise' }
-const STATUS_LABELS = { activa: 'Activa', suspendida: 'Suspendida', cancelada: 'Cancelada', eliminada: 'Eliminada' }
+import { useFocusFirstError } from '../ui/useFocusFirstError'
+import { PLAN_LABELS } from './tenantLabels'
+import { TenantStatusBadge } from './TenantStatusBadge'
 
 const EMPTY_FORM = {
   name: '',
@@ -85,6 +85,7 @@ export function TenantsPage() {
   }
 
   const errors = fieldErrors(createTenant.error)
+  useFocusFirstError(createTenant.error)
   const tenants = tenantsQuery.data ?? []
 
   return (
@@ -98,8 +99,9 @@ export function TenantsPage() {
       </PageHeader>
 
       {created && (
-        <div className="alert alert-success">
-          Clínica «{created.name}» registrada con el código <strong>{created.slug}</strong>. Se envió la invitación de
+        <div className="alert alert-success" role="status">
+          Clínica «{created.name}» registrada con el código <strong>{created.slug}</strong>. La dirección de la clínica
+          es <strong>{`${window.location.origin}${loginPathFor(created.slug)}`}</strong>. Se envió la invitación de
           activación a <strong>{created.adminEmail}</strong> (vence en 72 horas).
         </div>
       )}
@@ -108,7 +110,9 @@ export function TenantsPage() {
         <div className="card">
           <h2>Nueva clínica</h2>
           {generalError(createTenant.error) && (
-            <div className="alert alert-error">{generalError(createTenant.error)}</div>
+            <div className="alert alert-error" role="alert">
+              {generalError(createTenant.error)}
+            </div>
           )}
           <form onSubmit={handleSubmit} noValidate autoComplete="off">
             <div className="form-grid">
@@ -213,7 +217,7 @@ export function TenantsPage() {
 
       <div className="card">
         <form
-          className="form-actions"
+          className="search-form"
           role="search"
           onSubmit={(event) => {
             event.preventDefault()
@@ -232,7 +236,11 @@ export function TenantsPage() {
           </button>
         </form>
         {tenantsQuery.isLoading && <div className="empty">Cargando…</div>}
-        {tenantsQuery.isError && <div className="alert alert-error">{generalError(tenantsQuery.error)}</div>}
+        {tenantsQuery.isError && (
+          <div className="alert alert-error" role="alert">
+            {generalError(tenantsQuery.error)}
+          </div>
+        )}
         {tenantsQuery.isSuccess && tenants.length === 0 && (
           <div className="empty">Aún no hay clínicas registradas.</div>
         )}
@@ -256,12 +264,10 @@ export function TenantsPage() {
                       <Link to={adminPath(`/clinicas/${tenant.id}`)}>{tenant.name}</Link>
                     </td>
                     <td className="muted">{tenant.slug}</td>
-                    <td>{PLAN_LABELS[tenant.plan?.code]}</td>
+                    <td>{PLAN_LABELS[tenant.plan?.code] ?? tenant.plan?.name}</td>
                     <td>{tenant.active_dentists}</td>
                     <td>
-                      <span className={tenant.status === 'activa' ? 'badge' : 'badge badge-muted'}>
-                        {STATUS_LABELS[tenant.status]}
-                      </span>
+                      <TenantStatusBadge status={tenant.status} />
                     </td>
                     <td className="muted">{formatDate(tenant.created_at)}</td>
                   </tr>

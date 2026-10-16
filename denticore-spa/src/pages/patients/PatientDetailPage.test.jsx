@@ -67,6 +67,8 @@ describe('PatientDetailPage', () => {
       expect(within(header).getByText('36 años')).toBeInTheDocument()
       expect(within(header).getByText('HC 40000001')).toBeInTheDocument()
       expect(within(header).getByText('Consentimiento vigente')).toBeInTheDocument()
+      // DESIGN.md › Status palette: consentimiento vigente en tertiary, con ícono.
+      expect(within(header).getByText('Consentimiento vigente')).toHaveClass('badge-success')
       expect(within(header).getByText('Penicilina')).toBeInTheDocument()
     },
   )

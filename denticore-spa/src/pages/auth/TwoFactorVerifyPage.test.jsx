@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { makeUser, mockApi, renderPage } from '../../test/utils'
@@ -51,6 +51,15 @@ describe('TwoFactorVerifyPage', () => {
 
     expect(await screen.findByText('Código incorrecto.')).toBeInTheDocument()
     expect(screen.getByLabelText('Dígito 1 de 6')).toHaveValue('')
+    // El foco vuelve a la primera casilla para escribir el código de nuevo.
+    await waitFor(() => expect(screen.getByLabelText('Dígito 1 de 6')).toHaveFocus())
+  })
+
+  it('puts the focus on the first box when it opens', () => {
+    mockApi(() => ({ status: 404 }))
+    render()
+
+    expect(screen.getByLabelText('Dígito 1 de 6')).toHaveFocus()
   })
 
   it('locks the form with a countdown after too many attempts', async () => {

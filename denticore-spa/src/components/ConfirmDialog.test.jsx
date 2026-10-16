@@ -36,4 +36,16 @@ describe('ConfirmDialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Anular' })).toHaveFocus()
   })
+
+  it('keeps the focus inside the modal dialog with Tab and Shift+Tab', async () => {
+    render(<Opener />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Anular' }))
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus()
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'Anular abono' })).toHaveFocus()
+    await userEvent.tab({ shift: true })
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus()
+  })
 })

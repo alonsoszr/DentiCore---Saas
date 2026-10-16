@@ -11,8 +11,8 @@ import { Alert } from '../../components/Alert'
 import { OtpInput } from '../../components/auth/OtpInput'
 import { Spinner } from '../../ui/icons'
 import { groupKey } from './authHelpers'
+import { ROLE_LABELS } from '../../auth/roles'
 
-const ROLE_LABELS = { super_admin: 'Súper Administrador', clinic_admin: 'Administrador de Clínica' }
 const STEPS = ['Escanea', 'Confirma', 'Códigos']
 
 /**
@@ -142,21 +142,37 @@ export function TwoFactorSetupPage() {
             </Alert>
             {setup.isError && <Alert tone="error">{generalError(setup.error)}</Alert>}
             {setup.isPending && <p className="empty">Generando…</p>}
-            {qr && <img src={qr} alt="Código QR para tu aplicación de autenticación" width={200} height={200} />}
-            <p className="text-body-md">Usa Google Authenticator, Microsoft Authenticator u otra app compatible.</p>
-            {setup.data && (
-              <details>
-                <summary>¿No puedes escanear el código? Clave de configuración manual</summary>
-                <p className="mono" data-testid="manual-key">
-                  {groupKey(setup.data.secret)}
+            {qr && (
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-low p-4">
+                <img
+                  src={qr}
+                  alt="Código QR para tu aplicación de autenticación"
+                  width={200}
+                  height={200}
+                  className="rounded bg-surface-container-lowest p-2"
+                />
+                <p className="m-0 text-center text-body-md text-on-surface-variant">
+                  Usa Google Authenticator, Microsoft Authenticator u otra app compatible.
                 </p>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => navigator.clipboard?.writeText(setup.data.secret)}
-                >
-                  Copiar
-                </button>
+              </div>
+            )}
+            {setup.data && (
+              <details className="mt-4">
+                <summary className="cursor-pointer text-label-md">
+                  ¿No puedes escanear el código? Clave de configuración manual
+                </summary>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-container-low p-3">
+                  <p className="mono m-0" data-testid="manual-key">
+                    {groupKey(setup.data.secret)}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => navigator.clipboard?.writeText(setup.data.secret)}
+                  >
+                    Copiar
+                  </button>
+                </div>
               </details>
             )}
             <div className="form-actions">
@@ -176,7 +192,7 @@ export function TwoFactorSetupPage() {
             noValidate
           >
             <h1 className="text-headline-md">Confirma la configuración</h1>
-            <p className="text-body-md">Ingresa el código de 6 dígitos que muestra tu aplicación.</p>
+            <p className="mt-1 mb-4 text-body-md">Ingresa el código de 6 dígitos que muestra tu aplicación.</p>
             {confirmStatus === 422 && (
               <Alert tone="error" className="mb-4">
                 Código incorrecto. Revisa que la hora de tu teléfono sea correcta e inténtalo de nuevo.
@@ -188,12 +204,13 @@ export function TwoFactorSetupPage() {
               </Alert>
             )}
             <OtpInput
+              autoFocus
               value={code}
               onChange={setCode}
               disabled={confirm.isPending || lockSeconds > 0}
               invalid={confirmStatus === 422}
             />
-            <p className="muted">
+            <p className="muted mt-3">
               ¿Problemas de sincronización? Verifica que la hora de tu teléfono esté en modo automático.
             </p>
             <div className="form-actions">
@@ -215,7 +232,7 @@ export function TwoFactorSetupPage() {
         {step === 2 && (
           <>
             <h1 className="text-headline-md">Guarda tus códigos de recuperación</h1>
-            <p className="text-body-md">
+            <p className="mt-1 mb-4 text-body-md">
               Si pierdes acceso a tu aplicación de autenticación, estos códigos te permitirán iniciar sesión.
             </p>
             <Alert tone="warning" className="mb-4">
@@ -240,7 +257,7 @@ export function TwoFactorSetupPage() {
                 Copiar
               </button>
             </div>
-            <label className="checkbox">
+            <label className="checkbox mt-4">
               <input type="checkbox" checked={saved} onChange={(event) => setSaved(event.target.checked)} />
               Guardé mis códigos de recuperación
             </label>

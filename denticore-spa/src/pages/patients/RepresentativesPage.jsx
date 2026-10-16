@@ -4,9 +4,11 @@ import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field } from '../../components/Field'
 import { formatCivilDate } from '../../ui/format'
 import { DOCUMENT_TYPES, today } from './patientIdentity'
+import { useFocusFirstError } from '../../ui/useFocusFirstError'
 
 const RELATIONSHIPS = { madre: 'Madre', padre: 'Padre', tutor: 'Tutor', curador: 'Curador', otro: 'Otro' }
 const END_REASONS = { mayoria_de_edad: 'Mayoría de edad', revocada: 'Revocada', otro: 'Otro' }
@@ -29,6 +31,7 @@ export function RepresentativesPage({ patient }) {
   const queryClient = useQueryClient()
   const [form, setForm] = useState(EMPTY)
   const [showForm, setShowForm] = useState(false)
+  const [ending, setEnding] = useState(null)
   const canEdit = EDIT_ROLES.includes(user?.role)
   const queryKey = ['representatives', slug, patient.id]
 
@@ -48,7 +51,10 @@ export function RepresentativesPage({ patient }) {
   const end = useMutation({
     mutationFn: async ({ id, reason }) =>
       (await apiClient.post(`/patients/${patient.id}/representatives/${id}/end`, { reason })).data.data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+    onSuccess: () => {
+      setEnding(null)
+      queryClient.invalidateQueries({ queryKey })
+    },
   })
 
   const handleChange = (event) => setForm({ ...form, [event.target.name]: event.target.value })
@@ -58,6 +64,7 @@ export function RepresentativesPage({ patient }) {
   }
 
   const errors = fieldErrors(add.error)
+  useFocusFirstError(add.error)
   const representatives = listQuery.data ?? []
 
   return (
@@ -71,13 +78,23 @@ export function RepresentativesPage({ patient }) {
         )}
       </div>
       {patient.is_minor && representatives.every((item) => !item.is_current) && listQuery.isSuccess && (
-        <div className="alert alert-error">El paciente es menor de edad y no tiene un representante vigente.</div>
+        <div className="alert alert-error" role="alert">
+          El paciente es menor de edad y no tiene un representante vigente.
+        </div>
       )}
-      {generalError(end.error) && <div className="alert alert-error">{generalError(end.error)}</div>}
+      {!ending && generalError(end.error) && (
+        <div className="alert alert-error" role="alert">
+          {generalError(end.error)}
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} noValidate>
-          {generalError(add.error) && <div className="alert alert-error">{generalError(add.error)}</div>}
+          {generalError(add.error) && (
+            <div className="alert alert-error" role="alert">
+              {generalError(add.error)}
+            </div>
+          )}
           <div className="form-grid">
             <Field label="Tipo de documento" name="document_type" error={errors.document_type}>
               <select id="document_type" name="document_type" value={form.document_type} onChange={handleChange}>
@@ -184,9 +201,8 @@ export function RepresentativesPage({ patient }) {
                         className="btn-link"
                         onClick={() => {
                           // RNF-063: la acción pide confirmación con sus efectos.
-                          if (window.confirm(`¿Terminar la representación de ${item.first_name} ${item.last_name}?`)) {
-                            end.mutate({ id: item.id, reason: 'revocada' })
-                          }
+                          end.reset()
+                          setEnding(item)
                         }}
                       >
                         Terminar
@@ -198,6 +214,20 @@ export function RepresentativesPage({ patient }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {ending && (
+        <ConfirmDialog
+          title={`¿Terminar la representación de ${ending.first_name} ${ending.last_name}?`}
+          confirmLabel="Terminar representación"
+          destructive
+          busy={end.isPending}
+          error={generalError(end.error)}
+          onCancel={() => setEnding(null)}
+          onConfirm={() => end.mutate({ id: ending.id, reason: 'revocada' })}
+        >
+          <p>La representación termina hoy y queda en el historial de representantes.</p>
+        </ConfirmDialog>
       )}
     </div>
   )

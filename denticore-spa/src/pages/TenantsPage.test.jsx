@@ -45,6 +45,8 @@ describe('TenantsPage', () => {
 
     expect(await screen.findByText(/Clínica «Sonrisa Ñaña» registrada/)).toBeInTheDocument()
     expect(screen.getByText(/Se envió la/)).toBeInTheDocument()
+    // CUS-01 paso 7: la dirección de la clínica donde ingresan su personal y sus pacientes (DD-29).
+    expect(screen.getByText(`${window.location.origin}/c/sonrisa-nana/login`)).toBeInTheDocument()
     const post = calls.find((call) => call.method === 'post')
     expect(post.url).toBe('/platform/tenants')
     expect(JSON.parse(post.data)).toEqual({

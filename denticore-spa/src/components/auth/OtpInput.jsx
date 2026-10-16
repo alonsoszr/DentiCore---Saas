@@ -1,14 +1,32 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 const LENGTH = 6
 
 /**
  * Código TOTP de 6 dígitos en casillas (docs/design/screens/README.md › OtpInput): admite
- * pegar los 6 dígitos, avanza solo y llama a `onComplete` al llenarse.
+ * pegar los 6 dígitos, avanza solo y llama a `onComplete` al llenarse. Con `autoFocus` la primera
+ * casilla recibe el foco al aparecer, y tras un código incorrecto (casillas vacías) vuelve a ella.
  */
-export function OtpInput({ value, onChange, onComplete, disabled, label = 'Código de verificación', invalid }) {
+export function OtpInput({
+  value,
+  onChange,
+  onComplete,
+  disabled,
+  label = 'Código de verificación',
+  invalid,
+  autoFocus,
+}) {
   const inputs = useRef([])
   const digits = Array.from({ length: LENGTH }, (_, index) => value[index] ?? '')
+  const emptyAfterError = Boolean(invalid) && value === ''
+
+  useEffect(() => {
+    if (autoFocus) inputs.current[0]?.focus()
+  }, [autoFocus])
+
+  useEffect(() => {
+    if (emptyAfterError && !disabled) inputs.current[0]?.focus()
+  }, [emptyAfterError, disabled])
 
   const update = (next, focusIndex) => {
     const clean = next.replace(/\D/g, '').slice(0, LENGTH)
