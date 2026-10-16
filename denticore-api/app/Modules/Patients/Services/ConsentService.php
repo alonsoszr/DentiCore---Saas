@@ -35,6 +35,12 @@ class ConsentService
         private AuditLogger $audit,
     ) {}
 
+    /** RN-10: mensajes de la finalidad (a), obligatoria en todo canal. */
+    public const PURPOSE_CARE_MESSAGES = [
+        'purpose_care.accepted' => 'La finalidad (a) atención odontológica es obligatoria.',
+        'purpose_care.required' => 'La finalidad (a) atención odontológica es obligatoria.',
+    ];
+
     /**
      * Texto que se presenta para firmar, con quién lo otorga y las finalidades disponibles.
      *
@@ -42,9 +48,9 @@ class ConsentService
      *
      * @throws BusinessRuleException
      */
-    public function preview(Patient $patient): array
+    public function preview(Patient $patient, ?User $portalUser = null): array
     {
-        $representative = $this->grantingRepresentative($patient);
+        $representative = $this->grantingRepresentative($patient, $portalUser);
         $version = app(ConsentGate::class)->currentTemplateVersion();
 
         return [
@@ -59,15 +65,18 @@ class ConsentService
     /**
      * Registra el consentimiento y sustituye al vigente sin alterar sus datos (CA-17.4). En el
      * canal presencial, el documento escrito debe ser el del titular o del representante (FE-2);
-     * en papel se adjunta el formulario firmado (FA-2).
+     * en papel se adjunta el formulario firmado (FA-2). En el portal (FA-1) `$actor` es la cuenta
+     * que otorga: no hay personal que asista y un menor otorga por la representación de esa cuenta.
      *
      * @param  array{channel: string, purpose_notifications?: bool|null, purpose_ai?: bool|null, purpose_risk?: bool|null, purpose_surveys?: bool|null, confirmation_document_number?: string|null, scanned_file?: UploadedFile|null}  $data
      *
      * @throws BusinessRuleException|ValidationException
      */
-    public function grant(Patient $patient, array $data, User $assistant, ?string $ipAddress): Consent
+    public function grant(Patient $patient, array $data, User $actor, ?string $ipAddress): Consent
     {
-        $representative = $this->grantingRepresentative($patient);
+        $fromPortal = $data['channel'] === 'portal';
+        $representative = $this->grantingRepresentative($patient, $fromPortal ? $actor : null);
+        $assistant = $fromPortal ? null : $actor;
 
         if ($data['channel'] === 'presencial') {
             $this->ensureConfirmationMatches($patient, $representative, (string) ($data['confirmation_document_number'] ?? ''));
@@ -76,11 +85,11 @@ class ConsentService
         $version = app(ConsentGate::class)->currentTemplateVersion();
         $rendered = $this->renderer->render($version, $patient->tenant, $patient);
 
-        $consent = DB::transaction(function () use ($patient, $data, $assistant, $ipAddress, $representative, $version, $rendered): Consent {
+        $consent = DB::transaction(function () use ($patient, $data, $actor, $assistant, $ipAddress, $representative, $version, $rendered): Consent {
             // Serializa los registros concurrentes del mismo paciente (índice único `vigente`).
             Patient::query()->whereKey($patient->id)->lockForUpdate()->first();
 
-            $scan = isset($data['scanned_file']) ? $this->files->storeUpload($data['scanned_file'], $assistant) : null;
+            $scan = isset($data['scanned_file']) ? $this->files->storeUpload($data['scanned_file'], $actor) : null;
 
             $patient->consents()->where('status', 'vigente')->get()->each(
                 fn (Consent $previous) => $previous->forceFill(['status' => 'sustituido', 'superseded_at' => now()])->save(),
@@ -104,7 +113,7 @@ class ConsentService
                 'scanned_file_id' => $scan?->id,
                 'granted_at' => now(),
                 'ip_address' => $ipAddress,
-                'assisted_by' => $assistant->id,
+                'assisted_by' => $assistant?->id,
                 'status' => 'vigente',
             ]);
             $consent->setRelation('patient', $patient)
@@ -114,7 +123,7 @@ class ConsentService
             $consent->save();
 
             // RF-066: la constancia se genera en la cola `documents`; se enlaza una sola vez.
-            $certificate = $this->documents->request($consent, 'constancia_consentimiento', $assistant);
+            $certificate = $this->documents->request($consent, 'constancia_consentimiento', $actor);
             $consent->forceFill(['certificate_document_id' => $certificate->id])->save();
             $consent->setRelation('certificate', $certificate);
 
@@ -130,19 +139,43 @@ class ConsentService
     }
 
     /**
+     * CA-17.5: (c) y (d) solo se otorgan si la clínica las ofrece (plan e IA activada).
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ValidationException
+     */
+    public function ensurePurposesOffered(Patient $patient, array $data): void
+    {
+        $available = $this->renderer->availablePurposes($patient->tenant);
+        $unavailable = collect(['purpose_ai', 'purpose_risk'])
+            ->filter(fn (string $column) => filter_var($data[$column] ?? false, FILTER_VALIDATE_BOOLEAN) && ! in_array($column, $available, true));
+
+        if ($unavailable->isNotEmpty()) {
+            throw ValidationException::withMessages(
+                $unavailable->mapWithKeys(fn (string $column) => [$column => 'La clínica no ofrece esta finalidad.'])->all(),
+            );
+        }
+    }
+
+    /**
      * RN-12, CA-17.3: un menor otorga por medio de su representante vigente; sin él no se puede
-     * iniciar el registro (FE-3).
+     * iniciar el registro (FE-3). Desde el portal, por la representación de la cuenta (SDD §3.3).
      *
      * @throws BusinessRuleException
      */
-    private function grantingRepresentative(Patient $patient): ?LegalRepresentative
+    private function grantingRepresentative(Patient $patient, ?User $portalUser = null): ?LegalRepresentative
     {
         if (! $patient->isMinorOn()) {
             return null;
         }
 
         /** @var LegalRepresentative|null $representative */
-        $representative = $patient->representatives()->whereNull('valid_until')->latest('valid_from')->first();
+        $representative = $patient->representatives()
+            ->whereNull('valid_until')
+            ->when($portalUser !== null, fn ($query) => $query->where('user_id', $portalUser?->id))
+            ->latest('valid_from')
+            ->first();
 
         return $representative ?? throw new BusinessRuleException(
             'RN-12',

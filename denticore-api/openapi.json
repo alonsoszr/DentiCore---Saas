@@ -3441,86 +3441,14 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "",
+                        "description": "`ConsentPreviewResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "object",
-                                            "properties": {
-                                                "template_version": {
-                                                    "type": "integer"
-                                                },
-                                                "text": {
-                                                    "type": "string"
-                                                },
-                                                "text_sha256": {
-                                                    "type": "string"
-                                                },
-                                                "granted_by": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "titular",
-                                                        "representante"
-                                                    ]
-                                                },
-                                                "representative": {
-                                                    "type": [
-                                                        "object",
-                                                        "null"
-                                                    ],
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "first_name": {
-                                                            "type": "string"
-                                                        },
-                                                        "last_name": {
-                                                            "type": "string"
-                                                        },
-                                                        "relationship": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "madre",
-                                                                "padre",
-                                                                "tutor",
-                                                                "curador",
-                                                                "otro"
-                                                            ]
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "id",
-                                                        "first_name",
-                                                        "last_name",
-                                                        "relationship"
-                                                    ]
-                                                },
-                                                "available_purposes": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "purpose_care",
-                                                            "purpose_notifications",
-                                                            "purpose_ai",
-                                                            "purpose_risk",
-                                                            "purpose_surveys"
-                                                        ]
-                                                    }
-                                                }
-                                            },
-                                            "required": [
-                                                "template_version",
-                                                "text",
-                                                "text_sha256",
-                                                "granted_by",
-                                                "representative",
-                                                "available_purposes"
-                                            ]
+                                            "$ref": "#/components/schemas/ConsentPreviewResource"
                                         }
                                     },
                                     "required": [
@@ -7315,6 +7243,400 @@
                     },
                     "409": {
                         "description": "Transici\u00f3n no definida del \u00edtem o plan completado o cancelado (RF-114)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/portal/patients/{patient}/consents": {
+            "get": {
+                "operationId": "portalConsent.index",
+                "summary": "RF-065, RF-067: consentimientos del paciente, del m\u00e1s reciente al m\u00e1s antiguo",
+                "tags": [
+                    "PortalConsent"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ConsentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ConsentResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "portalConsent.store",
+                "summary": "CUS-17 FA-1: la finalidad (a) es obligatoria (RN-10); (c) y (d) solo si la cl\u00ednica las\nofrece (CA-17.5). Lo otorga el titular adulto o su representante vigente (RN-12)",
+                "tags": [
+                    "PortalConsent"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "purpose_care": {
+                                        "enum": [
+                                            "yes",
+                                            "on",
+                                            "1",
+                                            1,
+                                            "true",
+                                            true
+                                        ]
+                                    },
+                                    "purpose_notifications": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "purpose_ai": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "purpose_risk": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "purpose_surveys": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "purpose_care"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ConsentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ConsentResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BusinessRuleException"
+                                        },
+                                        {
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/portal/patients/{patient}/consents/preview": {
+            "get": {
+                "operationId": "portalConsent.preview",
+                "summary": "CUS-17 pasos 2\u20133: texto vigente y finalidades; las opcionales se presentan sin marcar (CA-17.1)",
+                "tags": [
+                    "PortalConsent"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ConsentPreviewResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ConsentPreviewResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Paciente menor sin representante legal vigente (RN-12)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/portal/patients/{patient}/teeth/{tooth}/history": {
+            "get": {
+                "operationId": "portalOdontogram.toothHistory",
+                "tags": [
+                    "PortalOdontogram"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tooth",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `OdontogramEntryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/OdontogramEntryResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "corrected_by_id"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "La pieza no existe en el Sistema D\u00edgito Dos (RN-16)",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -12655,6 +12977,82 @@
                     "signed_at"
                 ],
                 "title": "ClinicalNoteResource"
+            },
+            "ConsentPreviewResource": {
+                "type": "object",
+                "properties": {
+                    "template_version": {
+                        "type": "integer"
+                    },
+                    "text": {
+                        "type": "string"
+                    },
+                    "text_sha256": {
+                        "type": "string"
+                    },
+                    "granted_by": {
+                        "type": "string",
+                        "enum": [
+                            "titular",
+                            "representante"
+                        ]
+                    },
+                    "representative": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "first_name": {
+                                "type": "string"
+                            },
+                            "last_name": {
+                                "type": "string"
+                            },
+                            "relationship": {
+                                "type": "string",
+                                "enum": [
+                                    "madre",
+                                    "padre",
+                                    "tutor",
+                                    "curador",
+                                    "otro"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "first_name",
+                            "last_name",
+                            "relationship"
+                        ]
+                    },
+                    "available_purposes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "purpose_care",
+                                "purpose_notifications",
+                                "purpose_ai",
+                                "purpose_risk",
+                                "purpose_surveys"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "template_version",
+                    "text",
+                    "text_sha256",
+                    "granted_by",
+                    "representative",
+                    "available_purposes"
+                ],
+                "title": "ConsentPreviewResource"
             },
             "ConsentResource": {
                 "type": "object",

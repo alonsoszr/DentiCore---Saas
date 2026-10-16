@@ -36,10 +36,18 @@ function clinicalNoteKeysIn(mixed $payload): array
 
 it('serves no clinical note keys from the portal routes', function () {
     $tenant = Tenant::factory()->create();
-    [$user] = PortalFixtures::holder($tenant);
+    [$user, $patient] = PortalFixtures::holder($tenant);
+    PortalFixtures::recordedFinding($tenant, $patient);
     $this->actingWithToken($user);
 
-    foreach (['/api/v1/portal/subjects'] as $uri) {
+    $uris = [
+        '/api/v1/portal/subjects',
+        "/api/v1/portal/patients/{$patient->uuid}/consents",
+        "/api/v1/portal/patients/{$patient->uuid}/consents/preview",
+        "/api/v1/portal/patients/{$patient->uuid}/teeth/36/history",
+    ];
+
+    foreach ($uris as $uri) {
         expect(clinicalNoteKeysIn($this->getJson($uri)->assertOk()->json()))->toBe([], $uri);
     }
 })->group('DI-13', 'RF-179');
