@@ -203,6 +203,7 @@ describe('SchedulePage', () => {
 
     expect(await screen.findByText('El odontólogo aún no tiene horario laboral.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cambiar horario' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Nuevo bloqueo' })).toHaveClass('btn-secondary')
     await userEvent.click(screen.getByRole('button', { name: 'Nuevo bloqueo' }))
     expect(screen.queryByText('Toda la clínica')).not.toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Motivo'), 'Trámite personal')

@@ -76,7 +76,7 @@ export function SlotPicker({ params, selected, onSelect, chooseDentist = false }
                 <button
                   key={start}
                   type="button"
-                  className={isSelected ? 'btn' : 'btn btn-secondary'}
+                  className={`min-w-20 tabular-nums ${isSelected ? 'btn' : 'btn btn-secondary'}`}
                   aria-pressed={isSelected}
                   onClick={() =>
                     onSelect({ dentistId: group.dentist.id, dentistName: group.dentist.name, startsAt: start })

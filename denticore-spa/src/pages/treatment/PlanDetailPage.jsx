@@ -52,7 +52,7 @@ function useFocusWhenOpen(open) {
 }
 
 /** Diálogo destructivo con un motivo obligatorio (descartar un ítem o cancelar el plan, RF-129). */
-function ReasonDialog({ title, confirmLabel, children, mutation, onConfirm, onCancel }) {
+function ReasonDialog({ title, confirmLabel, cancelLabel, children, mutation, onConfirm, onCancel }) {
   const [reason, setReason] = useState('')
   const reasonError = fieldErrors(mutation.error).reason
 
@@ -60,6 +60,7 @@ function ReasonDialog({ title, confirmLabel, children, mutation, onConfirm, onCa
     <ConfirmDialog
       title={title}
       confirmLabel={confirmLabel}
+      cancelLabel={cancelLabel}
       onConfirm={() => onConfirm(reason)}
       onCancel={onCancel}
       busy={mutation.isPending}
@@ -506,6 +507,7 @@ export function PlanDetailPage() {
         <ReasonDialog
           title="Cancelar el plan"
           confirmLabel="Confirmar cancelación"
+          cancelLabel="Volver"
           mutation={cancel}
           onConfirm={(reason) => cancel.mutate(reason)}
           onCancel={() => setCancelPreview(null)}

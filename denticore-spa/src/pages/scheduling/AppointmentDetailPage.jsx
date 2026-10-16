@@ -37,6 +37,7 @@ function CancelDialog({ appointment, onDone, onCancel }) {
     <ConfirmDialog
       title="¿Cancelar la cita?"
       confirmLabel="Cancelar cita"
+      cancelLabel="Volver"
       destructive
       confirmDisabled={reason === ''}
       onConfirm={() => cancel.mutate()}
@@ -130,7 +131,7 @@ function Reschedule({ appointment, onDone, onCancel }) {
           {slot ? `Reprogramar al ${formatDateTime(slot.startsAt, timeZone)}` : 'Reprogramar'}
         </button>
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
-          Cancelar
+          Volver
         </button>
       </div>
     </section>
@@ -159,8 +160,9 @@ export function AppointmentDetailPage() {
   })
   const refresh = (data) => {
     queryClient.setQueryData(queryKey, data)
-    queryClient.invalidateQueries({ queryKey: ['appointments'] })
-    queryClient.invalidateQueries({ queryKey: ['waiting-room'] })
+    // La agenda en caché se descarta: al volver muestra «Cargando…», no los datos anteriores.
+    queryClient.resetQueries({ queryKey: ['appointments'] })
+    queryClient.resetQueries({ queryKey: ['waiting-room'] })
     setMode(null)
   }
   const confirm = useMutation({
@@ -213,34 +215,40 @@ export function AppointmentDetailPage() {
           <StatusBadge appointment={data} />
         </div>
         <dl className="details">
-          <dt>Paciente</dt>
-          <dd>
-            <Link to={appPath(`/pacientes/${data.patient.id}`)}>{data.patient.name}</Link>
-          </dd>
-          <dt>Odontólogo</dt>
-          <dd>{data.dentist.name}</dd>
-          <dt>Confirmación</dt>
-          <dd>
-            {data.confirmed_at
-              ? `Confirmada ${CONFIRMATION_CHANNELS[data.confirmation_channel] ?? ''} el ${formatDateTime(data.confirmed_at, timeZone)}`
-              : data.reconfirmation_pending
-                ? 'Pendiente: la cita se reprogramó y falta reconfirmarla.'
-                : 'Pendiente'}
-          </dd>
+          <div>
+            <dt>Paciente</dt>
+            <dd>
+              <Link to={appPath(`/pacientes/${data.patient.id}`)}>{data.patient.name}</Link>
+            </dd>
+          </div>
+          <div>
+            <dt>Odontólogo</dt>
+            <dd>{data.dentist.name}</dd>
+          </div>
+          <div>
+            <dt>Confirmación</dt>
+            <dd>
+              {data.confirmed_at
+                ? `Confirmada ${CONFIRMATION_CHANNELS[data.confirmation_channel] ?? ''} el ${formatDateTime(data.confirmed_at, timeZone)}`
+                : data.reconfirmation_pending
+                  ? 'Pendiente: la cita se reprogramó y falta reconfirmarla.'
+                  : 'Pendiente'}
+            </dd>
+          </div>
           {data.checked_in_at && (
-            <>
+            <div>
               <dt>Llegada</dt>
               <dd>{formatDateTime(data.checked_in_at, timeZone)}</dd>
-            </>
+            </div>
           )}
           {data.status === 'cancelada' && (
-            <>
+            <div>
               <dt>Cancelación</dt>
               <dd>
                 {CANCEL_REASONS[data.cancel_reason]}
                 {data.cancel_detail ? ` · ${data.cancel_detail}` : ''}
               </dd>
-            </>
+            </div>
           )}
         </dl>
 
@@ -261,7 +269,8 @@ export function AppointmentDetailPage() {
           </Alert>
         )}
 
-        {isDesk && pending && mode === null && (
+        {/* Con el diálogo de cancelar abierto la barra sigue montada: al cerrarlo, el foco vuelve a su botón. */}
+        {isDesk && pending && mode !== 'reschedule' && (
           <div className="form-actions">
             <button type="button" className="btn" onClick={() => checkIn.mutate()} disabled={checkIn.isPending}>
               Registrar llegada
