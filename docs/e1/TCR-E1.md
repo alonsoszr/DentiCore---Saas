@@ -74,6 +74,7 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 | Frontend | Vitest y React Testing Library | 247 pruebas en 42 archivos | spa |
 | E2E y accesibilidad | Playwright con axe-core (WCAG 2.1 AA) | Chrome, Edge, Firefox y WebKit a 360, 768, 1280 y 1920 px: 204 casos en verde. Chrome para Android emulado (Pixel 7): el portal y el login en verde (6 casos; las pantallas del personal se omiten por debajo de 768 px) | RUN 39016862446; Android en la CI de #97 |
 | Concurrencia (PC-E, T-176) | k6 0.54 | 50 reservas simultáneas del mismo horario: 1 creada, 49 conflictos (409), 0 errores; p95 2,08 s | Artefacto `load-results/pc-e-summary.json` |
+| Flujo de valor de E1 (TASK-098) | E2E `value-flow.spec.ts` en chromium-1280 | Cita → HC → riesgo → plan → presupuesto → procedimiento, solo por la interfaz y con datos sintéticos | ⟨pendiente: corrida de la etiqueta⟩ |
 | Tolerancia a fallos | E2E `@motor-detenido` | Con el motor detenido, la atención sigue editable y la pantalla dice «Predicción no disponible» | RUN 39016862446 |
 | Seguridad | Semgrep (reglas propias), gitleaks, `composer audit`, `npm audit` y `pip-audit` | 0 hallazgos SAST, 0 secretos, 0 vulnerabilidades conocidas | api, spa y ml |
 | Mutación (nocturna) | Pest `--mutate --covered-only` sobre los 5 servicios críticos | MSI 75,7 % (1 752 de 2 314 mutantes eliminados; detalle abajo) | RUN 39051823643, artefactos `mutation-*` |
@@ -122,8 +123,8 @@ Registro de los defectos encontrados por las pruebas de la verificación de E1 (
 | DEF-005 | Las tablas con desplazamiento horizontal no se podían recorrer con el teclado (axe `scrollable-region-focusable`). | WCAG 2.1.1 | Media | TASK-094 (#94): `TableWrap` (grupo con nombre y foco). | Cerrado |
 | DEF-006 | Dos reglas de validación (`multiple_of`, `prohibited_if`) devolvían su mensaje en inglés. | RNF-188 | Baja | TASK-094 (#94): traducción y una prueba que recorre todas las reglas usadas por la API. | Cerrado |
 | DEF-007 | La mutación nocturna nunca midió el MSI: `--parallel` fallaba al crear las bases (el rol de la API no tiene CREATEDB) y `continue-on-error` lo ocultaba. Antes tampoco tenía Redis ni Mailpit. | RNF-127 | Media | TASK-095 (#95) agregó los servicios y TASK-097 corre cada servicio crítico en serie, sin ocultar el fallo. | Cerrado |
-| DEF-008 | Faltaba el aviso de RNF-146 cuando el usuario tiene abierto otro paciente en otra pestaña. | RNF-146 | Media | TASK-098: aviso en la franja del paciente (BroadcastChannel). | ⟨pendiente⟩ |
-| DEF-009 | Ocho badges de estado mostraban texto sin ícono. Cumplían RNF-061 por el texto, no la regla de diseño «texto e ícono». | RNF-061, DESIGN.md | Baja | TASK-098: `StatusBadge` con ícono. | ⟨pendiente⟩ |
+| DEF-008 | Faltaba el aviso de RNF-146 cuando el usuario tiene abierto otro paciente en otra pestaña. | RNF-146 | Media | TASK-098 (#98): aviso en la franja del paciente (`useOtherPatientTabs`, BroadcastChannel); Vitest y `e2e/patient-tabs.spec.ts`. | Cerrado |
+| DEF-009 | Ocho badges de estado mostraban texto sin ícono. Cumplían RNF-061 por el texto, no la regla de diseño «texto e ícono». | RNF-061, DESIGN.md | Baja | TASK-098 (#98): `StatusBadge` con ícono en los ocho; `expectStatesNotOnlyByColor` exige texto e ícono en cada badge de la matriz E2E. | Cerrado |
 
 **Causa raíz de DEF-001:**
 - `OutboxJob` confiaba en que el *job* solo llegara con el uuid de su propia clínica, y no lo comprobaba.
@@ -179,7 +180,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 | RNF-128 | Cada RN y CA con prueba | ✅ | Workflow `traceability`: 64 RN y 59 CA |
 | RNF-130 | Reloj simulado y 0 esperas reales | ✅ | `TimeTest` (`arch()`), `EvidenceTest` y otras |
 | RNF-135 | Cambios por PR con ≥ 1 revisor y CI en verde | ⚠️ | Todos los cambios entraron por PR con la CI y SonarCloud en verde, pero se integraron con `--admin`, sin un segundo revisor. Además, `main` solo exige el check `e2e`. |
-| RNF-146 | Identidad del paciente visible y aviso de otra pestaña | 🟨 | La franja `PatientHeader` está en toda pantalla clínica. El aviso de otra pestaña llega con DEF-008 (TASK-098). |
+| RNF-146 | Identidad del paciente visible y aviso de otra pestaña | ✅ | La franja `PatientHeader` está en toda pantalla clínica, con el aviso de otro paciente abierto en otra pestaña (DEF-008): `PatientHeader.test.jsx` y `e2e/patient-tabs.spec.ts` |
 | RNF-147 | La IA o el modelo no escriben datos clínicos | ✅ | `PredictTest`: tras una predicción, las tablas clínicas no cambian |
 | RNF-149 | Aviso de alergias antes de actuar | ✅ | `MedicalHistoryTest` y la franja del paciente |
 | RNF-151 | Solo simbología oficial | ✅ | `FindingCatalogSchemaTest`, `NtsCatalogSeedTest` |
@@ -197,8 +198,8 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 
 | Estado | RNF |
 | :-- | --: |
-| ✅ Cumplidos | 37 |
-| 🟨 Cumplidos con condición | 6 (RNF-004, 007, 051, 091, 100 y 146) |
+| ✅ Cumplidos | 38 |
+| 🟨 Cumplidos con condición | 5 (RNF-004, 007, 051, 091 y 100) |
 | ⏸️ Diferidos por R-03 | 6 |
 | ⚠️ Desviación aceptada | 1 |
 
@@ -211,7 +212,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 | C-03 | Firma del cirujano dentista sobre el catálogo NTS 188 (RNF-004) | La firma se exige en E2 (DE-04, PQ-05); E1 cierra con el catálogo verificado por prueba. | MS-10: TASK-117 | Plan §7.3 (DE-04) |
 | C-04 | RNF-135: integración con `--admin`, sin un segundo revisor | Decisión del equipo para los hitos MS-03 a MS-08, con la CI y SonarCloud en verde como condición de cada integración. | Se vuelve a decidir al iniciar E2 | Dueño del producto, 2026-10-17 |
 | C-05 | Chrome para Android emulado, no en un dispositivo real; sin la versión estable anterior de cada navegador (RNF-051) | La CI usa la versión actual de cada motor de Playwright. | Prueba en dispositivo en E3 (portal completo, MS-13) | Dueño del producto, 2026-10-17 |
-| C-06 | Sin staging: la demostración de TASK-098 corre en el entorno local | Staging se aprovisiona en MS-10 (TASK-111). | MS-10 | Dueño del producto, 2026-10-17 |
+| C-06 | Sin staging: la demostración de TASK-098 corre en el entorno local | Staging se aprovisiona en MS-10 (TASK-111). El guion (`docs/e1/demostracion.md`) corre de principio a fin sin tocar la BD, y la CI lo repite en `e2e/value-flow.spec.ts`. | MS-10 | Dueño del producto, 2026-10-17 |
 | C-07 | La guía de instalación debe verificarla otro integrante (RNF-141, *Should*, de E3) | La corrida automatizada en un clon limpio funcionó (`docs/e1/verificacion-instalacion.md`); falta la del compañero. | MS-08 | ⟨pendiente⟩ |
 
 **Fuera de E1:** RNF-127 (MSI ≥ 70 %) es *Should*. Su valor se informa (§3: 75,7 % global, riesgo 63,0 %) y bloquea la liberación desde E3 (Plan §6.1).
@@ -220,7 +221,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 
 **ACEPTAR CON CONDICIONES.**
 - Los 115 RF de E1 tienen sus pruebas en verde.
-- 37 de los 50 RNF cumplen su criterio entero, y los demás tienen su condición registrada en §6, con la nueva entrega y la aprobación del dueño del producto (Plan §6.5).
+- 38 de los 50 RNF cumplen su criterio entero, y los demás tienen su condición registrada en §6, con la nueva entrega y la aprobación del dueño del producto (Plan §6.5).
 - No quedan defectos críticos ni altos abiertos.
 - Ningún dato real entra a la plataforma antes de aceptar E2 (SRS §17.1).
 
@@ -236,5 +237,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 - `docs/e1/trazabilidad-e1.md`: cada RF, RN, CA y RNF de E1 con todas sus pruebas. Lo genera `node scripts/traceability/e1.mjs --anexo`.
 - `docs/e1/verificacion-instalacion.md`: verificación de la guía de instalación.
 - `docs/e1/migraciones.md`: registro de migraciones expandir/contraer.
+- `docs/e1/demostracion.md`: guion de la demostración de E1.
+- `docs/e1/retrospectiva.md`: velocidad medida y retrospectiva.
 - `denticore-ml/docs/model_card_1.0.0.md`: ficha técnica provisional del modelo.
 - GitHub Release `e1.0`: el OpenAPI generado por la CI, este informe y la ficha del modelo.

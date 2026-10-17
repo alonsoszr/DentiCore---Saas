@@ -275,7 +275,7 @@ Generado por `node scripts/traceability/e1.mjs --anexo` (TASK-097). Una prueba c
 | RNF-046 | 2 | `denticore-api/tests/Contract/OpenApiTest.php`<br>`denticore-api/tests/Feature/Support/MoneyTest.php` |
 | RNF-051 | 1 | `denticore-spa/e2e/budget-portal.spec.ts` |
 | RNF-052 | 1 | `denticore-spa/src/components/TableWrap.test.jsx` |
-| RNF-061 | 1 | `denticore-spa/e2e/attention.spec.ts` |
+| RNF-061 | 2 | `denticore-spa/e2e/attention.spec.ts`<br>`denticore-spa/src/components/badges.test.jsx` |
 | RNF-063 | 1 | `denticore-spa/src/pages/treatment/Budget.test.jsx` |
 | RNF-064 | 1 | `denticore-spa/src/api/schemas.test.js` |
 | RNF-074 | 1 | `denticore-spa/e2e/risk.spec.ts` |
@@ -296,7 +296,7 @@ Generado por `node scripts/traceability/e1.mjs --anexo` (TASK-097). Una prueba c
 | RNF-128 | 0 | ci: Informe de trazabilidad (scripts/traceability/e1.mjs): cada RN de los CUS de E1 y cada CA de §11 de esos CUS citados por al menos una prueba. |
 | RNF-130 | 4 | `denticore-api/tests/Architecture/TimeTest.php`<br>`denticore-api/tests/Feature/Support/EvidenceTest.php`<br>`denticore-api/tests/Feature/Support/FileStorageTest.php`<br>`denticore-api/tests/Feature/Support/OutboxTest.php` |
 | RNF-135 | 0 | manual: Todo cambio entra por PR con la CI y SonarCloud en verde, pero los PR de E1 se integraron con --admin, sin un segundo revisor, y la protección de main solo exige el check e2e. Desviación C-04 del TCR-E1, aceptada por el dueño del producto el 2026-10-17; se vuelve a decidir al iniciar E2. |
-| RNF-146 | 1 | `denticore-api/tests/Feature/Patients/MedicalHistoryTest.php` |
+| RNF-146 | 2 | `denticore-api/tests/Feature/Patients/MedicalHistoryTest.php`<br>`denticore-spa/src/pages/patients/PatientHeader.test.jsx` |
 | RNF-147 | 1 | `denticore-api/tests/Feature/Risk/PredictTest.php` |
 | RNF-149 | 1 | `denticore-api/tests/Feature/Patients/MedicalHistoryTest.php` |
 | RNF-151 | 2 | `denticore-api/tests/Feature/Odontogram/FindingCatalogSchemaTest.php`<br>`denticore-api/tests/Feature/Odontogram/NtsCatalogSeedTest.php` |
