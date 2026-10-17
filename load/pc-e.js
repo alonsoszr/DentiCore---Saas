@@ -8,6 +8,7 @@
 import http from 'k6/http'
 import { Counter } from 'k6/metrics'
 import { check, fail } from 'k6'
+import { randomBytes } from 'k6/crypto'
 
 const API = __ENV.API_URL || 'http://localhost:8000/api/v1'
 const RESERVAS = 50
@@ -27,9 +28,15 @@ export const options = {
   },
 }
 
+/** Entero aleatorio en [0, max) con el generador criptográfico de k6. */
+function randomInt(max) {
+  const [a, b, c, d] = new Uint8Array(randomBytes(4))
+  return (((a << 24) >>> 0) + (b << 16) + (c << 8) + d) % max
+}
+
 /** Clave de idempotencia distinta por escritura (SDD §4.1). */
 function idempotencyKey() {
-  const hex = () => Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0')
+  const hex = () => randomInt(0x10000).toString(16).padStart(4, '0')
   return `${hex()}${hex()}-${hex()}-4${hex().slice(1)}-a${hex().slice(1)}-${hex()}${hex()}${hex()}`
 }
 
@@ -80,12 +87,12 @@ export function setup() {
       `${API}/patients`,
       JSON.stringify({
         document_type: 'dni',
-        document_number: String(60000000 + Math.floor(Math.random() * 9999999)),
+        document_number: String(60000000 + randomInt(9999999)),
         first_name: 'Carga',
         last_name: `Sintética ${index + 1}`,
         birth_date: '1990-01-01',
         sex: 'femenino',
-        phone: `9${String(Math.floor(Math.random() * 99999999)).padStart(8, '0')}`,
+        phone: `9${String(randomInt(99999999)).padStart(8, '0')}`,
       }),
       headers(token, true),
     )
