@@ -19,6 +19,7 @@ Está escrita para Windows con **Git Bash**. En Linux y macOS los comandos de la
 **Requisitos de la PC:**
 - 16 GB de RAM (mínimo 8 GB) y 15 GB libres de disco.
 - No instales PostgreSQL ni Redis: los levanta Docker.
+- Clona el repositorio en un **SSD**. En un disco duro mecánico, `npm ci` y `composer install` escriben decenas de miles de archivos y pueden pasar de una hora (ver `docs/e1/verificacion-instalacion.md`).
 
 **Windows.** Abre PowerShell como administrador:
 
@@ -189,6 +190,7 @@ cd denticore-spa && npx playwright install && npm run e2e -- --project=chromium-
 | El login responde «demasiados intentos» (429) | Hubo más de 5 intentos en un minuto desde tu IP (RF-035): espera un minuto. |
 | Docker no arranca (Windows) | Ejecuta `wsl --update` y revisa la virtualización en la BIOS. |
 | La PC se pone lenta | Detén el antivirus si no subes archivos: `docker compose stop clamav`. |
+| `npm ci` o `composer install` tardan muchísimo | El repositorio está en un disco duro mecánico o el antivirus de Windows revisa cada archivo. Clona en un SSD, o excluye la carpeta del repositorio en *Seguridad de Windows → Exclusiones*. |
 
 ## 10. Asistente de IA (opcional)
 
