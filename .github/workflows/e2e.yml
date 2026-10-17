@@ -36,7 +36,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BASE_SHA...$GITHUB_SHA" | grep -qE '^(denticore-api/|denticore-spa/|denticore-ml/|infra/|docker-compose\.yml$|\.github/workflows/e2e\.yml$)'; then
+          elif git diff --name-only "$BASE_SHA...$GITHUB_SHA" | grep -qE '^(denticore-api/|denticore-spa/|denticore-ml/|infra/|load/|docker-compose\.yml$|\.github/workflows/e2e\.yml$)'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
@@ -88,7 +88,8 @@ jobs:
           docker compose -f ../docker-compose.yml run --rm minio-setup
           docker compose -f ../docker-compose.yml exec -T ml python -m denticore_ml.training --version 1.0.0 --out models --commit "$GITHUB_SHA" --upload
           php artisan risk:register-model 1.0.0 --activate
-          php artisan serve --port=8000 > ../api.log 2>&1 &
+          # Varios procesos del servidor de PHP: T-176 (k6) necesita reservas de verdad simultáneas.
+          PHP_CLI_SERVER_WORKERS=8 php artisan serve --port=8000 > ../api.log 2>&1 &
           # Correos de invitación (outbox → cola → Mailpit), como el worker de producción.
           php artisan outbox:dispatch > ../outbox.log 2>&1 &
           php artisan queue:work redis --queue=critical,notifications,documents,heavy,default > ../worker.log 2>&1 &
@@ -112,6 +113,16 @@ jobs:
         working-directory: denticore-spa
         run: npm run e2e -- --grep-invert @motor-detenido
 
+      # T-176 (TASK-091; RNF-038, RN-46): 50 reservas simultáneas del mismo horario dan 1 éxito y 49
+      # conflictos sin errores 5xx. El resumen de k6 queda como artefacto para el informe de E1.
+      - name: Concurrencia de reservas (k6, T-176)
+        run: |
+          mkdir -p load-results
+          docker run --rm --network host -u "$(id -u):$(id -g)" \
+            -v "$PWD/load:/load:ro" -v "$PWD/load-results:/results" \
+            grafana/k6:0.54.0 run -e API_URL=http://localhost:8000/api/v1 \
+            --summary-export /results/pc-e-summary.json /load/pc-e.js
+
       # TASK-083 (criterio 2) y RT-01: con el motor ML detenido la atención continúa y la pantalla
       # muestra «Predicción no disponible» (RN-64, CA-55.3).
       - name: Playwright con el motor ML detenido
@@ -130,3 +141,4 @@ jobs:
             spa.log
             outbox.log
             worker.log
+            load-results
