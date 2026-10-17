@@ -29,7 +29,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: pg-${{ github.run_id }}
           POSTGRES_DB: postgres
         ports: ['5432:5432']
         options: >-
@@ -37,33 +37,34 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+    # Contraseñas de una base efímera de esta corrida, derivadas de su identificador.
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: 5432
       DB_DATABASE: denticore_testing
       DB_USERNAME: denticore_app
-      DB_PASSWORD: app_ci
+      DB_PASSWORD: app-${{ github.run_id }}
       DB_MIGRATOR_USERNAME: denticore_migrator
-      DB_MIGRATOR_PASSWORD: migrator_ci
+      DB_MIGRATOR_PASSWORD: migrator-${{ github.run_id }}
       DB_PLATFORM_USERNAME: denticore_platform
-      DB_PLATFORM_PASSWORD: platform_ci
+      DB_PLATFORM_PASSWORD: platform-${{ github.run_id }}
     steps:
       - uses: actions/checkout@v4
       - name: Roles y bases de PostgreSQL (infra/postgres/init.sh)
         env:
           PGHOST: 127.0.0.1
-          PGPASSWORD: postgres
+          PGPASSWORD: pg-${{ github.run_id }}
           POSTGRES_USER: postgres
-          DENTICORE_MIGRATOR_PASSWORD: migrator_ci
-          DENTICORE_APP_PASSWORD: app_ci
-          DENTICORE_PLATFORM_PASSWORD: platform_ci
+          DENTICORE_MIGRATOR_PASSWORD: migrator-${{ github.run_id }}
+          DENTICORE_APP_PASSWORD: app-${{ github.run_id }}
+          DENTICORE_PLATFORM_PASSWORD: platform-${{ github.run_id }}
         run: bash infra/postgres/init.sh
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.3'
           extensions: bcmath, intl, pdo_pgsql, pgsql, zip, pcntl
           coverage: none
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # 3.2.1
         with:
           working-directory: denticore-api
 
