@@ -198,8 +198,7 @@ jobs:
           php artisan key:generate
       # SDD §6.4: 100 % en verde y cobertura de líneas ≥ 80 % en el backend.
       - name: Pest con cobertura
-        # El informe de cobertura de la suite completa supera los 512 MB por defecto de la CLI.
-        run: php -d memory_limit=2G vendor/bin/pest --coverage --min=80 --coverage-clover=coverage.xml
+        run: vendor/bin/pest --coverage --min=80 --coverage-clover=coverage.xml
       # SDD §4.1 (RNF-044): el documento versionado debe coincidir con el generado del código.
       # Va en este job porque Scramble lee el esquema de la BD (ya migrado por Pest) para
       # tipar los modelos; sin BD el documento generado sería distinto.

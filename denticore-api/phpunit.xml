@@ -28,7 +28,7 @@
     </source>
     <php>
         <!-- La prueba de contrato genera el OpenAPI en el mismo proceso (Scramble analiza el código). -->
-        <ini name="memory_limit" value="512M"/>
+        <ini name="memory_limit" value="1024M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
