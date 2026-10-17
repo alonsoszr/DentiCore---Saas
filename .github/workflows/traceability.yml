@@ -22,10 +22,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Pruebas de los scripts de trazabilidad y cobertura
+        run: node --test "scripts/**/*.test.mjs"
+      # El anexo por ID es el del informe de aceptación de E1 (TASK-097, docs/e1/TCR-E1.md).
       - name: Informe RF, RN, CA y RNF → prueba
-        run: node scripts/traceability/e1.mjs --json traceability-e1.json
+        run: node scripts/traceability/e1.mjs --json traceability-e1.json --anexo traceability-e1-anexo.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: traceability-e1
-          path: traceability-e1.json
+          path: |
+            traceability-e1.json
+            traceability-e1-anexo.md

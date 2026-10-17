@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Pruebas E2E (TASK-020; SDD §6.1, RNF-051, RNF-052): Chrome, Edge, Firefox y WebKit a
- * 360, 768, 1280 y 1920 px, contra el entorno local (Compose + API + SPA).
- * E2E_BROWSERS y E2E_VIEWPORTS permiten acotar la matriz (p. ej. "chromium" y "1280").
+ * 360, 768, 1280 y 1920 px, y Chrome para Android emulado, contra el entorno local (Compose + API + SPA).
+ * E2E_BROWSERS y E2E_VIEWPORTS permiten acotar la matriz (p. ej. "chromium,android" y "1280").
  */
 const BROWSERS = {
   chromium: devices['Desktop Chrome'],
@@ -14,13 +14,20 @@ const BROWSERS = {
 
 const VIEWPORTS = { 360: 740, 768: 1024, 1280: 800, 1920: 1080 }
 
+// RNF-051: el portal también en Chrome para Android. Es una emulación (Chromium con el agente, la
+// pantalla de 412 px y el tacto de un Pixel 7), no un teléfono real; las pantallas del personal se
+// omiten solas porque piden desde 768 px (RNF-052).
+const ANDROID = { name: 'android-pixel7', use: { ...devices['Pixel 7'] } }
+
 const pick = (value, all) => (value ? value.split(',').map((item) => item.trim()) : Object.keys(all))
 
-const projects = pick(process.env.E2E_BROWSERS, BROWSERS).flatMap((browser) =>
-  pick(process.env.E2E_VIEWPORTS, VIEWPORTS).map((width) => ({
-    name: `${browser}-${width}`,
-    use: { ...BROWSERS[browser], viewport: { width: Number(width), height: VIEWPORTS[width] } },
-  })),
+const projects = pick(process.env.E2E_BROWSERS, { ...BROWSERS, android: ANDROID }).flatMap((browser) =>
+  browser === 'android'
+    ? [ANDROID]
+    : pick(process.env.E2E_VIEWPORTS, VIEWPORTS).map((width) => ({
+        name: `${browser}-${width}`,
+        use: { ...BROWSERS[browser], viewport: { width: Number(width), height: VIEWPORTS[width] } },
+      })),
 )
 
 export default defineConfig({
