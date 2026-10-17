@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
 import { Cie10Picker } from './Cie10Picker'
+import { StatusBadge } from '../../components/StatusBadge'
+import { CheckIcon, InfoIcon } from '../../ui/icons'
 
 const TYPES = { presuntivo: 'Presuntivo', definitivo: 'Definitivo' }
 const ORIGINS = { nota: 'Origen: nota', adenda: 'Origen: adenda' }
@@ -16,7 +18,9 @@ export function DiagnosesList({ diagnoses, onRemove }) {
         <li key={diagnosis.id ?? diagnosis.cie10_code} className="flex flex-wrap items-center gap-2">
           <span className="font-semibold tabular-nums">{diagnosis.code ?? diagnosis.cie10_code}</span>
           <span>{diagnosis.description}</span>
-          <span className="badge badge-muted">{TYPES[diagnosis.type]}</span>
+          <StatusBadge tone="neutral" icon={diagnosis.type === 'definitivo' ? CheckIcon : InfoIcon}>
+            {TYPES[diagnosis.type]}
+          </StatusBadge>
           {diagnosis.origin && <span className="muted">{ORIGINS[diagnosis.origin]}</span>}
           {onRemove && (
             <button type="button" className="btn btn-link" onClick={() => onRemove(diagnosis)}>

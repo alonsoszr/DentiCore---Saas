@@ -11,9 +11,9 @@ const TONES = {
  * Badge de estado con texto e ícono sobre el tono de la Status palette (DESIGN.md): ningún estado
  * se comunica solo con color.
  */
-export function StatusBadge({ tone = 'secondary', icon: Icon, children }) {
+export function StatusBadge({ tone = 'secondary', icon: Icon, className, children }) {
   return (
-    <span className={TONES[tone]}>
+    <span className={className ? `${TONES[tone]} ${className}` : TONES[tone]}>
       {Icon && <Icon className="size-4" />}
       {children}
     </span>

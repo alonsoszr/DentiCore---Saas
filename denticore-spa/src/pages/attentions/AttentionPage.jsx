@@ -17,8 +17,8 @@ import { ProceduresPanel } from '../treatment/ProceduresPanel'
 import { Cie10Picker } from './Cie10Picker'
 import { DiagnosesList, DiagnosesPanel } from './DiagnosesPanel'
 import { FindingsWorkspace } from './FindingsWorkspace'
-import { ATTENTION_STATUS } from './labels'
 import { NotePanel, NoteView } from './NotePanel'
+import { AttentionStatusBadge } from './AttentionStatusBadge'
 
 /** Lo que RN-77 exige para cerrar: motivo de consulta y al menos un diagnóstico CIE-10. */
 function missingForClose(attention) {
@@ -213,7 +213,7 @@ export function AttentionPage() {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="m-0 text-headline-md">Atención del {formatDateTime(attention.opened_at)}</h1>
-            <span className={open ? 'badge' : 'badge badge-muted'}>{ATTENTION_STATUS[attention.status]}</span>
+            <AttentionStatusBadge status={attention.status} />
           </div>
           <p>
             Odontólogo a cargo: {attention.dentist.name} · COP {attention.dentist.cop}

@@ -127,17 +127,18 @@ export async function expectNoHorizontalScroll(page: Page) {
   expect(overflow, `Desplazamiento horizontal en ${page.url()}`).toBeLessThanOrEqual(0)
 }
 
-/** RNF-061: ningún estado se comunica solo con color; cada badge visible tiene texto o un ícono con nombre. */
+/**
+ * RNF-061 y la regla de diseño del proyecto: ningún estado se comunica solo con color; cada badge
+ * visible lleva texto e ícono (DEF-009 del TCR-E1).
+ */
 export async function expectStatesNotOnlyByColor(page: Page) {
-  const colorOnly = await page.evaluate(() =>
+  const incomplete = await page.evaluate(() =>
     [...document.querySelectorAll('.badge')]
       .filter((badge) => badge instanceof HTMLElement && badge.offsetParent !== null)
-      .filter(
-        (badge) => !badge.textContent?.trim() && !badge.querySelector('svg[aria-label], [role="img"][aria-label]'),
-      )
+      .filter((badge) => !badge.textContent?.trim() || !badge.querySelector('svg'))
       .map((badge) => badge.outerHTML.slice(0, 120)),
   )
-  expect(colorOnly, `Estados solo con color en ${page.url()}`).toEqual([])
+  expect(incomplete, `Badges sin texto o sin ícono en ${page.url()}`).toEqual([])
 }
 
 /**

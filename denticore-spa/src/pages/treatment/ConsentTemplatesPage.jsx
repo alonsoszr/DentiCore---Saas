@@ -8,6 +8,8 @@ import { Field } from '../../components/Field'
 import { InlineError } from './InlineError'
 import { useProcedures } from './useTreatment'
 import { TableWrap } from '../../components/TableWrap'
+import { StatusBadge } from '../../components/StatusBadge'
+import { CheckIcon, XIcon } from '../../ui/icons'
 
 const EMPTY = { title: '', body: '', procedures: [] }
 
@@ -194,9 +196,12 @@ export function ConsentTemplatesPage() {
                   <td>{template.title}</td>
                   <td>{template.current_version}</td>
                   <td>
-                    <span className={template.is_active ? 'badge' : 'badge badge-muted'}>
+                    <StatusBadge
+                      tone={template.is_active ? 'secondary' : 'neutral'}
+                      icon={template.is_active ? CheckIcon : XIcon}
+                    >
                       {template.is_active ? 'Activa' : 'Inactiva'}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td>{template.procedures.map(nameOf).join(', ') || '—'}</td>
                   <td>
