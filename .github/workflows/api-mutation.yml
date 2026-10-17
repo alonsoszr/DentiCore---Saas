@@ -1,5 +1,11 @@
 # Pruebas de mutación nocturnas (TASK-002; SDD §6.1 y §6.4, RNF-127).
-# En E1 solo reportan: no bloquean la integración.
+# En E1 solo reportan: no bloquean la integración (RNF-127 es *Should* y bloquea desde E3, Plan §6.1).
+#
+# TASK-097: hasta E1 el job corría `pest --mutate --everything --parallel` con `continue-on-error`.
+# Las pruebas en paralelo crean una base por proceso con el rol de la API, que no tiene CREATEDB, y
+# las migraciones corren con otra conexión (pgsql_migrator): la corrida fallaba al empezar y el
+# MSI nunca se midió. Ahora cada servicio crítico corre en su propio job, en serie, y el job falla
+# si la herramienta falla; el MSI queda en el resumen de la corrida.
 name: api-mutation
 
 on:
@@ -13,9 +19,25 @@ defaults:
 
 jobs:
   mutate:
+    name: Mutación (${{ matrix.service }})
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    continue-on-error: true
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      # Servicios críticos de SDD §6.1 (los pagos son de E3), las mismas carpetas que
+      # scripts/coverage/critical.mjs.
+      matrix:
+        include:
+          - service: Aislamiento
+            path: app/Support/Tenancy
+          - service: Odontograma
+            path: app/Modules/Odontogram/Services
+          - service: Presupuestos
+            path: app/Modules/Treatment/Services
+          - service: Citas
+            path: app/Modules/Scheduling/Services
+          - service: Riesgo
+            path: app/Modules/Risk/Services
     services:
       postgres:
         image: postgres:16
@@ -80,6 +102,22 @@ jobs:
       - run: |
           cp .env.example .env
           php artisan key:generate
-      # Servicios críticos de SDD §6.1: aislamiento, odontograma, presupuestos, pagos,
-      # citas y riesgo. Se amplía la lista de clases a medida que existen.
-      - run: vendor/bin/pest --mutate --everything --covered-only --parallel
+      - name: Pest --mutate sobre ${{ matrix.path }}
+        env:
+          SERVICE: ${{ matrix.service }}
+          MUTATE_PATH: ${{ matrix.path }}
+        run: |
+          set -o pipefail
+          vendor/bin/pest --mutate --path="$MUTATE_PATH" --covered-only --no-cache 2>&1 | tee mutation.log
+          {
+            echo "## Mutación: $SERVICE (\`$MUTATE_PATH\`)"
+            echo
+            echo '```'
+            sed 's/\x1b\[[0-9;]*m//g' mutation.log | grep -E 'Mutations:|Score:|Duration:' || echo 'Sin resumen de mutación'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-${{ matrix.service }}
+          path: denticore-api/mutation.log
