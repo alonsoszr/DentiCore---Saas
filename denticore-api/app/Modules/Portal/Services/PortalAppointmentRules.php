@@ -69,7 +69,7 @@ class PortalAppointmentRules
         if (now()->diffInMinutes($appointment->starts_at, false) < $hours * 60) {
             throw new BusinessRuleException(
                 'RN-49',
-                "Desde el portal puede reprogramar o cancelar hasta {$hours} horas antes de la cita. Comuníquese con la clínica.",
+                "Desde el portal puedes reprogramar o cancelar hasta {$hours} horas antes de la cita. Comunícate con la clínica.",
             );
         }
     }

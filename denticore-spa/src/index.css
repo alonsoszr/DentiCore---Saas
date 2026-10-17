@@ -698,9 +698,16 @@
     padding: 1.5rem;
   }
 
-  /* Casillas del portal: la fila completa es el objetivo táctil de 44 px. */
+  /* Casillas del portal: la fila completa es el objetivo táctil de 44 px y el texto es de 16 px
+     (gana sobre .field label). */
   .portal .checkbox {
+    @apply text-body-lg;
     min-height: 44px;
+  }
+
+  .portal-main > h1,
+  .portal-section > h2 {
+    margin-bottom: 12px;
   }
 
   .portal .page-header {
@@ -770,6 +777,18 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  /* Excepción a los 16 px del portal: por debajo de 390 px, «Presupuestos» (93 px a 14 px) no
+     cabe en un cuarto del ancho, así que las etiquetas de las pestañas bajan a 12 px, como en la
+     navegación inferior de Material; la activa conserva el peso 600. */
+  @media (max-width: 389px) {
+    .portal-tabs a {
+      @apply text-label-sm;
+      font-weight: 500;
+      letter-spacing: 0;
+      padding-inline: 2px;
+    }
   }
 
   /* Las pestañas fijas no deben tapar el control que recibe el foco al tabular (WCAG 2.4.11). */
@@ -1045,13 +1064,20 @@
 
   .checkbox {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
   }
 
+  /* La casilla no hereda el alto ni el relleno de los campos de texto (.field input) y no se
+     encoge cuando la etiqueta ocupa varias líneas. */
   .checkbox input {
+    flex-shrink: 0;
     width: 20px;
     height: 20px;
+    min-height: 0;
+    /* Centrada con la primera línea de la etiqueta, sea cual sea su tamaño. */
+    margin-top: max(0px, calc((1lh - 20px) / 2));
+    padding: 0;
     border-radius: var(--radius-sm);
     accent-color: var(--color-primary);
   }
@@ -1070,6 +1096,7 @@
 
   :is(h2, h3, h4, legend).form-section {
     @apply text-title-md;
+    width: 100%;
   }
 
   /* Búsqueda: el botón se alinea con el campo, no con el bloque de etiqueta, campo y ayuda. */
@@ -1275,6 +1302,10 @@
     width: min(560px, 100%);
     max-height: calc(100vh - 2rem);
     overflow-y: auto;
+  }
+
+  .dialog > .field {
+    margin-top: 12px;
   }
 
   .session-timeout {

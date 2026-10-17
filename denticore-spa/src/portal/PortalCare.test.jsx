@@ -117,7 +117,8 @@ describe('portal appointments', () => {
           status: 422,
           data: {
             rule: 'RN-49',
-            detail: 'Desde el portal puede reprogramar o cancelar hasta 24 horas antes de la cita.',
+            detail:
+              'Desde el portal puedes reprogramar o cancelar hasta 24 horas antes de la cita. Comunícate con la clínica.',
           },
         }),
       },
@@ -177,8 +178,9 @@ describe('portal appointments', () => {
     await userEvent.click(await screen.findByRole('button', { name: '10:00' }))
     await userEvent.click(screen.getByRole('button', { name: /^Reservar con Dra. Ana Torres/ }))
 
-    // Abre la cita nueva: su fecha y hora son el título de la página.
+    // Abre la cita nueva con el aviso, que recibe el foco cuando la cita termina de cargar.
     expect(await screen.findByRole('heading', { level: 1, name: 'Cita del 06/01/2099 10:00' })).toBeInTheDocument()
+    expect(screen.getByText('Cita reservada.').closest('[tabindex="-1"]')).toHaveFocus()
     expect(JSON.parse(post(calls, '/portal/patients/p-1/appointments').data)).toEqual({
       appointment_type_id: 't-1',
       dentist_id: 'u-ana',

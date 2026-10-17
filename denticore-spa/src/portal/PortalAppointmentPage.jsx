@@ -132,9 +132,12 @@ function AppointmentDetail({ subject }) {
   const noticeRef = useRef(null)
   // Al volver de «Reprogramar», el foco regresa a su botón.
   const returnFocus = useRef(false)
+  const appointment = appointments.data?.find((item) => item.id === uuid)
+  // El aviso recibe el foco cuando ya está montado: tras reservar, la cita aún está cargando.
+  const loaded = Boolean(appointment)
   useEffect(() => {
-    if (notice) noticeRef.current?.focus()
-  }, [notice])
+    if (notice && loaded) noticeRef.current?.focus()
+  }, [notice, loaded])
 
   const act = useMutation({
     mutationFn: async ({ action, body = {} }) =>
@@ -152,7 +155,6 @@ function AppointmentDetail({ subject }) {
     },
   })
 
-  const appointment = appointments.data?.find((item) => item.id === uuid)
   if (!appointment) {
     return (
       <>
