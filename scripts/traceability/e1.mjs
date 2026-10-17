@@ -15,7 +15,7 @@
  * infraestructura) se declaran en docs/trazabilidad/rnf-e1.json con su evidencia.
  *
  * Falla (código 1) si un RF, una RN o un CA de E1 no tiene prueba, o si un RNF de E1 no tiene prueba
- * ni evidencia declarada. Uso: node scripts/traceability/e1.mjs [--json salida.json]
+ * ni evidencia declarada. Uso: node scripts/traceability/e1.mjs [--json salida.json] [--anexo anexo.md]
  */
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -122,6 +122,32 @@ export function citedIds() {
   return cited
 }
 
+const toPosix = (file) => file.replace(/\\/g, '/')
+
+/**
+ * Anexo del informe de aceptación (TASK-097): cada RF, RN, CA y RNF de E1 con todas las pruebas que lo
+ * citan, la evidencia declarada en rnf-e1.json o la marca «sin prueba».
+ */
+export function annex(required, cited, declared) {
+  const row = (id) => {
+    const files = [...(cited.get(id) ?? [])].map(toPosix).sort(byText)
+    if (files.length) return `| ${id} | ${files.length} | ${files.map((file) => `\`${file}\``).join('<br>')} |`
+    if (declared[id]) return `| ${id} | 0 | ${declared[id].verificacion}: ${declared[id].evidencia} |`
+    return `| ${id} | 0 | **sin prueba** |`
+  }
+  const section = (title, ids) => [`## ${title} (${ids.length})`, '', '| ID | Pruebas | Archivos o evidencia |', '| --- | --: | --- |', ...ids.map(row), '']
+  return [
+    '# Anexo: trazabilidad de E1 por ID',
+    '',
+    'Generado por `node scripts/traceability/e1.mjs --anexo` (TASK-097). Una prueba cita el ID en `->group(...)` (Pest), en el título, las etiquetas o el comentario previo (Vitest y Playwright), en el docstring (pytest) o en la cabecera del script de carga (k6).',
+    '',
+    ...section('RF de §17.4', required.rf),
+    ...section('RN de los CUS de E1 (§14.5)', required.rn),
+    ...section('CA de §11 de los CUS de E1', required.ca),
+    ...section('RNF de §17.4', required.rnf),
+  ].join('\n')
+}
+
 function main() {
   const required = e1Requirements(read('docs/SRS_DentiCore.md'))
   const cited = citedIds()
@@ -176,6 +202,9 @@ function main() {
       JSON.stringify({ gaps, tests: Object.fromEntries(ids.map((id) => [id, [...(cited.get(id) ?? [])].sort(byText)])) }, null, 2),
     )
   }
+
+  const annexAt = process.argv.indexOf('--anexo')
+  if (annexAt > 0) writeFileSync(process.argv[annexAt + 1], `${annex(required, cited, declared)}\n`)
 
   const total = gaps.rf.length + gaps.rn.length + gaps.ca.length + gaps.rnf.length + strayDeclarations.length
   process.exitCode = total > 0 ? 1 : 0

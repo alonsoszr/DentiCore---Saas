@@ -55,7 +55,8 @@ jobs:
       matrix:
         browser: [chromium, msedge, firefox, webkit]
     env:
-      E2E_BROWSERS: ${{ matrix.browser }}
+      # El job de Chromium corre además Chrome para Android emulado (Pixel 7, RNF-051).
+      E2E_BROWSERS: ${{ matrix.browser == 'chromium' && 'chromium,android' || matrix.browser }}
     steps:
       - uses: actions/checkout@v4
 
