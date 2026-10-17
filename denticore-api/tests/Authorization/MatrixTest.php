@@ -5,24 +5,10 @@
  * cuando el rol no puede ver el registro), y ninguna ruta queda fuera de la matriz.
  */
 
-use App\Modules\Identity\Models\User;
-use App\Modules\Odontogram\Models\Attention;
-use App\Modules\Odontogram\Models\OdontogramEntry;
-use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
-use App\Modules\Risk\Models\RiskAlert;
-use App\Modules\Risk\Models\RiskPrediction;
-use App\Modules\Risk\Models\RiskVariableSet;
-use App\Modules\Scheduling\Models\Appointment;
-use App\Modules\Scheduling\Models\AppointmentType;
-use App\Modules\Scheduling\Models\ScheduleBlock;
-use App\Modules\Treatment\Models\Budget;
-use App\Modules\Treatment\Models\PlanItem;
-use App\Modules\Treatment\Models\Procedure;
-use App\Modules\Treatment\Models\TreatmentPlan;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 use Tests\Support\PortalFixtures;
+use Tests\Support\RouteBindings;
 
 /**
  * @return list<array{method: string, uri: string, cus: string, denied: list<string>}>
@@ -50,41 +36,11 @@ it('denies every forbidden cell of the Must use cases', function (string $method
         : $this->actingAsRole($role, $tenant);
 
     // Parámetros de ruta de la propia clínica del usuario (o de una clínica cualquiera para SA).
-    $bindings = [
-        '{tenant}' => fn () => $tenant->uuid,
-        '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'dentist'])->uuid,
-        '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
-        // Representación inexistente: basta con un uuid; el rol se rechaza antes de buscarla.
-        '{representative}' => fn () => (string) Str::uuid(),
-        '{consent}' => fn () => (string) Str::uuid(),
-        '{template}' => fn () => (string) Str::uuid(),
-        '{informedConsent}' => fn () => (string) Str::uuid(),
-        '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        // Diagnóstico inexistente: el rol o el estado de la clínica se rechazan antes de buscarlo.
-        '{tooth}' => fn () => '16',
-        '{procedure}' => fn () => Procedure::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{plan}' => fn () => TreatmentPlan::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{item}' => fn () => PlanItem::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{entry}' => fn () => OdontogramEntry::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{diagnosis}' => fn () => (string) Str::uuid(),
-        '{budget}' => fn () => Budget::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        // Línea y documento inexistentes: el rol se rechaza antes de buscarlos.
-        '{line}' => fn () => (string) Str::uuid(),
-        '{document}' => fn () => (string) Str::uuid(),
-        '{dentist}' => fn () => User::factory()->for($tenant)->create(['role' => 'dentist'])->uuid,
-        '{block}' => fn () => ScheduleBlock::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{type}' => fn () => AppointmentType::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{appointment}' => fn () => Appointment::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{set}' => fn () => RiskVariableSet::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{prediction}' => fn () => RiskPrediction::factory()->create(['tenant_id' => $tenant->id])->uuid,
-        '{alert}' => fn () => RiskAlert::factory()->create(['tenant_id' => $tenant->id])->uuid,
-    ];
+    $path = RouteBindings::path($uri, $tenant);
 
-    $path = preg_replace_callback('/\{[a-z_]+\}/i', fn ($match) => $bindings[$match[0]](), $uri);
+    $status = $this->json($method, $path)->status();
 
-    $status = $this->json($method, '/'.$path)->status();
-
-    expect($status)->toBeIn([403, 404], "{$method} /{$path} como {$role} respondió {$status}");
+    expect($status)->toBeIn([403, 404], "{$method} {$path} como {$role} respondió {$status}");
 })->with('forbidden cells')->group('RN-06', 'RF-004');
 
 it('lists every API route in AUTH_MATRIX', function () {

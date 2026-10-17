@@ -34,7 +34,7 @@ it('returns no rows of another clinic from a raw query under the app database ro
         expect($rawCount())->toBe(2)
             ->and(DB::selectOne('select count(*) as total from patients where tenant_id = ?', [$tenantB->id])->total)->toBe(0);
     });
-})->group('DD-40', 'RNF-102');
+})->group('T-017', 'DD-40', 'RNF-102');
 
 it('rejects writing a row for another clinic', function () {
     $tenantA = Tenant::factory()->create();

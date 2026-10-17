@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Base de los *jobs* publicados por el outbox (SDD §1.9). Son idempotentes por el uuid del
  * mensaje: al terminar marcan `consumed_at` y, si ya estaba marcado, no repiten el efecto.
- * Los mensajes de una clínica corren dentro de su contexto (TenantAwareJob).
+ * Los mensajes de una clínica corren dentro de su contexto (TenantAwareJob), y un job solo procesa
+ * el mensaje de la clínica con la que se creó (RNF-101, T-016).
  */
 abstract class OutboxJob implements ShouldQueue
 {
@@ -39,7 +40,7 @@ abstract class OutboxJob implements ShouldQueue
         DB::transaction(function (): void {
             $message = OutboxMessage::query()->where('uuid', $this->messageUuid)->lockForUpdate()->first();
 
-            if ($message === null || $message->consumed_at !== null) {
+            if ($message === null || $message->consumed_at !== null || $message->tenant_id !== $this->tenantId) {
                 return;
             }
 
