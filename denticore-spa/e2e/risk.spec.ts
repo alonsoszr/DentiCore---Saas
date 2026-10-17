@@ -149,6 +149,8 @@ test('shows the support and low confidence legends for confidence 0.55', async (
   await dentist.context().close()
 })
 
+// RNF-074 (RN-64, CA-55.3): con el contenedor del motor detenido la atención sigue y CUS-55 responde
+// «Predicción no disponible» (job e2e, paso «Playwright con el motor ML detenido»).
 test('shows "Predicción no disponible" and keeps the attention editable with the engine stopped @motor-detenido', async ({
   browser,
 }) => {

@@ -1,0 +1,31 @@
+# Informe de trazabilidad de E1 (TASK-095; SDD §6.4 «Trazabilidad», RNF-005, RNF-128, DD-20).
+# Cruza los RF, RN, CA y RNF de E1 del SRS con los IDs que citan las pruebas y falla si alguno queda
+# sin prueba ni evidencia declarada (docs/trazabilidad/rnf-e1.json). El informe va al resumen del job.
+name: traceability
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: traceability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e1:
+    name: Trazabilidad de E1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Informe RF, RN, CA y RNF → prueba
+        run: node scripts/traceability/e1.mjs --json traceability-e1.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: traceability-e1
+          path: traceability-e1.json

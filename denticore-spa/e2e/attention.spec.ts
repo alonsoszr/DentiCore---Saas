@@ -5,6 +5,8 @@ import { auditScreen, staffOnly } from './support/screen'
 // una ficha nueva en cada ejecución (DNI sintético), así que corre en toda la matriz desde 768 px.
 staffOnly()
 
+// RNF-061 (RN-17): el hallazgo se ve con su sigla NTS 188 (CD, CE) y cada estado con texto, no solo con
+// color (auditScreen revisa los badges de cada pantalla).
 test('opens an attention, records and corrects a finding, closes it and shows the history of the tooth', async ({
   page,
 }) => {

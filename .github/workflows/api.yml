@@ -46,7 +46,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BASE_SHA...$GITHUB_SHA" | grep -qE '^(denticore-api/|\.github/workflows/api\.yml$)'; then
+          elif git diff --name-only "$BASE_SHA...$GITHUB_SHA" | grep -qE '^(denticore-api/|scripts/coverage/|\.github/workflows/api\.yml$)'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
@@ -199,6 +199,9 @@ jobs:
       # SDD §6.4: 100 % en verde y cobertura de líneas ≥ 80 % en el backend.
       - name: Pest con cobertura
         run: vendor/bin/pest --coverage --min=80 --coverage-clover=coverage.xml
+      # TASK-095 (SDD §6.4, RNF-126): ≥ 95 % en aislamiento, odontograma, presupuestos, citas y riesgo.
+      - name: Cobertura de los servicios críticos (≥ 95 %)
+        run: node ../scripts/coverage/critical.mjs coverage.xml
       # SDD §4.1 (RNF-044): el documento versionado debe coincidir con el generado del código.
       # Va en este job porque Scramble lee el esquema de la BD (ya migrado por Pest) para
       # tipar los modelos; sin BD el documento generado sería distinto.

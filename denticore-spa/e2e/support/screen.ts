@@ -127,10 +127,27 @@ export async function expectNoHorizontalScroll(page: Page) {
   expect(overflow, `Desplazamiento horizontal en ${page.url()}`).toBeLessThanOrEqual(0)
 }
 
-/** Las tres revisiones de cada pantalla: WCAG 2.1 A/AA, textos en español y sin desplazamiento horizontal. */
+/** RNF-061: ningún estado se comunica solo con color; cada badge visible tiene texto o un ícono con nombre. */
+export async function expectStatesNotOnlyByColor(page: Page) {
+  const colorOnly = await page.evaluate(() =>
+    [...document.querySelectorAll('.badge')]
+      .filter((badge) => badge instanceof HTMLElement && badge.offsetParent !== null)
+      .filter(
+        (badge) => !badge.textContent?.trim() && !badge.querySelector('svg[aria-label], [role="img"][aria-label]'),
+      )
+      .map((badge) => badge.outerHTML.slice(0, 120)),
+  )
+  expect(colorOnly, `Estados solo con color en ${page.url()}`).toEqual([])
+}
+
+/**
+ * Las revisiones de cada pantalla: WCAG 2.1 A/AA, textos en español, estados sin depender solo del
+ * color y sin desplazamiento horizontal.
+ */
 export async function auditScreen(page: Page) {
   await expectNoAxeViolations(page)
   await expectSpanishText(page)
+  await expectStatesNotOnlyByColor(page)
   await expectNoHorizontalScroll(page)
 }
 

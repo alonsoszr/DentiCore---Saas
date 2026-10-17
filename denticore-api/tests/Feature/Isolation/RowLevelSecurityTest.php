@@ -7,6 +7,7 @@
 
 use App\Modules\Patients\Models\Patient;
 use App\Modules\Platform\Models\Tenant;
+use App\Support\Tenancy\RowLevelSecurity;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -69,3 +70,23 @@ it('enables and forces RLS on every table with a non nullable tenant_id', functi
             ->toBeTrue("La tabla {$table->name} tiene tenant_id NOT NULL y no tiene la RLS habilitada y forzada");
     }
 })->group('DD-40', 'DI-19');
+
+it('enables and disables the policy of a table, as the migrations do and undo it', function () {
+    $migrator = DB::connection('pgsql_migrator');
+    $migrator->statement('create table rls_probe (id bigint primary key, tenant_id bigint not null)');
+    $state = fn () => $migrator->selectOne(<<<'SQL'
+        select t.relrowsecurity as enabled, t.relforcerowsecurity as forced,
+               exists (select 1 from pg_policies p where p.tablename = 'rls_probe' and p.policyname = 'tenant_isolation') as has_policy
+          from pg_class t where t.relname = 'rls_probe'
+        SQL);
+
+    try {
+        RowLevelSecurity::enable('rls_probe', $migrator);
+        expect((array) $state())->toBe(['enabled' => true, 'forced' => true, 'has_policy' => true]);
+
+        RowLevelSecurity::disable('rls_probe', $migrator);
+        expect((array) $state())->toBe(['enabled' => false, 'forced' => false, 'has_policy' => false]);
+    } finally {
+        $migrator->statement('drop table if exists rls_probe');
+    }
+})->group('DD-40', 'T-017');
