@@ -162,21 +162,29 @@ def publish(directory: Path, *, client: S3Client, bucket: str, prefix: str = "mo
 
 
 def model_card(metadata: dict[str, Any]) -> str:
-    """Borrador de la ficha técnica (RNF-171)."""
+    """Ficha técnica provisional (RNF-171): uso previsto, población, variables, métricas globales y por
+    subgrupo y limitaciones."""
     metrics = metadata["metrics"]
+    ages = metadata["subgroup_metrics"]["age_group"]
+    validation_rows = sum(stats["n"] for stats in ages.values())
+    rows_by_age = ", ".join(f"{value} {stats['n']}" for value, stats in ages.items())
     lines = [
-        f"# Ficha técnica del modelo de riesgo de caries {metadata['version']} (borrador)",
+        f"# Ficha técnica del modelo de riesgo de caries {metadata['version']} (provisional)",
         "",
         "## Uso previsto",
         "",
         "Estimar la probabilidad de al menos una lesión de caries nueva en 12 meses para priorizar la prevención"
         " (DD-12). Apoya la decisión del odontólogo: **no es un diagnóstico**.",
         "",
-        "## Datos",
+        f"Contrato del motor: versión {metadata['contract_version']} (SDD §4.6).",
+        "",
+        "## Población",
         "",
         f"- Conjunto sintético versión {metadata['dataset_version']}, {metadata['dataset_rows']} filas,"
         f" `dataset_hash` {metadata['dataset_hash']}.",
-        "- Distribuciones y supuestos: `docs/dataset_card.md`.",
+        "- Pacientes sintéticos de 3 a 80 años, menores y adultos, con las distribuciones de estudios de Brasil"
+        " y Egipto (`docs/dataset_card.md`); no se tomaron de una población peruana.",
+        f"- Validación: {validation_rows} filas ({rows_by_age}).",
         "- Un AUC sobre datos sintéticos no demuestra validez clínica (OUT-06).",
         "",
         "## Variables",
@@ -185,7 +193,7 @@ def model_card(metadata: dict[str, Any]) -> str:
         "",
         "## Métricas de validación",
         "",
-        f"- AUC-ROC: {metrics['auc_validation']:.4f} (mínimo para activar: 0,75; RN-84)",
+        f"- AUC-ROC: {metrics['auc_validation']:.4f} (mínimo para activar: 0.75; RN-84)",
         f"- Brier: {metrics['brier_score']:.4f}",
         f"- ECE (10 intervalos): {metrics['ece']:.4f}",
         f"- Umbrales: medio ≥ {metadata['thresholds']['medium']}, alto ≥ {metadata['thresholds']['high']}",
@@ -211,6 +219,7 @@ def model_card(metadata: dict[str, Any]) -> str:
         "",
         "- Entrenado solo con datos sintéticos (PQ-06); requiere validación clínica prospectiva (OUT-06).",
         "- Los supuestos del conjunto condicionan las métricas y la importancia de las variables.",
+        "- La población sintética no representa a los pacientes de las clínicas del Perú.",
         "",
     ]
     return "\n".join(lines)
