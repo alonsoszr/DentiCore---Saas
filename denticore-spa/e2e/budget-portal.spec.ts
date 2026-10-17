@@ -1,31 +1,10 @@
-import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Browser, type Page } from '@playwright/test'
-
-const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
-
-async function expectNoAxeViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze()
-  expect(violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
-}
-
-/** TASK-089 criterio 3 (RNF-051, RNF-052): a 360 px ninguna pantalla del portal se desplaza en horizontal. */
-async function expectNoHorizontalScroll(page: Page) {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
-  expect(overflow).toBeLessThanOrEqual(0)
-}
-
-async function login(page: Page, email: string, landing: RegExp) {
-  await page.goto('/c/clinica-demo/login')
-  await page.getByLabel('Correo electrónico').fill(email)
-  await page.getByLabel('Contraseña', { exact: true }).fill('password')
-  await page.getByRole('button', { name: 'Ingresar' }).click()
-  await expect(page).toHaveURL(landing)
-}
+import { expect, test, type Browser } from '@playwright/test'
+import { auditScreen, login, staffPage } from './support/screen'
 
 /** El odontólogo crea y propone un plan de Pablo Paciente (semilla) y emite su presupuesto. */
-async function issueBudgetForPablo(browser: Browser): Promise<string> {
-  const context = await browser.newContext()
-  const page = await context.newPage()
+async function issueBudgetForPablo(browser: Browser, width: number): Promise<string> {
+  const page = await staffPage(browser, width)
+  const context = page.context()
   await login(page, 'dentista@clinica-demo.test', /\/c\/clinica-demo\/app\/pacientes$/)
 
   await page.getByLabel('Buscar paciente').fill('70000077')
@@ -57,49 +36,37 @@ async function issueBudgetForPablo(browser: Browser): Promise<string> {
 }
 
 // T-171 (SDD §6.3; CUS-35, CUS-37, RNF-051): la recepción (aquí, el odontólogo) emite y el
-// paciente acepta desde el portal. Cada ejecución crea un plan nuevo de Pablo, así que corre en
-// Chrome a 360 px (el portal es móvil primero) y en el resto de proyectos solo revisa la lectura.
-test('issues a budget at reception and accepts it from the portal', async ({
-  page,
-  browser,
-  browserName,
-  channel,
-  viewport,
-}) => {
-  test.skip(
-    browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 360,
-    'Crea datos: solo en Chrome a 360 px',
-  )
+// paciente acepta desde el portal. Cada ejecución crea un plan y un presupuesto nuevos de Pablo, con
+// su propio número, así que corre en toda la matriz: el portal en los 4 anchos (desde 360 px) y el
+// personal a 1280 px cuando el proyecto es más angosto que 768 px.
+test('issues a budget at reception and accepts it from the portal', async ({ page, browser, viewport }) => {
   test.setTimeout(180_000)
 
-  const number = await issueBudgetForPablo(browser)
+  const number = await issueBudgetForPablo(browser, viewport?.width ?? 1280)
 
   await login(page, 'paciente@clinica-demo.test', /\/c\/clinica-demo\/portal$/)
   await expect(page.getByRole('heading', { name: 'Hola, Pablo Paciente' })).toBeVisible()
   await expect(page.getByRole('link', { name: `Presupuesto N° ${number}` }).first()).toBeVisible()
-  await expectNoHorizontalScroll(page)
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
 
   await page
     .getByRole('navigation', { name: 'Secciones del portal' })
     .getByRole('link', { name: 'Presupuestos' })
     .click()
   await expect(page.getByRole('heading', { name: 'Presupuestos' })).toBeVisible()
-  await expectNoHorizontalScroll(page)
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
 
   await page.getByRole('link', { name: `Presupuesto N° ${number}` }).click()
   await expect(page.getByRole('heading', { name: `Presupuesto N° ${number}` })).toBeVisible()
   await expect(page.getByText('Profilaxis')).toBeVisible()
-  await expectNoHorizontalScroll(page)
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
 
   await page.getByRole('button', { name: 'Aceptar presupuesto' }).click()
   await page.getByRole('checkbox', { name: new RegExp(`He leído el presupuesto N° ${number}`) }).check()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await page.getByRole('button', { name: 'Confirmar aceptación' }).click()
 
   await expect(page.getByText('Presupuesto aceptado')).toBeVisible()
   await expect(page.getByText('Aceptado', { exact: true })).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
 })

@@ -8,7 +8,7 @@ import { BrandPanel } from './BrandPanel'
 export function AuthLayout({ variant, clinicName, footer, children }) {
   return (
     <div className="grid min-h-dvh bg-surface-container-lowest text-body-lg lg:grid-cols-[55fr_45fr]">
-      <main className="flex flex-col px-6 py-10 sm:px-10 lg:px-16">
+      <main className="flex min-w-0 flex-col px-6 py-10 sm:px-10 lg:px-16">
         {variant === 'clinic' && (
           <p className="mx-auto mb-8 w-full max-w-[420px] text-title-lg font-bold text-primary">DentiCore</p>
         )}

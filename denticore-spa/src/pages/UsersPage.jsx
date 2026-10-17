@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { useFocusFirstError } from '../ui/useFocusFirstError'
+import { TableWrap } from '../components/TableWrap'
 
 const EMPTY_FORM = {
   name: '',
@@ -251,7 +252,7 @@ export function UsersPage() {
           </div>
         )}
         {users.length > 0 && (
-          <div className="table-wrap">
+          <TableWrap label="Usuarios">
             <table>
               <thead>
                 <tr>
@@ -310,7 +311,7 @@ export function UsersPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
       </div>
 

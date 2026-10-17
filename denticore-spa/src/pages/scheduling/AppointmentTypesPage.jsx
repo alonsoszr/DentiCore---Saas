@@ -6,6 +6,7 @@ import { useClinic } from '../../auth/useClinic'
 import { ActiveBadge } from '../../components/ActiveBadge'
 import { Field } from '../../components/Field'
 import { useAppointmentTypes } from './useScheduling'
+import { TableWrap } from '../../components/TableWrap'
 
 /** Color inicial de un tipo nuevo: el token secundario de DESIGN.md (los tipos guardan su propio color). */
 function defaultColor() {
@@ -163,7 +164,7 @@ export function AppointmentTypesPage() {
       )}
       {types.isSuccess && list.length === 0 && <div className="empty">La clínica aún no tiene tipos de cita.</div>}
       {list.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Tipos de cita">
           <table>
             <thead>
               <tr>
@@ -219,7 +220,7 @@ export function AppointmentTypesPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
     </div>
   )

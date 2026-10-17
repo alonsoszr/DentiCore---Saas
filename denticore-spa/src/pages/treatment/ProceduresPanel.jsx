@@ -10,6 +10,7 @@ import { InlineError } from './InlineError'
 import { ItemFields } from './ItemFields'
 import { EMPTY_ITEM, SIGNERS, siteText } from './labels'
 import { useFocusOnMount, usePatientPlans, useProcedures } from './useTreatment'
+import { TableWrap } from '../../components/TableWrap'
 
 const ACTIVE_PLANS = ['aceptado', 'en_ejecucion']
 
@@ -309,7 +310,7 @@ export function ProceduresPanel({ attention, patient }) {
         <div className="empty">El paciente no tiene ítems aceptados pendientes de realizar.</div>
       )}
       {items.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Ítems aceptados por realizar">
           <table>
             <thead>
               <tr>
@@ -349,7 +350,7 @@ export function ProceduresPanel({ attention, patient }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
 
       {performing && items.some((item) => item.id === performing) && (

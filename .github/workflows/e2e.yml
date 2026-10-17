@@ -1,6 +1,8 @@
 # Pruebas E2E (TASK-020; SDD §6.1 y §6.4: 100 % en verde y ≤ 20 min en la rama principal).
 # Levanta el entorno de docker-compose.yml, la API con la semilla de demostración
-# (datos sintéticos) y la SPA compilada; ejecuta Playwright con axe-core.
+# (datos sintéticos) y la SPA compilada; ejecuta Playwright con axe-core. La matriz de TASK-094
+# (RNF-051, RNF-052) corre un job por navegador con sus cuatro anchos, cada uno con su propio
+# entorno, y el job `e2e` resume el resultado para la protección de main.
 name: e2e
 
 on:
@@ -42,11 +44,18 @@ jobs:
             echo "relevant=false" >> "$GITHUB_OUTPUT"
           fi
 
-  e2e:
+  browser:
+    name: e2e (${{ matrix.browser }})
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, msedge, firefox, webkit]
+    env:
+      E2E_BROWSERS: ${{ matrix.browser }}
     steps:
       - uses: actions/checkout@v4
 
@@ -104,7 +113,7 @@ jobs:
         working-directory: denticore-spa
         run: |
           npm ci
-          npx playwright install --with-deps chromium firefox webkit msedge
+          npx playwright install --with-deps ${{ matrix.browser }}
           npm run build
           npx vite preview --port 5173 --strictPort > ../spa.log 2>&1 &
           npx wait-on -t 60000 http://localhost:5173 http://localhost:8000/up
@@ -116,6 +125,7 @@ jobs:
       # T-176 (TASK-091; RNF-038, RN-46): 50 reservas simultáneas del mismo horario dan 1 éxito y 49
       # conflictos sin errores 5xx. El resumen de k6 queda como artefacto para el informe de E1.
       - name: Concurrencia de reservas (k6, T-176)
+        if: matrix.browser == 'chromium'
         run: |
           mkdir -p load-results
           docker run --rm --network host -u "$(id -u):$(id -g)" \
@@ -129,12 +139,13 @@ jobs:
         working-directory: denticore-spa
         run: |
           docker compose -f ../docker-compose.yml stop ml
-          npm run e2e -- --grep @motor-detenido
+          # Un proyecto a la vez: los anchos comparten la atención de la paciente de DemoRiskSeeder.
+          npm run e2e -- --grep @motor-detenido --workers=1
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}
           path: |
             denticore-spa/playwright-report
             api.log
@@ -142,3 +153,19 @@ jobs:
             outbox.log
             worker.log
             load-results
+
+  # Check requerido de main: verde si la matriz pasó o si el PR no toca el código ni el entorno.
+  e2e:
+    needs: [changes, browser]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resultado de la matriz
+        run: |
+          echo "Cambios relevantes: ${{ needs.changes.outputs.relevant }}; matriz: ${{ needs.browser.result }}"
+          test "${{ needs.changes.result }}" = "success"
+          case "${{ needs.browser.result }}" in
+            success|skipped) ;;
+            *) exit 1 ;;
+          esac

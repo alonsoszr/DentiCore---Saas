@@ -26,10 +26,16 @@ const projects = pick(process.env.E2E_BROWSERS, BROWSERS).flatMap((browser) =>
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
+  // La API de desarrollo (`php artisan serve`) tarda hasta 2–3 s en las escrituras clínicas cuando
+  // corren varios proyectos de la matriz a la vez; 5 s de espera por aserción no alcanzaban en Firefox.
+  expect: { timeout: 10_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',
+    // Navegador en español del Perú (RNF-188, RNF-189): también los mensajes nativos y los formatos.
+    locale: 'es-PE',
+    timezoneId: 'America/Lima',
     trace: 'retain-on-failure',
   },
   projects,

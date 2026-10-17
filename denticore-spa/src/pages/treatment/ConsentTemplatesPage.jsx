@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field } from '../../components/Field'
 import { InlineError } from './InlineError'
 import { useProcedures } from './useTreatment'
+import { TableWrap } from '../../components/TableWrap'
 
 const EMPTY = { title: '', body: '', procedures: [] }
 
@@ -174,7 +175,7 @@ export function ConsentTemplatesPage() {
         <div className="empty">La clínica aún no tiene plantillas de consentimiento informado.</div>
       )}
       {list.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Plantillas de consentimiento informado">
           <table>
             <thead>
               <tr>
@@ -224,7 +225,7 @@ export function ConsentTemplatesPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
 
       {toDeactivate && (

@@ -7,6 +7,7 @@ import { useClinic } from '../../auth/useClinic'
 import { formatCurrency, formatDate } from '../../ui/format'
 import { BUDGET_ROLES } from './labels'
 import { BudgetStatusBadge } from './TreatmentStatusBadges'
+import { TableWrap } from '../../components/TableWrap'
 
 /**
  * Presupuestos del plan (CUS-35, CUS-36; RF-121): número, estado, total y vencimiento. Desde un plan
@@ -50,7 +51,7 @@ export function PlanBudgets({ plan, needsConsent }) {
       )}
       {budgets.isSuccess && list.length === 0 && <div className="empty">El plan aún no tiene presupuestos.</div>}
       {list.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap labelledBy="plan-budgets-title">
           <table>
             <thead>
               <tr>
@@ -75,7 +76,7 @@ export function PlanBudgets({ plan, needsConsent }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
     </section>
   )

@@ -23,6 +23,7 @@ import {
 } from './labels'
 import { useFocusOnMount } from './useTreatment'
 import { BudgetStatusBadge } from './TreatmentStatusBadges'
+import { TableWrap } from '../../components/TableWrap'
 
 const PDF_STATUS = {
   pendiente: 'PDF en generación…',
@@ -415,7 +416,7 @@ export function BudgetDetailPage() {
           </div>
         )}
 
-        <div className="table-wrap">
+        <TableWrap label="Líneas del presupuesto">
           <table>
             <thead>
               <tr>
@@ -464,7 +465,7 @@ export function BudgetDetailPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
 
         {discountLine && (
           <DiscountForm

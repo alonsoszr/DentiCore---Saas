@@ -16,6 +16,7 @@ import { PlanBudgets } from './PlanBudgets'
 import { EMPTY_ITEM, FINAL_PLAN_STATUSES, itemPayload, itemsFromFindings, progressText, siteText } from './labels'
 import { usePlan, useProcedures } from './useTreatment'
 import { ItemStatusBadge, PlanStatusBadge } from './TreatmentStatusBadges'
+import { TableWrap } from '../../components/TableWrap'
 
 const CANCEL_ROLES = ['clinic_admin', 'dentist']
 
@@ -381,7 +382,7 @@ export function PlanDetailPage() {
         {data.items.length === 0 ? (
           <div className="empty">El plan aún no tiene ítems.</div>
         ) : (
-          <div className="table-wrap">
+          <TableWrap label="Ítems del plan">
             <table>
               <thead>
                 <tr>
@@ -465,7 +466,7 @@ export function PlanDetailPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
       </div>
 

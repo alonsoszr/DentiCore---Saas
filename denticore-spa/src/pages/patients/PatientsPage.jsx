@@ -7,6 +7,7 @@ import { Field } from '../../components/Field'
 import { PageHeader } from '../../components/PageHeader'
 import { useClinic } from '../../auth/useClinic'
 import { formatCivilDate } from '../../ui/format'
+import { TableWrap } from '../../components/TableWrap'
 
 export function PatientsPage() {
   const { slug, appPath } = useClinic()
@@ -85,7 +86,7 @@ export function PatientsPage() {
 
         {patients.length > 0 && (
           <>
-            <div className="table-wrap">
+            <TableWrap label="Pacientes">
               <table>
                 <thead>
                   <tr>
@@ -112,7 +113,7 @@ export function PatientsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableWrap>
 
             {meta && meta.last_page > 1 && (
               <div className="pagination">

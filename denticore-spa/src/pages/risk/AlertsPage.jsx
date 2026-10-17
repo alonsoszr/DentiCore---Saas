@@ -11,6 +11,7 @@ import { addDays, formatDate, formatDateTime, localDate } from '../../ui/format'
 import { useTimeZone } from '../../ui/useTimeZone'
 import { AlertTriangleIcon, CheckIcon } from '../../ui/icons'
 import { RiskLevelBadge } from './RiskLevelBadge'
+import { TableWrap } from '../../components/TableWrap'
 
 const ACTIONS = {
   plan_preventivo: 'Plan preventivo',
@@ -240,7 +241,7 @@ export function AlertsPage() {
         )}
         {alerts.isSuccess && alerts.data.length === 0 && <div className="empty">No tienes alertas de riesgo.</div>}
         {alerts.isSuccess && alerts.data.length > 0 && (
-          <div className="table-wrap">
+          <TableWrap label="Alertas de riesgo">
             <table>
               <thead>
                 <tr>
@@ -292,7 +293,7 @@ export function AlertsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
       </section>
       {selected && (
