@@ -284,7 +284,7 @@ Generado por `node scripts/traceability/e1.mjs --anexo` (TASK-097). Una prueba c
 | RNF-093 | 2 | `denticore-api/tests/Feature/Identity/PasswordPolicyTest.php`<br>`denticore-api/tests/Feature/Support/SecurityTest.php` |
 | RNF-094 | 2 | `denticore-api/tests/Feature/Support/SecurityTest.php`<br>`denticore-spa/src/auth/tokenStorage.test.js` |
 | RNF-096 | 2 | `denticore-api/tests/Feature/Support/HttpContractTest.php`<br>`denticore-api/tests/Feature/Support/SecurityTest.php` |
-| RNF-100 | 0 | ci y manual: gitleaks en cada cambio (api.yml, «Dependencias, secretos y SAST»). La rotación de las credenciales de servicio cada 90 días es un registro manual de operación (evidencia de MS-08). |
+| RNF-100 | 0 | ci y manual: gitleaks en cada cambio (api.yml, «Dependencias, secretos y SAST»), sin hallazgos. La rotación cada 90 días de las credenciales de servicio queda como condición C-02 del TCR-E1 (docs/e1/TCR-E1.md): en E1 solo hay credenciales locales y de la CI; el gestor de secretos llega con TASK-111. |
 | RNF-101 | 12 | `denticore-api/tests/Architecture/TenancyTest.php`<br>`denticore-api/tests/Feature/Isolation/CrossClinicTest.php`<br>`denticore-api/tests/Feature/Isolation/PayloadTenantIdTest.php`<br>`denticore-api/tests/Feature/Isolation/PortalIsolationTest.php`<br>`denticore-api/tests/Feature/Patients/ConsentTest.php`<br>`denticore-api/tests/Feature/Patients/InformedConsentTest.php`<br>`denticore-api/tests/Feature/Scheduling/AppointmentTypeTest.php`<br>`denticore-api/tests/Feature/Scheduling/NotificationInboxTest.php`<br>`denticore-api/tests/Feature/Scheduling/WorkScheduleTest.php`<br>`denticore-api/tests/Feature/Support/FileStorageTest.php`<br>`denticore-api/tests/Feature/Support/OutboxTest.php`<br>`denticore-api/tests/Feature/Support/TenantContextTest.php` |
 | RNF-104 | 1 | `denticore-spa/src/security.test.js` |
 | RNF-110 | 3 | `denticore-api/tests/Feature/Scheduling/NotificationTest.php`<br>`denticore-api/tests/Feature/Support/HttpContractTest.php`<br>`denticore-api/tests/Feature/Support/LogPrivacyTest.php` |
@@ -295,7 +295,7 @@ Generado por `node scripts/traceability/e1.mjs --anexo` (TASK-097). Una prueba c
 | RNF-126 | 0 | ci: pest --coverage --min=80 y el umbral del 95 % en los servicios críticos (scripts/coverage/critical.mjs, api.yml); Vitest con 70 % de líneas (spa.yml); pytest --cov con fail_under = 80 (ml.yml). |
 | RNF-128 | 0 | ci: Informe de trazabilidad (scripts/traceability/e1.mjs): cada RN de los CUS de E1 y cada CA de §11 de esos CUS citados por al menos una prueba. |
 | RNF-130 | 4 | `denticore-api/tests/Architecture/TimeTest.php`<br>`denticore-api/tests/Feature/Support/EvidenceTest.php`<br>`denticore-api/tests/Feature/Support/FileStorageTest.php`<br>`denticore-api/tests/Feature/Support/OutboxTest.php` |
-| RNF-135 | 0 | manual: main exige PR y los checks del CI y SonarCloud. Los PR de E1 se integran con --admin tras el CI en verde, sin un segundo revisor: falta decidir en MS-08 si se acepta esta desviación del «≥ 1 revisor». |
+| RNF-135 | 0 | manual: Todo cambio entra por PR con la CI y SonarCloud en verde, pero los PR de E1 se integraron con --admin, sin un segundo revisor, y la protección de main solo exige el check e2e. Desviación C-04 del TCR-E1, aceptada por el dueño del producto el 2026-10-17; se vuelve a decidir al iniciar E2. |
 | RNF-146 | 1 | `denticore-api/tests/Feature/Patients/MedicalHistoryTest.php` |
 | RNF-147 | 1 | `denticore-api/tests/Feature/Risk/PredictTest.php` |
 | RNF-149 | 1 | `denticore-api/tests/Feature/Patients/MedicalHistoryTest.php` |
