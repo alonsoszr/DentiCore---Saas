@@ -86,7 +86,7 @@ function ToothHistoryPicker({ subject }) {
         </div>
       )}
       {history.isSuccess && (
-        <div className="card">
+        <div className="card mt-4">
           <ToothHistory tooth={Number(tooth)} entries={history.data} size="lg" />
         </div>
       )}

@@ -24,7 +24,10 @@ it('rejects a portal cancellation 23 hours before with a 24 hour limit', functio
     $later = PortalFixtures::clinicAppointment($clinic, '2026-11-03 11:00');
     $this->actingWithToken($clinic['user']);
 
-    portalAppointmentAction($soon->uuid, 'cancel')->assertUnprocessable()->assertJsonPath('rule', 'RN-49');
+    portalAppointmentAction($soon->uuid, 'cancel')
+        ->assertUnprocessable()
+        ->assertJsonPath('rule', 'RN-49')
+        ->assertJsonPath('detail', 'Desde el portal puedes reprogramar o cancelar hasta 24 horas antes de la cita. Comunícate con la clínica.');
     portalAppointmentAction($soon->uuid, 'reschedule', ['starts_at' => Carbon::parse('2026-11-03 15:00', 'America/Lima')->toIso8601String()])
         ->assertUnprocessable()
         ->assertJsonPath('rule', 'RN-49');
