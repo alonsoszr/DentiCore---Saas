@@ -67,6 +67,38 @@ def test_drafts_the_model_card(trained: tuple[Path, training.TrainingResult]) ->
     assert VERSION in card and result.dataset_hash in card
     assert "no es un diagnóstico" in card and "OUT-06" in card
     assert f"{result.metrics['auc_validation']:.4f}" in card
+    # RNF-171: uso previsto, población, variables, métricas globales y por subgrupo y limitaciones.
+    assert _sections(card) == RNF_171_SECTIONS
+
+
+RNF_171_SECTIONS = [
+    "Uso previsto",
+    "Población",
+    "Variables",
+    "Métricas de validación",
+    "Métricas por subgrupo (RNF-167)",
+    "Entrenamiento (RNF-170)",
+    "Limitaciones",
+]
+
+PUBLISHED_CARD = Path(__file__).resolve().parents[1] / "docs" / f"model_card_{VERSION}.md"
+
+
+def test_publishes_the_provisional_card_of_the_active_model(trained: tuple[Path, training.TrainingResult]) -> None:
+    """TASK-096: la ficha publicada es la que genera el entrenamiento de la versión activa en la CI y en el
+    entorno local (semilla por defecto)."""
+    _, result = trained
+    card = PUBLISHED_CARD.read_text(encoding="utf-8")
+
+    assert card.startswith(f"# Ficha técnica del modelo de riesgo de caries {VERSION} (provisional)")
+    assert _sections(card) == RNF_171_SECTIONS
+    assert result.dataset_hash in card
+    published_auc = float(card.split("AUC-ROC: ")[1].split(" ")[0])
+    assert published_auc == pytest.approx(result.metrics["auc_validation"], abs=0.005)
+
+
+def _sections(card: str) -> list[str]:
+    return [line.removeprefix("## ") for line in card.splitlines() if line.startswith("## ")]
 
 
 def test_reloads_the_model_with_the_same_predictions(trained: tuple[Path, training.TrainingResult]) -> None:

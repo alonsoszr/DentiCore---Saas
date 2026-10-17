@@ -2,7 +2,8 @@
     "openapi": "3.1.0",
     "info": {
         "title": "DentiCore",
-        "version": "0.0.1"
+        "version": "1.0.0",
+        "description": "API REST de DentiCore (`/api/v1`). Contrato de la entrega E1 con datos sint\u00e9ticos (SDD \u00a74)."
     },
     "servers": [
         {

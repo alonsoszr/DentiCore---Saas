@@ -43,14 +43,14 @@ return [
 
     'info' => [
         /*
-         * API version.
+         * Versión de la API (SemVer, RNF-133): 1.0.0 es la liberación de E1 (etiqueta e1.0, TASK-096).
          */
-        'version' => env('API_VERSION', '0.0.1'),
+        'version' => env('API_VERSION', '1.0.0'),
 
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => '',
+        'description' => 'API REST de DentiCore (`/api/v1`). Contrato de la entrega E1 con datos sintéticos (SDD §4).',
     ],
 
     'ui' => [

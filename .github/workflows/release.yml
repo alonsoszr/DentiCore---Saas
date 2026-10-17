@@ -1,0 +1,110 @@
+# Liberación de una entrega (TASK-096 y TASK-097; Plan §6.5, RNF-136).
+# Al empujar la etiqueta de una entrega (e1.0, e2.0…), regenera el OpenAPI desde el código, falla si
+# no coincide con el versionado en el repositorio y publica un GitHub Release con:
+#   - el OpenAPI generado en esta corrida, que así es el mismo de la CI;
+#   - el informe de pruebas y aceptación de la entrega (docs/e<n>/TCR-E<n>.md);
+#   - las fichas técnicas de los modelos (denticore-ml/docs/model_card_*.md).
+name: release
+
+on:
+  push:
+    tags: ['e[0-9]+.[0-9]+']
+  # Ensayo en los PR que cambian este workflow: todo menos publicar.
+  pull_request:
+    paths: ['.github/workflows/release.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release de la entrega
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: denticore_testing
+      DB_USERNAME: denticore_app
+      DB_PASSWORD: app_ci
+      DB_MIGRATOR_USERNAME: denticore_migrator
+      DB_MIGRATOR_PASSWORD: migrator_ci
+      DB_PLATFORM_USERNAME: denticore_platform
+      DB_PLATFORM_PASSWORD: platform_ci
+    steps:
+      - uses: actions/checkout@v4
+      - name: Roles y bases de PostgreSQL (infra/postgres/init.sh)
+        env:
+          PGHOST: 127.0.0.1
+          PGPASSWORD: postgres
+          POSTGRES_USER: postgres
+          DENTICORE_MIGRATOR_PASSWORD: migrator_ci
+          DENTICORE_APP_PASSWORD: app_ci
+          DENTICORE_PLATFORM_PASSWORD: platform_ci
+        run: bash infra/postgres/init.sh
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, intl, pdo_pgsql, pgsql, zip, pcntl
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: denticore-api
+
+      # Scramble tipa los modelos con el esquema de la BD: se migra antes de exportar, como en api.yml.
+      - name: Exportar OpenAPI 3.1 y comparar con el versionado
+        working-directory: denticore-api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate --database=pgsql_migrator --force
+          php artisan scramble:export
+          git diff --exit-code -- openapi.json
+
+      - name: Artefactos de la entrega
+        id: assets
+        env:
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'e1.0' }}
+          IS_TAG: ${{ github.ref_type == 'tag' }}
+        run: |
+          delivery="${TAG%%.*}"                      # e1.0 → e1
+          report="docs/${delivery}/TCR-${delivery^^}.md"
+          mkdir -p release
+          cp denticore-api/openapi.json "release/openapi-${TAG}.json"
+          if [ -f "$report" ]; then
+            cp "$report" release/
+          elif [ "$IS_TAG" = "true" ]; then
+            echo "::error::Falta el informe de la entrega: $report"; exit 1
+          else
+            echo "::warning::Ensayo sin el informe de la entrega: $report"
+          fi
+          cp denticore-ml/docs/model_card_*.md release/
+          echo "report=$report" >> "$GITHUB_OUTPUT"
+          ls -l release
+
+      - name: Publicar el Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPORT: ${{ steps.assets.outputs.report }}
+        run: |
+          gh release create "$TAG" release/* \
+            --title "DentiCore ${TAG}" \
+            --notes "Entrega ${TAG} con datos sintéticos (RES-08). Decisión de liberación, resultados por ID y desviaciones: [${REPORT}](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/${REPORT}). Adjuntos: el OpenAPI generado por esta corrida (idéntico al versionado), el informe y las fichas técnicas de los modelos."
