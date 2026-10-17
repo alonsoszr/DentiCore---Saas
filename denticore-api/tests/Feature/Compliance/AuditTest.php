@@ -21,6 +21,7 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
@@ -103,7 +104,7 @@ it('writes one audit row for each auditable event type without clinical values',
     foreach (['45678912', '987654321', 'rosa@correo.test', 'Rosa', 'Quispe', 'Penicilina', 'ana@sonrisa.test', 'Diego', 'password'] as $value) {
         expect($serialized)->not->toContain($value);
     }
-})->group('RN-67', 'RF-186', 'CUS-65', 'RNF-114');
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65', 'RNF-114');
 
 it('rejects UPDATE and DELETE on audit_logs', function () {
     app(AuditLogger::class)->record(AuditEvent::TenantCreated, Tenant::factory()->create());
@@ -121,7 +122,7 @@ it('rejects UPDATE and DELETE on audit_logs', function () {
     expect($sqlStateOf(fn () => DB::update("update audit_logs set action = 'x'")))->toBe('55000')
         ->and($sqlStateOf(fn () => DB::delete('delete from audit_logs')))->toBe('55000')
         ->and(auditActions())->toBe(['tenant.created']);
-})->group('RN-67', 'RF-186');
+})->group('T-150', 'RN-67', 'RF-186');
 
 it('chains the hashes of each clinic and of the platform separately', function () {
     $tenantA = Tenant::factory()->create();
@@ -464,4 +465,36 @@ it('writes the audit events of the MS-04 scheduling flows without identification
     foreach ([$patient->first_name, $patient->last_name, $patient->document_number, 'Viaje imprevisto'] as $value) {
         expect($serialized)->not->toContain($value);
     }
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
+
+it('writes the audit events of the MS-05 model registry without its metrics', function () {
+    MlEngine::publishes('1.0.0');
+
+    $this->artisan('risk:register-model', ['version' => '1.0.0', '--activate' => true])->assertSuccessful();
+
+    $rows = AuditLog::query()->whereIn('action', ['model.registered', 'model.activated'])->get();
+    expect($rows->pluck('action')->all())->toEqualCanonicalizing(['model.registered', 'model.activated'])
+        ->and($rows->pluck('tenant_id')->unique()->all())->toBe([null]);
+
+    // RN-67: la bitácora registra el cambio, no las métricas ni la huella del conjunto.
+    $serialized = json_encode(DB::table('audit_logs')->get());
+    foreach (['0.7812', '0.1601', str_repeat('a', 64)] as $value) {
+        expect($serialized)->not->toContain($value);
+    }
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65', 'RF-175');
+
+it('asserts in T-149 every audit event that the application emits', function () {
+    // TASK-093: cada evento del catálogo que el código de E1 emite tiene su fila verificada en este
+    // archivo. Los eventos del enum que ningún flujo emite todavía (E2 a E4) no se exigen.
+    $emitted = collect(File::allFiles(app_path()))
+        ->flatMap(fn ($file) => preg_match_all('/AuditEvent::([A-Z]\w+)/', $file->getContents(), $matches) ? $matches[1] : [])
+        ->unique()
+        ->map(fn (string $case) => collect(AuditEvent::cases())->firstWhere('name', $case)?->value)
+        ->filter()
+        ->sort()
+        ->values();
+    $asserted = (string) file_get_contents(__FILE__);
+
+    expect($emitted)->not->toBeEmpty()
+        ->and($emitted->reject(fn (string $action) => str_contains($asserted, "'{$action}'"))->values()->all())->toBe([]);
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');

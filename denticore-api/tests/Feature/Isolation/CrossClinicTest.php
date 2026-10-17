@@ -6,6 +6,8 @@
  */
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Odontogram\Jobs\AutoCloseAttentionsJob;
+use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Jobs\EndRepresentationsAtMajorityJob;
 use App\Modules\Patients\Models\Consent;
@@ -23,7 +25,9 @@ use App\Modules\Risk\Models\RiskPrediction;
 use App\Modules\Risk\Models\RiskVariableSet;
 use App\Modules\Scheduling\Enums\NotificationEvent;
 use App\Modules\Scheduling\Jobs\MarkNoShowsJob;
+use App\Modules\Scheduling\Jobs\SendNotificationJob;
 use App\Modules\Scheduling\Jobs\SendRemindersJob;
+use App\Modules\Scheduling\Mail\NotificationMail;
 use App\Modules\Scheduling\Models\Appointment;
 use App\Modules\Scheduling\Models\AppointmentType;
 use App\Modules\Scheduling\Models\Notification;
@@ -36,10 +40,12 @@ use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
 use App\Modules\Treatment\Services\BudgetIssuer;
 use App\Modules\Treatment\Services\BudgetService;
+use App\Support\Outbox\OutboxMessage;
 use App\Support\Tenancy\TenantContext;
 use App\Support\Tokens\OneTimeTokenService;
 use App\Support\Tokens\TokenPurpose;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -150,15 +156,30 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
         ))->uuid,
     ];
 
-    // Toda ruta de la clínica que recibe el uuid de un registro (RF-003).
-    $routes = collect(Route::getRoutes()->getRoutes())
-        ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/')
-            && preg_match('/\{(patient|representative|consent|user|attention|entry|procedure|plan|item|budget|line|document|template|informedConsent|dentist|block|type|appointment|notification|set|prediction|alert)\}/', $route->uri()) === 1)
+    // Toda ruta de la clínica que recibe el uuid de un registro (RF-003), tomada de las rutas
+    // registradas (TASK-093). No son registros la pieza dentaria, el código de la clínica de las
+    // rutas públicas ni los tokens de un solo uso; las rutas de plataforma ({tenant}, solo SA) y los
+    // archivos firmados ({tenant}/{file}, DI-16) tienen sus propias pruebas.
+    $notRecords = ['tooth', 'slug', 'token'];
+    $records = collect(Route::getRoutes()->getRoutes())
+        ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/'))
+        ->reject(fn ($route) => array_intersect($route->parameterNames(), ['tenant', 'file']) !== [])
+        ->filter(fn ($route) => array_diff($route->parameterNames(), $notRecords) !== []);
+
+    // Un parámetro nuevo sin registro de la otra clínica haría pasar la ruta sin probarla.
+    $unbound = $records->flatMap(fn ($route) => array_diff($route->parameterNames(), $notRecords))
+        ->unique()
+        ->reject(fn (string $name) => array_key_exists('{'.$name.'}', $bindings))
+        ->values()
+        ->all();
+    expect($unbound)->toBe([], 'Parámetros de ruta sin registro de la otra clínica en el dataset de T-015');
+
+    $routes = $records
         ->flatMap(fn ($route) => collect($route->methods())->reject(fn ($method) => $method === 'HEAD')
             ->map(fn ($method) => [$method, $route->uri()]))
         ->values();
 
-    expect($routes->count())->toBeGreaterThanOrEqual(73);
+    expect($routes->count())->toBeGreaterThanOrEqual(86);
 
     foreach ($routes as [$method, $uri]) {
         $path = '/'.strtr($uri, $bindings);
@@ -297,3 +318,39 @@ it('sends reminders only for the clinic of the job', function () {
 
     expect(Notification::query()->where('event', 'cita_recordatorio')->pluck('tenant_id')->all())->toBe([$own->id]);
 })->group('T-016', 'RN-52', 'RNF-101');
+
+it('auto closes the open attentions only of the clinic of the job', function () {
+    [$own, $other] = Tenant::factory()->count(2)->create();
+    $yesterday = ['status' => 'abierta', 'opened_at' => now()->subDay()];
+    $mine = Attention::factory()->create(['tenant_id' => $own->id, ...$yesterday]);
+    $theirs = Attention::factory()->create(['tenant_id' => $other->id, ...$yesterday]);
+
+    dispatch_sync(new AutoCloseAttentionsJob($own->id));
+
+    // Sin nota, el cierre automático la deja `cerrada_incompleta` (RN-77); la otra sigue abierta.
+    expect(TenantContext::run($own, fn () => $mine->fresh()->status))->toBe('cerrada_incompleta')
+        ->and(TenantContext::run($other, fn () => $theirs->fresh()->status))->toBe('abierta');
+})->group('T-016', 'RN-20', 'RNF-101');
+
+it('sends a queued notification only inside the clinic of its outbox message', function () {
+    Mail::fake();
+    [$own, $other] = Tenant::factory()->count(2)->create();
+    $notify = fn (Tenant $tenant) => TenantContext::run($tenant, fn () => app(NotificationService::class)->sendEmail(
+        NotificationEvent::InvitacionActivacion,
+        User::factory()->for($tenant)->create(['email' => Str::random(8).'@example.test']),
+        links: ['activate' => 'https://app.test/activar'],
+    ));
+    $theirs = $notify($other);
+    $message = OutboxMessage::query()->where('payload->notification', $theirs->uuid)->sole();
+
+    // Un job creado para esta clínica no procesa el mensaje de la otra.
+    TenantContext::run($own, fn () => (new SendNotificationJob($message->uuid, $own->id))->handle());
+
+    Mail::assertNothingSent();
+    expect(TenantContext::run($other, fn () => $theirs->fresh()->status))->toBe('pendiente')
+        ->and($message->fresh()->consumed_at)->toBeNull();
+
+    // Con su propia clínica, el mismo mensaje sí se envía.
+    TenantContext::run($other, fn () => (new SendNotificationJob($message->uuid, $other->id))->handle());
+    Mail::assertSent(NotificationMail::class);
+})->group('T-016', 'RF-155', 'RNF-101');

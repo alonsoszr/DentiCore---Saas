@@ -151,7 +151,7 @@ it('finds no personal data patterns in logs of a synthetic run', function () {
     foreach (['/\b\d{8}\b/', '/\b9\d{8}\b/', '/[\w.+-]+@[\w-]+\.[\w.]+/', '/Siempre Viva/', '/secreto/'] as $pattern) {
         expect(preg_match($pattern, $withoutUuids))->toBe(0, "el log contiene {$pattern}");
     }
-})->group('RNF-110');
+})->group('T-164', 'RNF-110');
 
 it('returns the correlation id and the security headers on every response', function () {
     $incoming = '7d0c9e1a-2b7f-4f53-9a55-0d1b8e7f4a10';

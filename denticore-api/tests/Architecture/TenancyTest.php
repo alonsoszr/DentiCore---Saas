@@ -42,4 +42,4 @@ it('requires BelongsToTenant on every model with a non nullable tenant_id outsid
     }
 
     expect($checked)->toBeGreaterThan(0);
-})->group('DD-03', 'RNF-101');
+})->group('T-160', 'DD-03', 'RNF-101');
