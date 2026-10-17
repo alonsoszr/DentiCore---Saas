@@ -24,11 +24,15 @@
 
 De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CUS-28, CUS-30, CUS-41 y CUS-64).
 
-**Versión probada:** la rama `main` en la etiqueta `e1.0`. Las corridas de referencia de la CI están en GitHub Actions, con el identificador de cada corrida:
+**Versión probada:** la rama `main` en la etiqueta `e1.0`. Las corridas de referencia de la CI están en GitHub Actions, con el identificador de cada corrida. Las primeras cinco son las del código de la etiqueta; las siguientes, las del cierre de MS-07, se conservan como historia:
 
 | Corrida (`RUN-id`) | Workflow | Commit | Resultado |
 | :-- | :-- | :-- | :-- |
-| ⟨pendiente: corridas de `main` en la etiqueta e1.0⟩ | api, spa, ml, e2e, traceability | | |
+| 39067482198 | e2e (matriz 4 × 4, Android emulado, flujo de valor, k6 T-176 y motor detenido) | `a7f369e` (TASK-098) | ✅ |
+| 39067482262 | spa (ESLint, Prettier, Vitest, build, auditoría) | `a7f369e` | ✅ |
+| 39067482144 | traceability (informe y anexo por ID) | `a7f369e` | ✅ |
+| 39053203401 | api (Pest, cobertura, SAST, secretos, OpenAPI). Desde `62eb74e` no cambió el código de la API. | `62eb74e` (TASK-096) | ✅ |
+| 39053203415 | ml (ruff, mypy, pytest con cobertura, pip-audit). Desde `62eb74e` no cambió el motor. | `62eb74e` | ✅ |
 | 39016862496 | api (Pest, cobertura, SAST, secretos, OpenAPI) | `1cf970b` (cierre de MS-07) | ✅ |
 | 39016862446 | e2e (matriz 4 × 4, k6 T-176, motor detenido) | `1cf970b` | ✅ |
 | 39016862441 | spa (ESLint, Prettier, Vitest, build, auditoría) | `1cf970b` | ✅ |
@@ -43,7 +47,7 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 
 | KPI | Valor en E1 | Meta | Estado |
 | :-- | :-- | :-- | :-- |
-| Tasa de éxito de la suite | 100 % de las ejecutadas: Pest 1 723 de 1 723 (1 omitida), Vitest 247 de 247, pytest 49 de 49, E2E 204 de 204 | 100 % | ✅ |
+| Tasa de éxito de la suite | 100 % de las ejecutadas: Pest 1 723 de 1 723 (1 omitida), Vitest 261 de 261, pytest 49 de 49, E2E 224 de 224 | 100 % | ✅ |
 | Cobertura de RF | 115 de 115 | 100 % | ✅ |
 | Cobertura de CA | 59 de 59 de los CUS de E1 | 100 % | ✅ |
 | Trazabilidad de RN | 64 de 64 | 100 % | ✅ |
@@ -53,29 +57,30 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 
 **La prueba omitida** es la del antivirus con EICAR (`FileStorageTest`). Se omite sola cuando ClamAV no responde, y la CI no lo levanta para no sumar 5 minutos de arranque. En local pasa. Su RNF (RNF-103) es de E2.
 
-**Sobre las E2E:**
-- La matriz completa tiene 60 casos por navegador (15 por ancho), en 4 navegadores.
-- En cada navegador se omiten 9 casos a propósito:
-  - 8 son pantallas del personal a 360 px, que pide desde 768 px (RNF-052);
-  - 1 es el caso del motor detenido a 360 px.
+**Sobre las E2E** (RUN 39067482198):
+- Cada navegador corre 17 casos por ancho a 360, 768, 1280 y 1920 px, y además los de `@motor-detenido`. El job de Chromium suma el proyecto Android emulado.
+- Pasan 224 casos y se omiten 65 a propósito:
+  - las pantallas del personal a 360 px y en Android, que piden desde 768 px (RNF-052);
+  - el flujo de valor fuera de `chromium-1280` (TASK-098);
+  - el caso del motor detenido a 360 px.
 
 ## 3. Resultados por nivel y por tipo de prueba
 
 | Nivel o tipo | Herramienta | Resultado | Evidencia |
 | :-- | :-- | :-- | :-- |
 | Estático | Pint, Larastan nivel 6, ESLint, Prettier, ruff, mypy estricto, SonarCloud | 0 errores; puerta de SonarCloud en verde en cada PR | api, spa y ml en cada PR |
-| Unitario e integración (API) | Pest con PostgreSQL 16 y RLS | 1 723 pruebas en verde en 182 s | RUN 39016862496 |
+| Unitario e integración (API) | Pest con PostgreSQL 16 y RLS | 1 723 pruebas en verde en 180 s | RUN 39053203401 |
 | Arquitectura | Pest `arch()` (T-158 a T-161) | Sin violaciones | Incluida en Pest |
 | Aislamiento entre clínicas | T-014 a T-018, T-160 sobre todas las rutas y *jobs* de E1 | 0 fugas | Incluida en Pest (TASK-093) |
 | Autorización | `AUTH_MATRIX` (T-019) | Toda ruta registrada en la matriz; ningún rol denegado recibe 2xx | Incluida en Pest |
 | Bitácora | T-149 y T-150 | Cada evento emitido en E1 se registra sin valores clínicos | Incluida en Pest |
 | Contrato OpenAPI | T-162 y el documento exportado comparado en la CI | Sin diferencias (OpenAPI 3.1, 119 rutas) | api |
 | Contrato ML | T-163 y pytest del motor | En verde | ml |
-| Frontend | Vitest y React Testing Library | 247 pruebas en 42 archivos | spa |
-| E2E y accesibilidad | Playwright con axe-core (WCAG 2.1 AA) | Chrome, Edge, Firefox y WebKit a 360, 768, 1280 y 1920 px: 204 casos en verde. Chrome para Android emulado (Pixel 7): el portal y el login en verde (6 casos; las pantallas del personal se omiten por debajo de 768 px) | RUN 39016862446; Android en la CI de #97 |
-| Concurrencia (PC-E, T-176) | k6 0.54 | 50 reservas simultáneas del mismo horario: 1 creada, 49 conflictos (409), 0 errores; p95 2,08 s | Artefacto `load-results/pc-e-summary.json` |
-| Flujo de valor de E1 (TASK-098) | E2E `value-flow.spec.ts` en chromium-1280 | Cita → HC → riesgo → plan → presupuesto → procedimiento, solo por la interfaz y con datos sintéticos | ⟨pendiente: corrida de la etiqueta⟩ |
-| Tolerancia a fallos | E2E `@motor-detenido` | Con el motor detenido, la atención sigue editable y la pantalla dice «Predicción no disponible» | RUN 39016862446 |
+| Frontend | Vitest y React Testing Library | 261 pruebas en 44 archivos | RUN 39067482262 |
+| E2E y accesibilidad | Playwright con axe-core (WCAG 2.1 AA) | Chrome, Edge, Firefox y WebKit a 360, 768, 1280 y 1920 px, y Chrome para Android emulado (Pixel 7) con el portal y el login: 224 casos en verde | RUN 39067482198 |
+| Concurrencia (PC-E, T-176) | k6 0.54 | 50 reservas simultáneas del mismo horario: 1 creada, 49 conflictos (409), 0 errores; p95 1,22 s | RUN 39067482198, artefacto `load-results/pc-e-summary.json` |
+| Flujo de valor de E1 (TASK-098) | E2E `value-flow.spec.ts` en chromium-1280 | Cita → HC → riesgo → plan → presupuesto → procedimiento, solo por la interfaz y con datos sintéticos | RUN 39067482198 (chromium-1280, 15,8 s) |
+| Tolerancia a fallos | E2E `@motor-detenido` | Con el motor detenido, la atención sigue editable y la pantalla dice «Predicción no disponible» | RUN 39067482198 |
 | Seguridad | Semgrep (reglas propias), gitleaks, `composer audit`, `npm audit` y `pip-audit` | 0 hallazgos SAST, 0 secretos, 0 vulnerabilidades conocidas | api, spa y ml |
 | Mutación (nocturna) | Pest `--mutate --covered-only` sobre los 5 servicios críticos | MSI 75,7 % (1 752 de 2 314 mutantes eliminados; detalle abajo) | RUN 39051823643, artefactos `mutation-*` |
 | Carga de desempeño (PC-N, PC-P) | k6 sobre el entorno de referencia | No ejecutada: diferida por R-03 (§6) | — |
@@ -90,7 +95,7 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 | Presupuestos | 99,1 % | 95 % |
 | Citas | 98,0 % | 95 % |
 | Riesgo | 98,7 % | 95 % |
-| SPA (líneas) | 90,6 % | 70 % |
+| SPA (líneas) | 90,7 % | 70 % |
 | Motor ML | 99,0 % | 80 % |
 
 **Mutación por servicio crítico** (primera medición real; DEF-007):
@@ -213,7 +218,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 | C-04 | RNF-135: integración con `--admin`, sin un segundo revisor | Decisión del equipo para los hitos MS-03 a MS-08, con la CI y SonarCloud en verde como condición de cada integración. | Se vuelve a decidir al iniciar E2 | Dueño del producto, 2026-10-17 |
 | C-05 | Chrome para Android emulado, no en un dispositivo real; sin la versión estable anterior de cada navegador (RNF-051) | La CI usa la versión actual de cada motor de Playwright. | Prueba en dispositivo en E3 (portal completo, MS-13) | Dueño del producto, 2026-10-17 |
 | C-06 | Sin staging: la demostración de TASK-098 corre en el entorno local | Staging se aprovisiona en MS-10 (TASK-111). El guion (`docs/e1/demostracion.md`) corre de principio a fin sin tocar la BD, y la CI lo repite en `e2e/value-flow.spec.ts`. | MS-10 | Dueño del producto, 2026-10-17 |
-| C-07 | La guía de instalación debe verificarla otro integrante (RNF-141, *Should*, de E3) | La corrida automatizada en un clon limpio funcionó (`docs/e1/verificacion-instalacion.md`); falta la del compañero. | MS-08 | ⟨pendiente⟩ |
+| C-07 | La guía de instalación debe verificarla otro integrante (RNF-141, *Should*, de E3) | La corrida automatizada en un clon limpio funcionó (`docs/e1/verificacion-instalacion.md`); falta la del compañero. | MS-08 | Abierta: se completa con el tiempo del compañero en `docs/e1/verificacion-instalacion.md` |
 
 **Fuera de E1:** RNF-127 (MSI ≥ 70 %) es *Should*. Su valor se informa (§3: 75,7 % global, riesgo 63,0 %) y bloquea la liberación desde E3 (Plan §6.1).
 

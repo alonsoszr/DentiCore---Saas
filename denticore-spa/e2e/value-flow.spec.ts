@@ -7,10 +7,6 @@ import { CHECK_IN_WINDOW, auditScreen, gotoSettled, hasSlotsBetween, login, rese
 //
 // Corre solo en chromium-1280: con un odontólogo y pasos de 15 min caben 4 citas en la próxima hora
 // (RN-50), y T-170 ya ocupa 3 en cada job de la matriz (768, 1280 y 1920 px).
-test.skip(
-  ({ browserName, viewport }) => browserName !== 'chromium' || viewport?.width !== 1280,
-  'Flujo de demostración: solo en chromium-1280',
-)
 
 async function receptionPage(browser: Browser) {
   const page = await (await browser.newContext()).newPage()
@@ -22,6 +18,8 @@ test('runs the E1 value flow: appointment, clinical record, risk, plan, budget a
   page,
   browser,
 }) => {
+  // Edge también es Chromium (`browserName`): se filtra por el nombre del proyecto.
+  test.skip(test.info().project.name !== 'chromium-1280', 'Flujo de demostración: solo en chromium-1280')
   test.setTimeout(300_000)
   const dni = String(10_000_000 + Math.floor(Math.random() * 89_999_999))
   const lastName = `Demostración ${dni
