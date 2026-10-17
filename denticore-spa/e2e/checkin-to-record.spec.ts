@@ -88,7 +88,7 @@ test('shows the full clinical record within 3 seconds after check-in', async ({
   // Historia clínica completa: datos del paciente, odontograma vigente y la atención abierta.
   await dentist.goto(`${patientPath}/hc`)
   await expect(
-    dentist.getByRole('region', { name: 'Paciente' }).getByRole('heading', { name: `Elena ${lastName}` }),
+    dentist.getByRole('region', { name: 'Paciente', exact: true }).getByRole('heading', { name: `Elena ${lastName}` }),
   ).toBeVisible()
   await expect(dentist.getByRole('button', { name: /^Pieza 36/ })).toBeVisible()
   await expect(dentist.getByRole('row', { name: /Abierta/ })).toBeVisible()

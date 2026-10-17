@@ -41,7 +41,7 @@ test('opens an attention, records and corrects a finding, closes it and shows th
   await page.getByRole('link', { name: 'Historia clínica', exact: true }).click()
   await page.getByRole('button', { name: 'Atender' }).click()
   await expect(page).toHaveURL(/\/c\/clinica-demo\/app\/atenciones\/[0-9a-f-]+$/)
-  await expect(page.getByRole('region', { name: 'Paciente' }).getByText('Penicilina')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Paciente', exact: true }).getByText('Penicilina')).toBeVisible()
 
   // Hallazgo en la pieza 36 elegida con el teclado (CUS-22).
   await page.getByRole('button', { name: /^Pieza 18/ }).focus()

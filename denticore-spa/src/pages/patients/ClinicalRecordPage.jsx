@@ -78,7 +78,7 @@ export function ClinicalRecordPage({ patient }) {
           <div className="empty">El paciente aún no tiene atenciones.</div>
         )}
         {attentions.length > 0 && (
-          <TableWrap label="Atenciones">
+          <TableWrap labelledBy="attentions-title">
             <table>
               <thead>
                 <tr>

@@ -51,7 +51,7 @@ export function PlanBudgets({ plan, needsConsent }) {
       )}
       {budgets.isSuccess && list.length === 0 && <div className="empty">El plan aún no tiene presupuestos.</div>}
       {list.length > 0 && (
-        <TableWrap label="Presupuestos del plan">
+        <TableWrap labelledBy="plan-budgets-title">
           <table>
             <thead>
               <tr>

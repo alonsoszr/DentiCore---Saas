@@ -277,7 +277,7 @@ export function PlanConsentsPage() {
         {items.length === 0 ? (
           <div className="empty">Ningún ítem pendiente del plan exige consentimiento informado.</div>
         ) : (
-          <TableWrap label="Consentimientos informados del plan">
+          <TableWrap label="Consentimientos informados">
             <table>
               <thead>
                 <tr>

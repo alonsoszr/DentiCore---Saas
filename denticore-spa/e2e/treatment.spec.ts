@@ -138,7 +138,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
 
   // Procedimiento en la atención abierta (CUS-39): confirmación con las alergias a la vista.
   await gotoSettled(page, attentionUrl.replace(/\/?$/, '/procedimientos'))
-  const procedures = page.getByRole('region', { name: 'Procedimientos' })
+  const procedures = page.getByRole('region', { name: 'Procedimientos', exact: true })
   const row = procedures.getByRole('row', { name: /Restauración con resina/ })
   await expect(row).toBeVisible()
   await row.getByRole('button', { name: 'Registrar' }).click()
@@ -158,6 +158,8 @@ test('turns a red finding into a performed procedure through an accepted budget'
 
   // La entrada del procedimiento aparece en el historial de la pieza 36 (RN-39, CA-39.1).
   await page.getByRole('link', { name: 'Volver a la historia clínica' }).click()
+  // El odontograma y el historial cargan después: se espera para que el clic en la pieza no se pierda.
+  await page.waitForLoadState('networkidle')
   // El odontograma vigente muestra la restauración en la 36 y la 48 ausente por extracción.
   const restoredTooth = page.getByRole('button', { name: /^Pieza 36: .*Restauración definitiva/ })
   const extractedTooth = page.getByRole('button', { name: /^Pieza 48: .*diente ausente por extracción/ })

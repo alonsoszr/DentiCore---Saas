@@ -254,7 +254,7 @@ export function CatalogPage() {
         <div className="empty">Aún no hay procedimientos en el catálogo.</div>
       )}
       {procedures.length > 0 && (
-        <TableWrap label="Procedimientos del catálogo">
+        <TableWrap label="Catálogo de procedimientos">
           <table>
             <thead>
               <tr>

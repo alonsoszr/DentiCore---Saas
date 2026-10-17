@@ -104,7 +104,7 @@ function WorkScheduleSection({ dentist, canEdit }) {
         <div className="empty">El odontólogo aún no tiene horario laboral.</div>
       )}
       {current.length > 0 && !editing && (
-        <TableWrap label="Horario laboral">
+        <TableWrap labelledBy="schedule-title">
           <table>
             <thead>
               <tr>
@@ -457,7 +457,7 @@ function BlocksSection({ dentist, isAdmin }) {
 
       {blocks.isSuccess && list.length === 0 && <div className="empty">No hay bloqueos vigentes.</div>}
       {list.length > 0 && (
-        <TableWrap label="Bloqueos de agenda">
+        <TableWrap labelledBy="blocks-title">
           <table>
             <thead>
               <tr>

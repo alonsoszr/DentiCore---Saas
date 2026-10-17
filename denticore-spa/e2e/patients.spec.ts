@@ -25,7 +25,7 @@ test('registers a patient, the data consent and the medical history', async ({ p
   await page.getByLabel('Teléfono').fill('987654321')
   await page.getByRole('button', { name: 'Registrar paciente' }).click()
 
-  const header = page.getByRole('region', { name: 'Paciente' })
+  const header = page.getByRole('region', { name: 'Paciente', exact: true })
   await expect(header.getByRole('heading', { name: 'Lucía Sintética Prueba' })).toBeVisible()
   await expect(header.getByText('Sin consentimiento vigente')).toBeVisible()
   await auditScreen(page)

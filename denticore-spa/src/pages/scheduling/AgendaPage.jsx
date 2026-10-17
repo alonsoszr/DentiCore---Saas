@@ -47,10 +47,10 @@ function AppointmentRow({ appointment, timeZone, appPath }) {
   )
 }
 
-function AppointmentsTable({ appointments, timeZone, appPath, empty }) {
+function AppointmentsTable({ appointments, timeZone, appPath, empty, label }) {
   if (appointments.length === 0) return <div className="empty">{empty}</div>
   return (
-    <TableWrap label="Citas">
+    <TableWrap label={`Citas del ${label}`}>
       <table>
         <thead>
           <tr>
@@ -267,6 +267,7 @@ export function AgendaPage() {
                   timeZone={timeZone}
                   appPath={appPath}
                   empty="No hay citas para este día."
+                  label={`${WEEKDAYS[isoWeekday(date)]} ${formatCivilDate(date)}`}
                 />
               </>
             )}
@@ -282,6 +283,7 @@ export function AgendaPage() {
                     timeZone={timeZone}
                     appPath={appPath}
                     empty="Sin citas."
+                    label={`${WEEKDAYS[isoWeekday(day)]} ${formatCivilDate(day)}`}
                   />
                 </div>
               ))}
