@@ -33,7 +33,7 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 | 39016862446 | e2e (matriz 4 × 4, k6 T-176, motor detenido) | `1cf970b` | ✅ |
 | 39016862441 | spa (ESLint, Prettier, Vitest, build, auditoría) | `1cf970b` | ✅ |
 | 39016862472 | traceability | `1cf970b` | ✅ |
-| 39051823643 | api-mutation (corregido en TASK-097) | rama `task/097-informe-e1` | ⟨pendiente⟩ |
+| 39051823643 | api-mutation (corregido en TASK-097) | rama `task/097-informe-e1` (`main` con #96) | ✅ (MSI 75,7 %) |
 
 **Entorno:**
 - runners de GitHub (`ubuntu-latest`) con PostgreSQL 16, Redis 7, MinIO, Mailpit y el motor ML del `docker-compose.yml`;
@@ -49,7 +49,7 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 | Trazabilidad de RN | 64 de 64 | 100 % | ✅ |
 | Densidad de defectos | 9 defectos en la verificación de E1 (§4) sobre 115 RF: 0,08 por RF | Tendencia decreciente | Línea base |
 | Reapertura de defectos | 0 de 9 | ≤ 10 % | ✅ |
-| Retención de mutación (MSI) | ⟨pendiente⟩ | ≥ 70 % (bloquea desde E3) | Informativo |
+| Retención de mutación (MSI) | 75,7 % en los servicios críticos (riesgo 63,0 %) | ≥ 70 % (bloquea desde E3) | Informativo |
 
 **La prueba omitida** es la del antivirus con EICAR (`FileStorageTest`). Se omite sola cuando ClamAV no responde, y la CI no lo levanta para no sumar 5 minutos de arranque. En local pasa. Su RNF (RNF-103) es de E2.
 
@@ -72,11 +72,11 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 | Contrato OpenAPI | T-162 y el documento exportado comparado en la CI | Sin diferencias (OpenAPI 3.1, 119 rutas) | api |
 | Contrato ML | T-163 y pytest del motor | En verde | ml |
 | Frontend | Vitest y React Testing Library | 247 pruebas en 42 archivos | spa |
-| E2E y accesibilidad | Playwright con axe-core (WCAG 2.1 AA) | Chrome, Edge, Firefox y WebKit a 360, 768, 1280 y 1920 px; Chrome para Android emulado (Pixel 7) ⟨pendiente⟩ | RUN 39016862446 |
+| E2E y accesibilidad | Playwright con axe-core (WCAG 2.1 AA) | Chrome, Edge, Firefox y WebKit a 360, 768, 1280 y 1920 px: 204 casos en verde. Chrome para Android emulado (Pixel 7): el portal y el login en verde (6 casos; las pantallas del personal se omiten por debajo de 768 px) | RUN 39016862446; Android en la CI de #97 |
 | Concurrencia (PC-E, T-176) | k6 0.54 | 50 reservas simultáneas del mismo horario: 1 creada, 49 conflictos (409), 0 errores; p95 2,08 s | Artefacto `load-results/pc-e-summary.json` |
 | Tolerancia a fallos | E2E `@motor-detenido` | Con el motor detenido, la atención sigue editable y la pantalla dice «Predicción no disponible» | RUN 39016862446 |
 | Seguridad | Semgrep (reglas propias), gitleaks, `composer audit`, `npm audit` y `pip-audit` | 0 hallazgos SAST, 0 secretos, 0 vulnerabilidades conocidas | api, spa y ml |
-| Mutación (nocturna) | Pest `--mutate` sobre los 5 servicios críticos | ⟨pendiente⟩ | RUN 39051823643 |
+| Mutación (nocturna) | Pest `--mutate --covered-only` sobre los 5 servicios críticos | MSI 75,7 % (1 752 de 2 314 mutantes eliminados; detalle abajo) | RUN 39051823643, artefactos `mutation-*` |
 | Carga de desempeño (PC-N, PC-P) | k6 sobre el entorno de referencia | No ejecutada: diferida por R-03 (§6) | — |
 
 **Cobertura de código (RNF-126):**
@@ -91,6 +91,19 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 | Riesgo | 98,7 % | 95 % |
 | SPA (líneas) | 90,6 % | 70 % |
 | Motor ML | 99,0 % | 80 % |
+
+**Mutación por servicio crítico** (primera medición real; DEF-007):
+
+| Servicio | Mutantes | Eliminados | Sobreviven | MSI | Duración |
+| :-- | --: | --: | --: | --: | --: |
+| Aislamiento | 108 | 98 | 10 | 90,74 % | 14 min |
+| Odontograma | 625 | 505 | 120 | 80,80 % | 49 min |
+| Presupuestos | 573 | 448 | 125 | 78,18 % | 34 min |
+| Citas | 457 | 354 | 103 | 77,46 % | 30 min |
+| Riesgo | 551 | 347 | 204 | 62,98 % | 31 min |
+| **Total** | **2 314** | **1 752** | **562** | **75,71 %** | |
+
+El MSI de riesgo queda bajo el 70 %. En E1 no bloquea (RNF-127 es *Should*; Plan §6.1), pero queda como acción para E3: reforzar las pruebas de `app/Modules/Risk/Services` antes de MS-16, donde el umbral pasa a bloquear.
 
 **Tiempo de las suites** (OQ-10; RNF-129 es de E3):
 - La suite de la API (Pest con cobertura) tarda 3 min 46 s, con un máximo de 15 min.
@@ -143,7 +156,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 | RNF-035 | Pico de una clínica (PC-P) ≤ +20 % | ⏸️ | R-03: T-175 en MS-10 |
 | RNF-038 | Integridad bajo concurrencia (PC-E) | ✅ | T-176 (k6): 1 creada, 49 conflictos, 0 errores. Los abonos simultáneos son de E3 (pagos). |
 | RNF-046 | ISO 8601, importes como cadena decimal, UTF-8 | ✅ | `OpenApiTest`, `MoneyTest` |
-| RNF-051 | Chrome, Edge y Firefox; el portal además en Safari y Chrome para Android | 🟨 | Matriz E2E en Chromium, Edge, Firefox y WebKit; Android emulado (Pixel 7) ⟨pendiente⟩. Ni un dispositivo Android real ni la versión estable anterior de cada navegador entran en la CI. |
+| RNF-051 | Chrome, Edge y Firefox; el portal además en Safari y Chrome para Android | 🟨 | Matriz E2E en Chromium, Edge, Firefox y WebKit; Android emulado (Pixel 7) con el portal y el login en verde. Ni un dispositivo Android real ni la versión estable anterior de cada navegador entran en la CI. |
 | RNF-052 | Personal 768–1920 px y portal desde 360 px, sin desplazamiento horizontal | ✅ | `auditScreen` en cada pantalla E2E de los 4 anchos, más `TableWrap` |
 | RNF-061 | Estados y hallazgos no solo por color | ✅ | Texto o sigla en todos (`attention.spec.ts`, `expectStatesNotOnlyByColor`). DEF-009 completa el ícono. |
 | RNF-063 | Confirmación de las acciones irreversibles | ✅ | Emitir presupuesto, cerrar atención, corregir un hallazgo y cancelar una cita (`Budget.test.jsx` y E2E). Anular abono, revocar, fusionar y eliminar la HC no existen en E1. |
@@ -201,7 +214,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 | C-06 | Sin staging: la demostración de TASK-098 corre en el entorno local | Staging se aprovisiona en MS-10 (TASK-111). | MS-10 | Dueño del producto, 2026-10-17 |
 | C-07 | La guía de instalación debe verificarla otro integrante (RNF-141, *Should*, de E3) | La corrida automatizada en un clon limpio funcionó (`docs/e1/verificacion-instalacion.md`); falta la del compañero. | MS-08 | ⟨pendiente⟩ |
 
-**Fuera de E1:** RNF-127 (MSI ≥ 70 %) es *Should*. Su valor se informa (§3) y bloquea la liberación desde E3 (Plan §6.1).
+**Fuera de E1:** RNF-127 (MSI ≥ 70 %) es *Should*. Su valor se informa (§3: 75,7 % global, riesgo 63,0 %) y bloquea la liberación desde E3 (Plan §6.1).
 
 ## 7. Decisión
 
