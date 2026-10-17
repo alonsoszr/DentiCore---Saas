@@ -31,7 +31,7 @@
     },
     "RNF-100": {
       "verificacion": "ci y manual",
-      "evidencia": "gitleaks en cada cambio (api.yml, «Dependencias, secretos y SAST»). La rotación de las credenciales de servicio cada 90 días es un registro manual de operación (evidencia de MS-08)."
+      "evidencia": "gitleaks en cada cambio (api.yml, «Dependencias, secretos y SAST»), sin hallazgos. La rotación cada 90 días de las credenciales de servicio queda como condición C-02 del TCR-E1 (docs/e1/TCR-E1.md): en E1 solo hay credenciales locales y de la CI; el gestor de secretos llega con TASK-111."
     },
     "RNF-122": {
       "verificacion": "ci",
@@ -51,7 +51,7 @@
     },
     "RNF-135": {
       "verificacion": "manual",
-      "evidencia": "main exige PR y los checks del CI y SonarCloud. Los PR de E1 se integran con --admin tras el CI en verde, sin un segundo revisor: falta decidir en MS-08 si se acepta esta desviación del «≥ 1 revisor»."
+      "evidencia": "Todo cambio entra por PR con la CI y SonarCloud en verde, pero los PR de E1 se integraron con --admin, sin un segundo revisor, y la protección de main solo exige el check e2e. Desviación C-04 del TCR-E1, aceptada por el dueño del producto el 2026-10-17; se vuelve a decidir al iniciar E2."
     }
   }
 }
