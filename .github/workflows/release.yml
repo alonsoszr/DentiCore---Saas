@@ -3,7 +3,8 @@
 # no coincide con el versionado en el repositorio y publica un GitHub Release con:
 #   - el OpenAPI generado en esta corrida, que así es el mismo de la CI;
 #   - el informe de pruebas y aceptación de la entrega (docs/e<n>/TCR-E<n>.md);
-#   - las fichas técnicas de los modelos (denticore-ml/docs/model_card_*.md).
+#   - las fichas técnicas de los modelos (denticore-ml/docs/model_card_*.md);
+#   - en E1, el anexo de trazabilidad por ID (docs/e1/trazabilidad-e1.md).
 name: release
 
 on:
@@ -98,6 +99,12 @@ jobs:
             echo "::warning::Ensayo sin el informe de la entrega: $report"
           fi
           cp denticore-ml/docs/model_card_*.md release/
+          # TASK-097: el anexo de trazabilidad versionado junto al informe es el que genera el código
+          # de la etiqueta (cada RF, RN, CA y RNF de E1 con sus pruebas).
+          if [ "$delivery" = e1 ]; then
+            node scripts/traceability/e1.mjs --anexo release/trazabilidad-e1.md > /dev/null
+            diff -u docs/e1/trazabilidad-e1.md release/trazabilidad-e1.md
+          fi
           echo "report=$report" >> "$GITHUB_OUTPUT"
           ls -l release
 

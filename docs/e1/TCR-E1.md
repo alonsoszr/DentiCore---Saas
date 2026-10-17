@@ -43,7 +43,7 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 
 | KPI | Valor en E1 | Meta | Estado |
 | :-- | :-- | :-- | :-- |
-| Tasa de éxito de la suite | 100 % de las ejecutadas: Pest 1 723 de 1 723 (1 omitida), Vitest 247 de 247, pytest ⟨pendiente⟩, E2E 204 de 204 | 100 % | ✅ |
+| Tasa de éxito de la suite | 100 % de las ejecutadas: Pest 1 723 de 1 723 (1 omitida), Vitest 247 de 247, pytest 49 de 49, E2E 204 de 204 | 100 % | ✅ |
 | Cobertura de RF | 115 de 115 | 100 % | ✅ |
 | Cobertura de CA | 59 de 59 de los CUS de E1 | 100 % | ✅ |
 | Trazabilidad de RN | 64 de 64 | 100 % | ✅ |
@@ -90,7 +90,7 @@ De los 78 CA del anexo C del plan de pruebas, 19 pertenecen a CUS de E2 y E3 (CU
 | Citas | 98,0 % | 95 % |
 | Riesgo | 98,7 % | 95 % |
 | SPA (líneas) | 90,6 % | 70 % |
-| Motor ML | ⟨pendiente⟩ | 80 % |
+| Motor ML | 99,0 % | 80 % |
 
 **Tiempo de las suites** (OQ-10; RNF-129 es de E3):
 - La suite de la API (Pest con cobertura) tarda 3 min 46 s, con un máximo de 15 min.
@@ -166,7 +166,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 | RNF-128 | Cada RN y CA con prueba | ✅ | Workflow `traceability`: 64 RN y 59 CA |
 | RNF-130 | Reloj simulado y 0 esperas reales | ✅ | `TimeTest` (`arch()`), `EvidenceTest` y otras |
 | RNF-135 | Cambios por PR con ≥ 1 revisor y CI en verde | ⚠️ | Todos los cambios entraron por PR con la CI y SonarCloud en verde, pero se integraron con `--admin`, sin un segundo revisor. Además, `main` solo exige el check `e2e`. |
-| RNF-146 | Identidad del paciente visible y aviso de otra pestaña | ⟨pendiente⟩ | La franja `PatientHeader` está en toda pantalla clínica. El aviso de otra pestaña llega con DEF-008. |
+| RNF-146 | Identidad del paciente visible y aviso de otra pestaña | 🟨 | La franja `PatientHeader` está en toda pantalla clínica. El aviso de otra pestaña llega con DEF-008 (TASK-098). |
 | RNF-147 | La IA o el modelo no escriben datos clínicos | ✅ | `PredictTest`: tras una predicción, las tablas clínicas no cambian |
 | RNF-149 | Aviso de alergias antes de actuar | ✅ | `MedicalHistoryTest` y la franja del paciente |
 | RNF-151 | Solo simbología oficial | ✅ | `FindingCatalogSchemaTest`, `NtsCatalogSeedTest` |
@@ -184,8 +184,8 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 
 | Estado | RNF |
 | :-- | --: |
-| ✅ Cumplidos | ⟨pendiente⟩ |
-| 🟨 Cumplidos con condición | ⟨pendiente⟩ |
+| ✅ Cumplidos | 37 |
+| 🟨 Cumplidos con condición | 6 (RNF-004, 007, 051, 091, 100 y 146) |
 | ⏸️ Diferidos por R-03 | 6 |
 | ⚠️ Desviación aceptada | 1 |
 
@@ -207,7 +207,7 @@ El detalle de las pruebas de cada ID está en el anexo `trazabilidad-e1.md`.
 
 **ACEPTAR CON CONDICIONES.**
 - Los 115 RF de E1 tienen sus pruebas en verde.
-- ⟨pendiente⟩ de los 50 RNF cumplen su criterio, y los demás tienen su condición registrada en §6, con la nueva entrega y la aprobación del dueño del producto (Plan §6.5).
+- 37 de los 50 RNF cumplen su criterio entero, y los demás tienen su condición registrada en §6, con la nueva entrega y la aprobación del dueño del producto (Plan §6.5).
 - No quedan defectos críticos ni altos abiertos.
 - Ningún dato real entra a la plataforma antes de aceptar E2 (SRS §17.1).
 
