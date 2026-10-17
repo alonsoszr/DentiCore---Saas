@@ -1,13 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
+import { auditScreen, englishWords, staffOnly } from './support/screen'
 import { MAILPIT_URL, SUPER_ADMIN, syntheticRuc, totp } from './support/auth'
 
 // Flujos completos de MS-01 (TASK-039 y TASK-040): alta de clínica → invitación en Mailpit →
-// activación → configuración del 2FA → acceso completo. Crean datos nuevos en cada ejecución,
-// así que corren en un solo proyecto de la matriz (la del login cubre navegadores y anchos).
-test.skip(
-  ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
-  'Flujo con datos nuevos: solo en Chrome a 1280 px',
-)
+// activación → configuración del 2FA → acceso completo. Cada ejecución crea su propia clínica, así
+// que corre en todos los navegadores desde 768 px (TASK-094).
+staffOnly()
 test.describe.configure({ mode: 'serial' })
 
 async function typeCode(page: Page, code: string) {
@@ -17,6 +15,7 @@ async function typeCode(page: Page, code: string) {
 /** Enlace de activación del último correo enviado a `email` (Mailpit API v1). */
 async function invitationLink(page: Page, email: string): Promise<string> {
   let link = ''
+  let text = ''
   await expect
     .poll(
       async () => {
@@ -25,11 +24,14 @@ async function invitationLink(page: Page, email: string): Promise<string> {
         if (messages.length === 0) return ''
         const message = await (await page.request.get(`${MAILPIT_URL}/api/v1/message/${messages[0].ID}`)).json()
         link = (`${message.Text} ${message.HTML}`.match(/https?:\/\/[^\s"<]+\/activar\/[A-Za-z0-9_-]+/) ?? [''])[0]
+        text = `${message.Subject}\n${message.Text}`
         return link
       },
       { timeout: 30_000, message: `invitación para ${email} en Mailpit` },
     )
     .not.toBe('')
+  // RNF-188: el correo también va en español.
+  expect(englishWords(text)).toEqual([])
   return link
 }
 
@@ -50,6 +52,7 @@ test('registers a clinic, activates its administrator and configures the second 
   await expect(page).toHaveURL(/\/login\/2fa$/)
   await typeCode(page, totp(SUPER_ADMIN.totpSecret))
   await expect(page).toHaveURL(/\/admin\/clinicas$/)
+  await auditScreen(page)
 
   // Alta de la clínica con su primer administrador (CUS-01; TASK-039).
   await page.getByRole('button', { name: 'Registrar clínica' }).click()
@@ -73,6 +76,7 @@ test('registers a clinic, activates its administrator and configures the second 
   page = await (await browser.newContext()).newPage()
   await page.goto(new URL(link).pathname)
   await expect(page.getByText(`Te invitaron a Clínica E2E ${suffix}`)).toBeVisible()
+  await auditScreen(page)
   await page.getByLabel('Crea tu contraseña').fill(password)
   await page.getByLabel('Confirmar contraseña').fill(password)
   await page.getByLabel('Acepto los términos de uso y la política de privacidad').check()
@@ -92,10 +96,12 @@ test('registers a clinic, activates its administrator and configures the second 
   await page.getByRole('button', { name: 'Confirmar' }).click()
 
   await expect(page.getByRole('heading', { name: 'Guarda tus códigos de recuperación' })).toBeVisible()
+  await auditScreen(page)
   await page.getByLabel('Guardé mis códigos de recuperación').check()
   await page.getByRole('button', { name: 'Finalizar' }).click()
 
   // Acceso completo al área de la clínica.
   await expect(page).toHaveURL(new RegExp(`/c/${slug}/app/pacientes$`))
   await expect(page.getByRole('heading', { name: 'Pacientes' })).toBeVisible()
+  await auditScreen(page)
 })

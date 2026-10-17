@@ -30,6 +30,9 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',
+    // Navegador en español del Perú (RNF-188, RNF-189): también los mensajes nativos y los formatos.
+    locale: 'es-PE',
+    timezoneId: 'America/Lima',
     trace: 'retain-on-failure',
   },
   projects,

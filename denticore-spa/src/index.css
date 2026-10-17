@@ -204,6 +204,12 @@
     background: var(--color-background);
   }
 
+  /* El navegador da a fieldset `min-width: min-content`: con una tabla dentro, la página entera se
+     desplazaba en horizontal a 768 px en lugar de la tabla (RNF-052). */
+  fieldset {
+    min-width: 0;
+  }
+
   h1,
   h2,
   h3 {
@@ -1152,7 +1158,10 @@
     color: var(--color-on-tertiary-container);
   }
 
+  /* `position: relative` hace que el desplazamiento también recorte los `sr-only` (absolutos) de las
+     celdas: sin él, a 768 px la página entera se desplazaba en horizontal (RNF-052). */
   .table-wrap {
+    position: relative;
     overflow-x: auto;
   }
 

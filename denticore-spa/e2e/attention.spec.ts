@@ -1,19 +1,9 @@
-import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
-
-const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
-
-async function expectNoAxeViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze()
-  expect(violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
-}
+import { expect, test } from '@playwright/test'
+import { auditScreen, staffOnly } from './support/screen'
 
 // TASK-052: abrir atención → registrar hallazgo → corregir → cerrar → ver el historial de la pieza. Crea
-// una ficha nueva en cada ejecución (DNI sintético), así que corre en un solo proyecto.
-test.skip(
-  ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
-  'Flujo con datos nuevos: solo en Chrome a 1280 px',
-)
+// una ficha nueva en cada ejecución (DNI sintético), así que corre en toda la matriz desde 768 px.
+staffOnly()
 
 test('opens an attention, records and corrects a finding, closes it and shows the history of the tooth', async ({
   page,
@@ -84,7 +74,7 @@ test('opens an attention, records and corrects a finding, closes it and shows th
   await expect(mistaken.getByText('Corregida')).toBeVisible()
   await expect(mistaken.getByText('Motivo de la corrección: Registrada en la superficie equivocada')).toBeVisible()
   await expect(page.getByTestId('acronyms-36')).not.toContainText('CE')
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
 
   // Nota y diagnóstico CIE-10 (CUS-80), y cierre con confirmación (CUS-26, RN-77).
   await page.getByLabel('Motivo de consulta').fill('Dolor al masticar')
@@ -111,5 +101,5 @@ test('opens an attention, records and corrects a finding, closes it and shows th
   ).toBeVisible()
   await expect(history.getByText('Inicial · Manual')).toHaveCount(2)
   await expect(history.getByText('Corregida')).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
 })

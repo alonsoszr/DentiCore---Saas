@@ -1,30 +1,12 @@
-import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Browser, type Page } from '@playwright/test'
-
-const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
-
-async function expectNoAxeViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze()
-  expect(violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
-}
+import { expect, test, type Browser } from '@playwright/test'
+import { auditScreen, login, staffOnly } from './support/screen'
 
 // TASK-062 (criterio 1) y criterio de salida de MS-03: hallazgo rojo → pendientes → ítems del plan
 // (restauración y extracción) → plan propuesto → presupuesto emitido con IGV y número → aceptado en
 // recepción → consentimiento informado de la extracción → procedimientos → evolución en el
-// odontograma. Crea una ficha nueva en cada ejecución (DNI sintético), así que corre en un solo
-// proyecto. Usa el catálogo y la plantilla de demostración (DemoProcedureSeeder).
-test.skip(
-  ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
-  'Flujo con datos nuevos: solo en Chrome a 1280 px',
-)
-
-async function login(page: Page, email: string) {
-  await page.goto('/c/clinica-demo/login')
-  await page.getByLabel('Correo electrónico').fill(email)
-  await page.getByLabel('Contraseña', { exact: true }).fill('password')
-  await page.getByRole('button', { name: 'Ingresar' }).click()
-  await expect(page).toHaveURL(/\/c\/clinica-demo\/app\/pacientes$/)
-}
+// odontograma. Crea una ficha nueva en cada ejecución (DNI sintético), así que corre en toda la
+// matriz desde 768 px. Usa el catálogo y la plantilla de demostración (DemoProcedureSeeder).
+staffOnly()
 
 /** La recepción registra la aceptación presencial del titular en su propia sesión (CUS-37). */
 async function acceptAtReception(browser: Browser, budgetUrl: string, dni: string) {
@@ -33,7 +15,7 @@ async function acceptAtReception(browser: Browser, budgetUrl: string, dni: strin
   await login(page, 'recepcion@clinica-demo.test')
   await page.goto(budgetUrl)
   await expect(page.getByRole('heading', { name: 'Registrar la decisión del paciente' })).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await page.getByLabel('Documento de quien decide').fill(dni)
   await page.getByRole('button', { name: 'Registrar aceptación' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmar aceptación' }).click()
@@ -83,7 +65,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await page.getByRole('link', { name: 'Pendientes', exact: true }).click()
   const pending = page.getByRole('checkbox', { name: /^Seleccionar Lesión de caries dental \(CD\) en la pieza 36/ })
   await expect(pending).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await pending.check()
   await page.getByRole('button', { name: 'Crear ítems del plan (1)' }).click()
 
@@ -98,7 +80,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   const extractionItem = page.getByRole('group', { name: 'Ítem 2' })
   await extractionItem.getByLabel('Procedimiento').selectOption({ label: 'EXO-01 · Extracción simple (S/ 120.00)' })
   await extractionItem.getByLabel('Pieza').fill('48')
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await page.getByRole('button', { name: 'Crear plan en borrador' }).click()
 
   // Detalle del plan (CUS-33): borrador con el ítem vinculado, y luego propuesto.
@@ -106,7 +88,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await expect(page.getByRole('heading', { name: 'Plan de restauraciones' })).toBeVisible()
   await expect(page.getByText('Atiende 1 hallazgo')).toBeVisible()
   await expect(page.getByText('Borrador', { exact: true })).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await page.getByRole('button', { name: 'Proponer al paciente' }).click()
   await expect(page.getByText('Propuesto', { exact: true }).first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Volver a editar' })).toBeVisible()
@@ -123,7 +105,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await page.goto(planUrl)
   await page.getByRole('link', { name: 'Nuevo presupuesto' }).click()
   await expect(page.getByRole('heading', { name: 'Nuevo presupuesto' })).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await page.getByRole('button', { name: 'Crear borrador con 2 ítems' }).click()
   await expect(page).toHaveURL(/\/c\/clinica-demo\/app\/presupuestos\/[0-9a-f-]+$/)
   await expect(page.getByRole('heading', { name: 'Presupuesto en borrador' })).toBeVisible()
@@ -132,7 +114,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmar emisión' }).click()
   await expect(page.getByText('Emitido', { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: /^Presupuesto P-/ })).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   const budgetUrl = page.url()
 
   await acceptAtReception(browser, budgetUrl, dni)
@@ -149,7 +131,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
     page.getByText(/Yo, Lucía Sintética Plan, autorizo .* el procedimiento Extracción simple en la pieza 48/),
   ).toBeVisible()
   await expect(page.getByText(/riesgos: sangrado leve e inflamación/)).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await page.getByLabel('Documento de quien firma').fill(dni)
   await page.getByRole('button', { name: 'Registrar firma' }).click()
   await expect(consentRow.getByText('Firmado', { exact: true })).toBeVisible()
@@ -164,7 +146,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await expect(page.getByRole('dialog')).toContainText('alergias')
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmar registro' }).click()
   await expect(page.getByText('Su evolución se agregó al odontograma.')).toBeVisible()
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
 
   // La extracción usa el consentimiento firmado (RN-76) y deja la pieza 48 ausente.
   const extractionRow = procedures.getByRole('row', { name: /Extracción simple/ })

@@ -1,32 +1,79 @@
 <?php
 
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 /*
- * Mensajes 422 en español (SRS: interfaz en español del Perú). Cada regla que usan los Form
- * Requests de la API debe tener su traducción en lang/es/validation.php; si falta, Laravel cae al
- * inglés y la pantalla muestra «The … field must …» junto al campo.
+ * Mensajes 422 en español (RNF-188: 0 claves de traducción faltantes). Cada regla que usan los Form
+ * Requests y los `$request->validate([...])` de la API debe tener su traducción en
+ * lang/es/validation.php; si falta, Laravel cae al inglés y la pantalla muestra «The … field must …»
+ * junto al campo. Las reglas se leen del código, así que una regla nueva sin traducción hace fallar la
+ * prueba sin tocar esta lista.
  */
 
-dataset('reglas de la API', [
-    'accepted', 'after', 'after_or_equal', 'alpha_dash', 'array', 'before_or_equal', 'boolean', 'confirmed',
-    'date', 'date_format', 'decimal', 'distinct', 'email', 'exists', 'extensions', 'file', 'in', 'integer', 'ip',
-    'list', 'mimes', 'mimetypes', 'missing', 'numeric', 'present', 'prohibited', 'regex', 'required',
-    'required_if', 'required_with', 'required_without', 'required_without_all', 'string', 'unique', 'url', 'uuid',
-]);
+/** Reglas con un mensaje por tipo de valor (arreglo, archivo, número o texto). */
+const SIZED_RULES = ['between', 'max', 'min', 'size', 'gt', 'gte', 'lt', 'lte'];
 
-dataset('reglas con tamaño', ['between', 'max', 'min', 'size', 'gt', 'gte', 'lt', 'lte']);
+/**
+ * Reglas de validación de Laravel que aparecen en `rules()` y en `validate([...])` de app/: las de las
+ * cadenas ('required', 'max:100', 'string|email') y las de los objetos Rule (Rule::in → in).
+ *
+ * @return list<string>
+ */
+function validationRulesUsedByTheApi(): array
+{
+    $known = array_keys(require base_path('vendor/laravel/framework/src/Illuminate/Translation/lang/en/validation.php'));
+    $used = [];
 
-it('translates every validation rule used by the API', function (string $rule) {
-    expect(Lang::hasForLocale("validation.{$rule}", 'es'))->toBeTrue("Falta validation.{$rule} en español");
-})->with('reglas de la API');
+    foreach (File::allFiles(app_path()) as $file) {
+        $code = $file->getContents();
+        preg_match_all('/function rules\(\): array\s*\{(.*?)\n    \}/s', $code, $rules);
+        preg_match_all('/->validate\(\[(.*?)\n\s*\]\)/s', $code, $inline);
 
-it('translates every type of the size rules', function (string $rule) {
-    foreach (['array', 'file', 'numeric', 'string'] as $type) {
-        expect(Lang::hasForLocale("validation.{$rule}.{$type}", 'es'))->toBeTrue("Falta validation.{$rule}.{$type} en español");
+        foreach ([...$rules[1], ...$inline[1]] as $segment) {
+            // Sin los nombres de campo ('email' => ...): solo quedan las reglas y sus parámetros.
+            $segment = preg_replace("/'[^']*'\s*=>/", '', $segment);
+            preg_match_all("/'([^']*)'/", $segment, $literals);
+            foreach ($literals[1] as $literal) {
+                foreach (explode('|', $literal) as $rule) {
+                    $used[] = Str::before($rule, ':');
+                }
+            }
+            preg_match_all('/Rule::([a-zA-Z]+)\(/', $segment, $objects);
+            foreach ($objects[1] as $method) {
+                $used[] = Str::snake($method);
+            }
+        }
     }
-})->with('reglas con tamaño');
+
+    return array_values(array_intersect($known, array_unique($used)));
+}
+
+it('reads the validation rules from the API code', function () {
+    expect(validationRulesUsedByTheApi())->toContain('required', 'string', 'max', 'in', 'uuid', 'unique', 'date');
+})->group('RNF-188');
+
+it('translates every validation rule used by the API', function () {
+    $missing = [];
+    foreach (validationRulesUsedByTheApi() as $rule) {
+        $keys = in_array($rule, SIZED_RULES, true)
+            ? array_map(fn (string $type): string => "validation.{$rule}.{$type}", ['array', 'file', 'numeric', 'string'])
+            : ["validation.{$rule}"];
+        foreach ($keys as $key) {
+            if (! Lang::hasForLocale($key, 'es')) {
+                $missing[] = $key;
+            }
+        }
+    }
+
+    expect($missing)->toBe([]);
+})->group('RNF-188');
+
+it('runs the API in Spanish of Peru by default', function () {
+    expect(file_get_contents(base_path('.env.example')))->toMatch('/^APP_LOCALE=es\r?$/m');
+})->group('RNF-188');
 
 it('names the attributes in Spanish in the messages', function () {
     app()->setLocale('es');
@@ -39,4 +86,4 @@ it('names the attributes in Spanish in the messages', function () {
     expect($errors->first('ruc'))->toBe('El campo RUC debe tener 11 caracteres.')
         ->and($errors->first('discount_cap_pct'))->toBe('El campo tope de descuento no debe ser mayor que 100.')
         ->and($errors->first('reason'))->toBe('El campo motivo es obligatorio.');
-});
+})->group('RNF-188');

@@ -1,28 +1,11 @@
-import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Browser, type Page } from '@playwright/test'
-
-const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
-
-async function expectNoAxeViolations(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze()
-  expect(violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
-}
+import { auditScreen, login, staffOnly } from './support/screen'
 
 // TASK-083 y MS-05 (CUS-54 a CUS-58). Requiere el modelo 1.0.0 activo (e2e.yml lo entrena y lo
 // registra) y la paciente de DemoRiskSeeder. Crea datos nuevos en cada ejecución, así que corre en
-// un solo proyecto. Las pruebas `@motor-detenido` corren aparte, con el contenedor `ml` detenido.
-test.skip(
-  ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
-  'Flujo con datos nuevos: solo en Chrome a 1280 px',
-)
-
-async function login(page: Page, email: string) {
-  await page.goto('/c/clinica-demo/login')
-  await page.getByLabel('Correo electrónico').fill(email)
-  await page.getByLabel('Contraseña', { exact: true }).fill('password')
-  await page.getByRole('button', { name: 'Ingresar' }).click()
-  await expect(page).toHaveURL(/\/c\/clinica-demo\/app\/pacientes$/)
-}
+// toda la matriz desde 768 px. Las pruebas `@motor-detenido` corren aparte, con el contenedor `ml`
+// detenido.
+staffOnly()
 
 async function dentistPage(browser: Browser): Promise<Page> {
   const context = await browser.newContext()
@@ -64,7 +47,7 @@ test('captures the variables by role, computes a high risk and acknowledges its 
   await expect(page.getByLabel('CPOD')).toHaveCount(0)
   await page.getByLabel('Nivel educativo').selectOption('sin_estudios')
   await page.getByLabel('Situación laboral').selectOption('desempleado')
-  await expectNoAxeViolations(page)
+  await auditScreen(page)
   await page.getByRole('button', { name: 'Guardar variables' }).click()
   await expect(page.getByText('Variables guardadas.')).toBeVisible()
 
@@ -80,7 +63,7 @@ test('captures the variables by role, computes a high risk and acknowledges its 
   await dentist.getByLabel('Visitas al odontólogo por año').selectOption('<1')
   await dentist.getByRole('button', { name: 'Guardar variables' }).click()
   await expect(dentist.getByText('El registro está completo para calcular el riesgo.')).toBeVisible()
-  await expectNoAxeViolations(dentist)
+  await auditScreen(dentist)
 
   await dentist.getByRole('link', { name: 'Ir al cálculo' }).click()
   await dentist.getByRole('button', { name: 'Calcular riesgo' }).click()
@@ -90,7 +73,7 @@ test('captures the variables by role, computes a high risk and acknowledges its 
   await expect(dentist.getByText('Probabilidad calibrada')).toBeVisible()
   await expect(dentist.getByText('Factores que aumentan el riesgo')).toBeVisible()
   await expect(dentist.getByText('Herramienta de apoyo; no constituye diagnóstico')).toBeVisible()
-  await expectNoAxeViolations(dentist)
+  await auditScreen(dentist)
 
   // Alerta de riesgo alto (CUS-57, CUS-58): se reconoce con una justificación.
   await dentist.getByRole('link', { name: 'Alertas', exact: true }).click()
@@ -99,7 +82,7 @@ test('captures the variables by role, computes a high risk and acknowledges its 
   await expect(dialog.getByRole('button', { name: 'Reconocer alerta' })).toBeDisabled()
   await dialog.getByRole('radio', { name: 'Justificación' }).check()
   await dialog.getByLabel('Texto de la justificación').fill('Control preventivo vigente en otra clínica.')
-  await expectNoAxeViolations(dentist)
+  await auditScreen(dentist)
   await dialog.getByRole('button', { name: 'Reconocer alerta' }).click()
   await expect(dialog).toBeHidden()
   await expect(dentist.getByRole('row', { name: new RegExp(lastName) }).getByText('Reconocida')).toBeVisible()
@@ -162,7 +145,7 @@ test('shows the support and low confidence legends for confidence 0.55', async (
   await dentist.getByRole('link', { name: 'Riesgo', exact: true }).click()
   await expect(dentist.getByText('Baja confianza')).toBeVisible()
   await expect(dentist.getByText('Herramienta de apoyo; no constituye diagnóstico')).toBeVisible()
-  await expectNoAxeViolations(dentist)
+  await auditScreen(dentist)
   await dentist.context().close()
 })
 
@@ -184,7 +167,7 @@ test('shows "Predicción no disponible" and keeps the attention editable with th
 
   await dentist.getByRole('button', { name: 'Calcular riesgo' }).click()
   await expect(dentist.getByRole('heading', { name: 'Predicción no disponible' })).toBeVisible({ timeout: 15_000 })
-  await expectNoAxeViolations(dentist)
+  await auditScreen(dentist)
 
   await dentist.getByLabel('Motivo de consulta').fill('Control de rutina con el motor de riesgo detenido.')
   await dentist.getByRole('button', { name: 'Guardar nota' }).click()

@@ -1,11 +1,9 @@
 import { expect, test } from '@playwright/test'
+import { auditScreen, staffOnly } from './support/screen'
 
 // TASK-041: registrar paciente → consentimiento → antecedentes. Crea una ficha nueva en cada
-// ejecución (DNI sintético), así que corre en un solo proyecto de la matriz.
-test.skip(
-  ({ browserName, channel, viewport }) => browserName !== 'chromium' || Boolean(channel) || viewport?.width !== 1280,
-  'Flujo con datos nuevos: solo en Chrome a 1280 px',
-)
+// ejecución (DNI sintético), así que corre en toda la matriz desde 768 px.
+staffOnly()
 
 test('registers a patient, the data consent and the medical history', async ({ page }) => {
   const dni = String(10_000_000 + Math.floor(Math.random() * 89_999_999))
@@ -18,6 +16,7 @@ test('registers a patient, the data consent and the medical history', async ({ p
 
   // Alta (CUS-14).
   await page.getByRole('link', { name: 'Registrar paciente' }).click()
+  await auditScreen(page)
   await page.getByLabel('Número de documento', { exact: true }).fill(dni)
   await page.getByLabel('Nombres', { exact: true }).fill('Lucía')
   await page.getByLabel('Apellidos', { exact: true }).fill('Sintética Prueba')
@@ -29,6 +28,7 @@ test('registers a patient, the data consent and the medical history', async ({ p
   const header = page.getByRole('region', { name: 'Paciente' })
   await expect(header.getByRole('heading', { name: 'Lucía Sintética Prueba' })).toBeVisible()
   await expect(header.getByText('Sin consentimiento vigente')).toBeVisible()
+  await auditScreen(page)
 
   // Consentimiento presencial (CUS-17): (a) obligatoria y confirmación con el documento.
   await page.getByRole('link', { name: 'Consentimiento', exact: true }).click()
@@ -38,6 +38,7 @@ test('registers a patient, the data consent and the medical history', async ({ p
   await page.getByRole('button', { name: 'Registrar consentimiento' }).click()
   await expect(page.getByText('Consentimiento registrado.')).toBeVisible()
   await expect(header.getByText('Consentimiento vigente')).toBeVisible()
+  await auditScreen(page)
 
   // Antecedentes con aviso de alergias (RF-064, RNF-149).
   await page.getByRole('link', { name: 'Antecedentes', exact: true }).click()
@@ -45,4 +46,5 @@ test('registers a patient, the data consent and the medical history', async ({ p
   await page.getByRole('button', { name: 'Guardar antecedentes' }).click()
   await expect(page.getByText('Antecedentes guardados.')).toBeVisible()
   await expect(header.getByText('Penicilina')).toBeVisible()
+  await auditScreen(page)
 })
