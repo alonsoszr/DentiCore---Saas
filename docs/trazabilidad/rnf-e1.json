@@ -1,0 +1,57 @@
+{
+  "descripcion": "RNF de E1 (SRS §17.4) que no se verifican con una prueba que cite su ID: controles del pipeline, mediciones diferidas por el recorte R-03 y verificaciones manuales. scripts/traceability/e1.mjs los muestra con su evidencia en el informe de trazabilidad (TASK-095); TASK-097 los recoge en el informe de aceptación de E1.",
+  "rnf": {
+    "RNF-005": {
+      "verificacion": "ci",
+      "evidencia": "Informe de trazabilidad (scripts/traceability/e1.mjs, workflow traceability): falla si un RF, una RN o un CA de E1 no tiene prueba."
+    },
+    "RNF-006": {
+      "verificacion": "diferido",
+      "evidencia": "R-03 (MS-04): el k6 de lecturas bajo PC-N (T-174) pasa a MS-10 (TASK-072 y TASK-116), en el entorno de referencia."
+    },
+    "RNF-008": {
+      "verificacion": "diferido",
+      "evidencia": "R-03 (MS-04): el k6 de escrituras simples bajo PC-N (T-174) pasa a MS-10 (TASK-072 y TASK-116)."
+    },
+    "RNF-011": {
+      "verificacion": "diferido",
+      "evidencia": "R-03 (MS-04): el k6 de recálculo y emisión de presupuestos (T-178) pasa a MS-10 (TASK-072 y TASK-116)."
+    },
+    "RNF-013": {
+      "verificacion": "diferido",
+      "evidencia": "R-03 (MS-04): el p95 de la predicción (T-179) pasa a MS-10. El corte de 3 s y la respuesta «no disponible» ya se prueban en T-127 (CA-55.3) y en el E2E @motor-detenido."
+    },
+    "RNF-016": {
+      "verificacion": "diferido",
+      "evidencia": "R-03 (MS-04): el p95 de la reserva bajo PC-N (T-174) pasa a MS-10. La restricción de exclusión con 50 reservas simultáneas se prueba en T-176 (load/pc-e.js)."
+    },
+    "RNF-035": {
+      "verificacion": "diferido",
+      "evidencia": "R-03 (MS-04): la comparación PC-N contra PC-P (T-175) pasa a MS-10 (TASK-072 y TASK-116)."
+    },
+    "RNF-100": {
+      "verificacion": "ci y manual",
+      "evidencia": "gitleaks en cada cambio (api.yml, «Dependencias, secretos y SAST»). La rotación de las credenciales de servicio cada 90 días es un registro manual de operación (evidencia de MS-08)."
+    },
+    "RNF-122": {
+      "verificacion": "ci",
+      "evidencia": "Larastan nivel 6 (api.yml), ESLint (spa.yml), ruff y mypy estricto (ml.yml); todos bloquean el PR."
+    },
+    "RNF-123": {
+      "verificacion": "ci",
+      "evidencia": "pint --test (api.yml), prettier --check (spa.yml) y ruff format --check (ml.yml); todos bloquean el PR."
+    },
+    "RNF-126": {
+      "verificacion": "ci",
+      "evidencia": "pest --coverage --min=80 y el umbral del 95 % en los servicios críticos (scripts/coverage/critical.mjs, api.yml); Vitest con 70 % de líneas (spa.yml); pytest --cov con fail_under = 80 (ml.yml)."
+    },
+    "RNF-128": {
+      "verificacion": "ci",
+      "evidencia": "Informe de trazabilidad (scripts/traceability/e1.mjs): cada RN de los CUS de E1 y cada CA de §11 de esos CUS citados por al menos una prueba."
+    },
+    "RNF-135": {
+      "verificacion": "manual",
+      "evidencia": "main exige PR y los checks del CI y SonarCloud. Los PR de E1 se integran con --admin tras el CI en verde, sin un segundo revisor: falta decidir en MS-08 si se acepta esta desviación del «≥ 1 revisor»."
+    }
+  }
+}

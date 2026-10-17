@@ -32,12 +32,13 @@ final class RowLevelSecurity
             SQL);
     }
 
-    public static function disable(string $table): void
+    public static function disable(string $table, ?Connection $connection = null): void
     {
-        $quoted = DB::getQueryGrammar()->wrapTable($table);
+        $connection ??= DB::connection();
+        $quoted = $connection->getQueryGrammar()->wrapTable($table);
 
-        DB::statement("DROP POLICY IF EXISTS tenant_isolation ON {$quoted}");
-        DB::statement("ALTER TABLE {$quoted} NO FORCE ROW LEVEL SECURITY");
-        DB::statement("ALTER TABLE {$quoted} DISABLE ROW LEVEL SECURITY");
+        $connection->statement("DROP POLICY IF EXISTS tenant_isolation ON {$quoted}");
+        $connection->statement("ALTER TABLE {$quoted} NO FORCE ROW LEVEL SECURITY");
+        $connection->statement("ALTER TABLE {$quoted} DISABLE ROW LEVEL SECURITY");
     }
 }

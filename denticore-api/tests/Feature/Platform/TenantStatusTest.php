@@ -213,3 +213,39 @@ it('limits each clinic to the requests per minute of its plan', function () {
 
     $this->getJson('/api/v1/patients')->assertStatus(429)->assertHeader('Retry-After');
 })->group('RNF-042');
+
+it('lets only the administrator of a cancelled clinic use the routes marked as exportable', function () {
+    // Las marcas `tenant.exportable` y `tenant.readonly_ok` son de E2 (exportación y PDF); se prueban
+    // sobre rutas de prueba con la misma cadena de middleware que el grupo STAFF.
+    Route::middleware(['auth:sanctum', 'tenant', 'tenant.writable', 'tenant.exportable'])
+        ->post('/api/v1/_test/export', fn () => response()->json(['ok' => true]));
+    Route::middleware(['auth:sanctum', 'tenant', 'tenant.writable', 'tenant.readonly_ok'])
+        ->post('/api/v1/_test/report', fn () => response()->json(['ok' => true]));
+    $cancelled = Tenant::factory()->create(['status' => 'cancelada']);
+
+    $this->actingAsRole('clinic_admin', $cancelled);
+    $this->postJson('/api/v1/_test/export')->assertOk();
+    $this->getJson('/api/v1/patients')
+        ->assertForbidden()
+        ->assertJsonPath('rule', 'RN-07')
+        ->assertJsonPath('detail', 'La clínica está cancelada: solo su administrador puede exportar sus datos.');
+
+    $this->actingAsRole('receptionist', $cancelled);
+    $this->postJson('/api/v1/_test/export')->assertForbidden()->assertJsonPath('rule', 'RN-07');
+
+    $this->actingAsRole('receptionist', Tenant::factory()->create(['status' => 'suspendida']));
+    $this->postJson('/api/v1/_test/report')->assertOk();
+})->group('RN-07', 'RF-020', 'CUS-05');
+
+it('blocks every staff route of a deleted clinic', function () {
+    $this->actingAsRole('clinic_admin', Tenant::factory()->create(['status' => 'eliminada']));
+
+    $this->getJson('/api/v1/patients')
+        ->assertForbidden()
+        ->assertJsonPath('rule', 'RN-07')
+        ->assertJsonPath('detail', 'La clínica ya no está disponible.');
+})->group('RN-07', 'RF-006');
+
+it('answers 404 for the public page of a clinic that does not exist', function () {
+    $this->getJson('/api/v1/public/clinics/no-existe')->assertNotFound();
+});

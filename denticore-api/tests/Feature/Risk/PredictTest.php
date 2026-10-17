@@ -81,7 +81,7 @@ it('assigns high level and creates one alert at probability 0.60', function () {
             ->and(Notification::query()->where('event', 'alerta_riesgo_alto')->pluck('channel')->sort()->values()->all())->toBe(['correo', 'in_app'])
             ->and(OutboxMessage::query()->latest('id')->value('queue'))->toBe('critical');
     });
-})->group('T-125', 'CA-55.1', 'RN-59', 'RN-61', 'CUS-57', 'RF-170');
+})->group('T-125', 'CA-55.1', 'RN-59', 'RN-61', 'CUS-57', 'RF-165', 'RF-170');
 
 it('assigns medium level without alert at probability 0.59', function () {
     ['tenant' => $tenant, 'patient' => $patient, 'set' => $set] = predictionScenario();
@@ -90,7 +90,7 @@ it('assigns medium level without alert at probability 0.59', function () {
     requestPrediction($patient, $set)->assertCreated()->assertJsonPath('data.level', 'medio')->assertJsonPath('data.alert_id', null);
 
     expect(inClinic($tenant, fn () => RiskAlert::query()->count()))->toBe(0);
-})->group('T-126', 'CA-55.2', 'RN-59', 'RN-61');
+})->group('T-126', 'CA-55.2', 'RN-59', 'RN-61', 'RF-165');
 
 it('stores no prediction when the engine answers in 4 seconds', function () {
     ['tenant' => $tenant, 'patient' => $patient, 'set' => $set] = predictionScenario();
@@ -203,7 +203,7 @@ it('exposes the explanation only inside a computed prediction', function () {
     $admin = $this->getJson("/api/v1/risk-predictions/{$id}")->assertOk()->assertJsonPath('data.level', 'medio')->json('data');
     expect(array_keys($admin))->not->toContain('probability', 'top_increasing', 'top_decreasing', 'explanation_individual')
         ->toContain('confidence', 'explanation_global', 'legend');
-})->group('T-134', 'RN-62', 'RN-63', 'CA-55.7', 'CUS-56');
+})->group('T-134', 'RN-62', 'RN-63', 'CA-55.7', 'CUS-56', 'RF-168');
 
 it('leaves the variables that do not apply out of the top contributions', function () {
     ['patient' => $patient, 'set' => $set] = predictionScenario();
@@ -250,3 +250,25 @@ it('expires current predictions after 12 months', function () {
 
     inClinic($tenant, fn () => expect($old->fresh()->status)->toBe('vencida')->and($recent->fresh()->status)->toBe('vigente'));
 })->group('RN-60');
+
+it('never writes clinical data on its own when it computes a prediction', function () {
+    // RNF-147: el modelo solo deja su predicción, su alerta y sus avisos; el odontograma, la historia,
+    // los diagnósticos y los planes cambian solo por una decisión registrada del odontólogo.
+    ['tenant' => $tenant, 'patient' => $patient, 'set' => $set] = predictionScenario();
+    MlEngine::predicts(0.85);
+    $clinicalTables = [
+        'attentions', 'attention_addenda', 'attention_diagnoses', 'clinical_notes', 'finding_no_treat_decisions',
+        'initial_odontograms', 'odontogram_entries', 'treatment_plans', 'plan_items', 'plan_item_findings',
+        'performed_procedures', 'budgets', 'budget_lines', 'informed_consents',
+    ];
+    $snapshot = fn () => inClinic($tenant, fn () => [
+        'rows' => collect($clinicalTables)->mapWithKeys(fn (string $table) => [$table => DB::table($table)->count()])->all(),
+        'patient' => DB::table('patients')->where('id', $patient->id)->first(),
+    ]);
+    $before = $snapshot();
+
+    requestPrediction($patient, $set)->assertCreated()->assertJsonPath('data.level', 'alto');
+
+    expect($snapshot())->toEqual($before)
+        ->and(inClinic($tenant, fn () => [RiskPrediction::query()->count(), RiskAlert::query()->count()]))->toBe([1, 1]);
+})->group('RNF-147', 'RN-55', 'CUS-55');

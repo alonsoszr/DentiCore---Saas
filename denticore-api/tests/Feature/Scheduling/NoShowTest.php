@@ -43,7 +43,7 @@ it('marks a no-show between 30 and 35 minutes after the end', function () {
     // Repetirla no duplica efectos.
     $this->artisan('appointments:mark-no-shows')->assertSuccessful();
     expect(TenantContext::run($tenant, fn () => AuditLog::query()->where('action', 'appointment.no_show')->count()))->toBe(2);
-})->group('T-121', 'RN-51', 'RNF-020', 'CUS-51');
+})->group('T-121', 'RF-152', 'RN-51', 'RNF-020', 'CUS-51');
 
 it('leaves checked-in, cancelled and attended appointments untouched', function () {
     $tenant = Tenant::factory()->create();
@@ -59,4 +59,4 @@ it('leaves checked-in, cancelled and attended appointments untouched', function 
             ->and($cancelled->fresh()->status)->toBe('cancelada')
             ->and($attended->fresh()->status)->toBe('atendida');
     });
-})->group('RN-51', 'CUS-51');
+})->group('RF-152', 'RN-51', 'CUS-51');

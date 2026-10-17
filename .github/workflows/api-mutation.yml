@@ -29,6 +29,25 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Mismos servicios que el job de Pest de api.yml (TASK-095): sin Redis fallaban las pruebas del
+      # Circuit Breaker (DI-12) y sin Mailpit la de entrega real de correo (RF-155).
+      mailpit:
+        image: axllent/mailpit
+        credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        ports: ['1025:1025', '8025:8025']
+      redis:
+        image: redis:7-alpine
+        credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        ports: ['6380:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: 5432
