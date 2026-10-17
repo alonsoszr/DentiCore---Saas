@@ -10,6 +10,7 @@ import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { useFocusFirstError } from '../ui/useFocusFirstError'
 import { TableWrap } from '../components/TableWrap'
+import { UserStatusBadge } from './UserStatusBadge'
 
 const EMPTY_FORM = {
   name: '',
@@ -19,13 +20,6 @@ const EMPTY_FORM = {
   specialty: '',
   rne_number: '',
   is_data_officer: false,
-}
-
-const STATUS_LABELS = {
-  pendiente_activacion: 'Pendiente de activación',
-  activo: 'Activo',
-  bloqueado_temporal: 'Bloqueado temporalmente',
-  inactivo: 'Inactivo',
 }
 
 /**
@@ -274,9 +268,7 @@ export function UsersPage() {
                     <td className="muted">{user.email}</td>
                     <td>{ROLE_LABELS[user.role]}</td>
                     <td>
-                      <span className={user.status === 'activo' ? 'badge' : 'badge badge-muted'}>
-                        {STATUS_LABELS[user.status] ?? user.status}
-                      </span>
+                      <UserStatusBadge status={user.status} />
                     </td>
                     <td style={{ textAlign: 'right', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                       <button type="button" className="btn-link" onClick={() => openEdit(user)}>

@@ -13,13 +13,7 @@ import { PasswordRequirements } from '../../components/auth/PasswordRequirements
 import { lengthState, serverState } from '../../components/auth/passwordRules'
 import { Spinner } from '../../ui/icons'
 import { containsIdentity } from './authHelpers'
-
-const ROLE_LABELS = {
-  clinic_admin: 'Administrador de Clínica',
-  dentist: 'Odontólogo',
-  receptionist: 'Recepcionista',
-  patient: 'Paciente',
-}
+import { RoleBadge } from '../../components/RoleBadge'
 
 /**
  * Activar cuenta por invitación (A6; CUS-01, CUS-11; RF-016, RF-040, DD-22). Tras activar,
@@ -102,7 +96,7 @@ export function ActivateAccountPage() {
           <div className="card">
             <p className="m-0 text-title-md">{invitation.name}</p>
             <p className="m-0 muted">{invitation.email}</p>
-            <span className="badge mt-2">{ROLE_LABELS[invitation.role] ?? invitation.role}</span>
+            <RoleBadge role={invitation.role} className="mt-2" />
           </div>
           {invitation.role === 'clinic_admin' && (
             <Alert tone="info" className="mb-5">

@@ -15,6 +15,8 @@ import { InlineError } from './InlineError'
 import { ITEM_STATUS, SIGNERS, siteText } from './labels'
 import { useFocusOnMount, usePlan, useProcedures } from './useTreatment'
 import { TableWrap } from '../../components/TableWrap'
+import { StatusBadge } from '../../components/StatusBadge'
+import { CheckIcon, XIcon } from '../../ui/icons'
 
 const PENDING_ITEM = ['propuesto', 'aceptado']
 
@@ -301,9 +303,15 @@ export function PlanConsentsPage() {
                       <td>
                         {consent ? (
                           <>
-                            <span className={consent.status === 'revocado' ? 'badge badge-muted' : 'badge'}>
-                              {consent.status === 'revocado' ? 'Revocado' : 'Firmado'}
-                            </span>
+                            {consent.status === 'revocado' ? (
+                              <StatusBadge tone="error" icon={XIcon}>
+                                Revocado
+                              </StatusBadge>
+                            ) : (
+                              <StatusBadge tone="success" icon={CheckIcon}>
+                                Firmado
+                              </StatusBadge>
+                            )}
                             <div className="muted">
                               Versión {consent.template_version} · {formatDateTime(consent.signed_at)}
                             </div>

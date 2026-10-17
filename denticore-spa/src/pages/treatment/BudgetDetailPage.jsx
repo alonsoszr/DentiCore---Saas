@@ -24,12 +24,23 @@ import {
 import { useFocusOnMount } from './useTreatment'
 import { BudgetStatusBadge } from './TreatmentStatusBadges'
 import { TableWrap } from '../../components/TableWrap'
+import { StatusBadge } from '../../components/StatusBadge'
+import { FileCheckIcon, FileClockIcon, FileTextIcon, FileXIcon } from '../../ui/icons'
 
 const PDF_STATUS = {
   pendiente: 'PDF en generación…',
   generando: 'PDF en generación…',
   listo: 'PDF listo',
   fallido: 'No se pudo generar el PDF.',
+}
+
+/** Tono e ícono del estado del PDF (RNF-061: texto e ícono). */
+const PDF_BADGE = {
+  pendiente: { tone: 'neutral', icon: FileClockIcon },
+  generando: { tone: 'neutral', icon: FileClockIcon },
+  listo: { tone: 'secondary', icon: FileCheckIcon },
+  fallido: { tone: 'error', icon: FileXIcon },
+  none: { tone: 'neutral', icon: FileTextIcon },
 }
 
 /** Descuento de una línea del borrador (RN-31): porcentaje y motivo de 5 a 200 caracteres. */
@@ -540,9 +551,9 @@ export function BudgetDetailPage() {
           )}
           {pdf.isSuccess && (
             <div className="flex flex-wrap items-center gap-3">
-              <span className={pdf.data.status === 'listo' ? 'badge' : 'badge badge-muted'}>
+              <StatusBadge {...(PDF_BADGE[pdf.data.status] ?? PDF_BADGE.none)}>
                 {PDF_STATUS[pdf.data.status] ?? 'Sin PDF'}
-              </span>
+              </StatusBadge>
               {pdf.data.url && (
                 <a href={pdf.data.url} target="_blank" rel="noopener noreferrer">
                   Descargar PDF (enlace válido 10 minutos)

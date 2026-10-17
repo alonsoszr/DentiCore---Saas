@@ -11,7 +11,7 @@ import { Alert } from '../../components/Alert'
 import { OtpInput } from '../../components/auth/OtpInput'
 import { Spinner } from '../../ui/icons'
 import { groupKey } from './authHelpers'
-import { ROLE_LABELS } from '../../auth/roles'
+import { RoleBadge } from '../../components/RoleBadge'
 
 const STEPS = ['Escanea', 'Confirma', 'Códigos']
 
@@ -118,7 +118,7 @@ export function TwoFactorSetupPage() {
         {user && (
           <div className="mb-5 flex flex-wrap items-center gap-2 border-b border-outline-variant pb-4">
             <span className="text-body-md">{user.email}</span>
-            <span className="badge">{ROLE_LABELS[user.role] ?? user.role}</span>
+            <RoleBadge role={user.role} />
             {user.tenant?.name && <span className="muted">{user.tenant.name}</span>}
           </div>
         )}

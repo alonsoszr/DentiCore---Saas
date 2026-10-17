@@ -10,9 +10,10 @@ import { Odontogram } from '../../components/odontogram/Odontogram'
 import { ToothHistory } from '../../components/odontogram/ToothHistory'
 import { formatDateTime, formatPercent } from '../../ui/format'
 import { AlertTriangleIcon } from '../../ui/icons'
-import { ATTENTION_STATUS, DENTITIONS } from '../attentions/labels'
+import { DENTITIONS } from '../attentions/labels'
 import { RiskLevelBadge } from '../risk/RiskLevelBadge'
 import { TableWrap } from '../../components/TableWrap'
+import { AttentionStatusBadge } from '../attentions/AttentionStatusBadge'
 
 /**
  * Historia clínica del paciente (CUS-21, CUS-24, CUS-25; RF-076, RF-079, RF-081): atenciones,
@@ -96,9 +97,7 @@ export function ClinicalRecordPage({ patient }) {
                       {attention.dentist.name} · COP {attention.dentist.cop}
                     </td>
                     <td>
-                      <span className={attention.status === 'abierta' ? 'badge' : 'badge badge-muted'}>
-                        {ATTENTION_STATUS[attention.status]}
-                      </span>
+                      <AttentionStatusBadge status={attention.status} />
                     </td>
                     {canOpenAttentions && (
                       <td>
