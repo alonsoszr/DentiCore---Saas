@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test'
+import { randomInt } from 'node:crypto'
 
 /**
  * Revisiones comunes de cada pantalla que recorren los E2E (TASK-094; RNF-051, RNF-052, RNF-188).
@@ -206,7 +207,7 @@ export async function reserveFreeSlot(
     await expect(slots.first()).toBeVisible()
     const candidates = await slotsBetween(slots, range.from, range.to)
     expect(candidates.length, 'Horarios libres en el rango').toBeGreaterThan(0)
-    await slots.nth(candidates[Math.floor(Math.random() * candidates.length)]).click()
+    await slots.nth(candidates[randomInt(candidates.length)]).click()
     const [response] = await Promise.all([
       page.waitForResponse(
         (candidate) => candidate.request().method() === 'POST' && /\/api\/v1\/appointments$/.test(candidate.url()),
