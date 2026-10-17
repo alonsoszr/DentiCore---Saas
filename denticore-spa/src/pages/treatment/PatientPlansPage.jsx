@@ -12,6 +12,7 @@ import { EMPTY_ITEM, itemPayload, itemsFromFindings, progressText } from './labe
 import { ItemsEditor } from './ItemsEditor'
 import { usePatientPlans, useProcedures } from './useTreatment'
 import { PlanStatusBadge } from './TreatmentStatusBadges'
+import { TableWrap } from '../../components/TableWrap'
 
 /**
  * Planes de tratamiento del paciente (/c/:slug/app/pacientes/:uuid/planes; CUS-33; RF-110, RF-111,
@@ -111,7 +112,7 @@ export function PatientPlansPage({ patient }) {
         <div className="empty">El paciente aún no tiene planes de tratamiento.</div>
       )}
       {list.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Planes de tratamiento">
           <table>
             <thead>
               <tr>
@@ -136,7 +137,7 @@ export function PatientPlansPage({ patient }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
     </div>
   )

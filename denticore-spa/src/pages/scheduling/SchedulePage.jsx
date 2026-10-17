@@ -13,6 +13,7 @@ import { AffectedDecisionsDialog } from './AffectedDecisionsDialog'
 import { BLOCK_KINDS, WEEKDAYS } from './labels'
 import { InlineError } from '../treatment/InlineError'
 import { loadAffected, problemDetail, useManagedDentists } from './useScheduling'
+import { TableWrap } from '../../components/TableWrap'
 
 const EMPTY_SLOT = { weekday: '1', start_time: '09:00', end_time: '13:00' }
 
@@ -103,7 +104,7 @@ function WorkScheduleSection({ dentist, canEdit }) {
         <div className="empty">El odontólogo aún no tiene horario laboral.</div>
       )}
       {current.length > 0 && !editing && (
-        <div className="table-wrap">
+        <TableWrap label="Horario laboral">
           <table>
             <thead>
               <tr>
@@ -127,7 +128,7 @@ function WorkScheduleSection({ dentist, canEdit }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
 
       {editing && (
@@ -456,7 +457,7 @@ function BlocksSection({ dentist, isAdmin }) {
 
       {blocks.isSuccess && list.length === 0 && <div className="empty">No hay bloqueos vigentes.</div>}
       {list.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Bloqueos de agenda">
           <table>
             <thead>
               <tr>
@@ -494,7 +495,7 @@ function BlocksSection({ dentist, isAdmin }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
 
       {affected && isAdmin && (

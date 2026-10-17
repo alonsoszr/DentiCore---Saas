@@ -10,6 +10,7 @@ import { usePatient } from '../patients/usePatient'
 import { InlineError } from './InlineError'
 import { siteText } from './labels'
 import { usePlan, useProcedures } from './useTreatment'
+import { TableWrap } from '../../components/TableWrap'
 
 /**
  * Nuevo presupuesto de un plan propuesto (/c/:slug/app/planes/:uuid/presupuesto; CUS-35 pasos 1 a 3;
@@ -75,7 +76,7 @@ export function BudgetNewPage() {
         ) : (
           <fieldset className="m-0 border-0 p-0">
             <legend className="text-label-md">Ítems del plan</legend>
-            <div className="table-wrap">
+            <TableWrap label="Ítems del plan">
               <table>
                 <thead>
                   <tr>
@@ -114,7 +115,7 @@ export function BudgetNewPage() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableWrap>
           </fieldset>
         )}
 

@@ -1,5 +1,5 @@
 import { expect, test, type Browser } from '@playwright/test'
-import { auditScreen, login, staffOnly } from './support/screen'
+import { auditScreen, gotoSettled, login, staffOnly } from './support/screen'
 
 // TASK-062 (criterio 1) y criterio de salida de MS-03: hallazgo rojo → pendientes → ítems del plan
 // (restauración y extracción) → plan propuesto → presupuesto emitido con IGV y número → aceptado en
@@ -102,7 +102,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await expect(page.getByText('No hay hallazgos pendientes de decisión.')).toBeVisible()
 
   // Presupuesto (CUS-35): borrador con el ítem propuesto y emisión confirmada (RNF-063).
-  await page.goto(planUrl)
+  await gotoSettled(page, planUrl)
   await page.getByRole('link', { name: 'Nuevo presupuesto' }).click()
   await expect(page.getByRole('heading', { name: 'Nuevo presupuesto' })).toBeVisible()
   await auditScreen(page)
@@ -120,7 +120,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await acceptAtReception(browser, budgetUrl, dni)
 
   // Consentimiento informado de la extracción (CUS-83): vista previa y firma en el dispositivo.
-  await page.goto(`${planUrl}/consentimientos`)
+  await gotoSettled(page, `${planUrl}/consentimientos`)
   const consentRow = page.getByRole('row', { name: /Extracción simple/ })
   await expect(page.getByRole('row', { name: /Restauración con resina/ })).toHaveCount(0)
   await consentRow.getByRole('button', { name: 'Firmar: consentimiento de Extracción simple' }).click()
@@ -137,7 +137,7 @@ test('turns a red finding into a performed procedure through an accepted budget'
   await expect(consentRow.getByText('Firmado', { exact: true })).toBeVisible()
 
   // Procedimiento en la atención abierta (CUS-39): confirmación con las alergias a la vista.
-  await page.goto(attentionUrl.replace(/\/?$/, '/procedimientos'))
+  await gotoSettled(page, attentionUrl.replace(/\/?$/, '/procedimientos'))
   const procedures = page.getByRole('region', { name: 'Procedimientos' })
   const row = procedures.getByRole('row', { name: /Restauración con resina/ })
   await expect(row).toBeVisible()

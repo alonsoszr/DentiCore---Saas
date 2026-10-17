@@ -9,6 +9,7 @@ import { Field } from '../../components/Field'
 import { FINDING_COLORS } from '../../components/odontogram/teeth'
 import { formatDate } from '../../ui/format'
 import { findingText, siteText } from './labels'
+import { TableWrap } from '../../components/TableWrap'
 
 /**
  * Hallazgos pendientes de decisión (/c/:slug/app/pacientes/:uuid/pendientes; CUS-34; RF-111 a
@@ -69,7 +70,7 @@ export function PendingFindingsPage({ patient }) {
         <div className="alert alert-success">No hay hallazgos pendientes de decisión.</div>
       )}
       {entries.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Hallazgos pendientes de decisión">
           <table>
             <thead>
               <tr>
@@ -118,7 +119,7 @@ export function PendingFindingsPage({ patient }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
 
       {declining && (

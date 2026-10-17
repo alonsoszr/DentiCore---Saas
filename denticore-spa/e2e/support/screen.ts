@@ -134,6 +134,16 @@ export async function auditScreen(page: Page) {
   await expectNoHorizontalScroll(page)
 }
 
+/**
+ * Navega y espera a que la pantalla termine de cargar sus consultas. Las secciones que llegan después
+ * (p. ej. la tarjeta de riesgo de la atención) desplazan el contenido: un clic justo en ese momento
+ * hace `mousedown` en un botón y `mouseup` fuera de él, y el clic se pierde (pasaba en Firefox).
+ */
+export async function gotoSettled(page: Page, url: string) {
+  await page.goto(url)
+  await page.waitForLoadState('networkidle')
+}
+
 /** Inicia sesión en la clínica de demostración (semilla local, datos sintéticos). */
 export async function login(page: Page, email: string, landing = /\/c\/clinica-demo\/app\/pacientes$/) {
   await page.goto('/c/clinica-demo/login')

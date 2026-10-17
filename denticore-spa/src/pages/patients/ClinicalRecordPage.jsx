@@ -12,6 +12,7 @@ import { formatDateTime, formatPercent } from '../../ui/format'
 import { AlertTriangleIcon } from '../../ui/icons'
 import { ATTENTION_STATUS, DENTITIONS } from '../attentions/labels'
 import { RiskLevelBadge } from '../risk/RiskLevelBadge'
+import { TableWrap } from '../../components/TableWrap'
 
 /**
  * Historia clínica del paciente (CUS-21, CUS-24, CUS-25; RF-076, RF-079, RF-081): atenciones,
@@ -77,7 +78,7 @@ export function ClinicalRecordPage({ patient }) {
           <div className="empty">El paciente aún no tiene atenciones.</div>
         )}
         {attentions.length > 0 && (
-          <div className="table-wrap">
+          <TableWrap label="Atenciones">
             <table>
               <thead>
                 <tr>
@@ -113,7 +114,7 @@ export function ClinicalRecordPage({ patient }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
       </section>
 

@@ -10,6 +10,7 @@ import { formatDate } from '../ui/format'
 import { useFocusFirstError } from '../ui/useFocusFirstError'
 import { PLAN_LABELS } from './tenantLabels'
 import { TenantStatusBadge } from './TenantStatusBadge'
+import { TableWrap } from '../components/TableWrap'
 
 const EMPTY_FORM = {
   name: '',
@@ -245,7 +246,7 @@ export function TenantsPage() {
           <div className="empty">Aún no hay clínicas registradas.</div>
         )}
         {tenants.length > 0 && (
-          <div className="table-wrap">
+          <TableWrap label="Clínicas">
             <table>
               <thead>
                 <tr>
@@ -274,7 +275,7 @@ export function TenantsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
       </div>
     </>

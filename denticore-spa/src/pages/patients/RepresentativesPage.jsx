@@ -9,6 +9,7 @@ import { Field } from '../../components/Field'
 import { formatCivilDate } from '../../ui/format'
 import { DOCUMENT_TYPES, today } from './patientIdentity'
 import { useFocusFirstError } from '../../ui/useFocusFirstError'
+import { TableWrap } from '../../components/TableWrap'
 
 const RELATIONSHIPS = { madre: 'Madre', padre: 'Padre', tutor: 'Tutor', curador: 'Curador', otro: 'Otro' }
 const END_REASONS = { mayoria_de_edad: 'Mayoría de edad', revocada: 'Revocada', otro: 'Otro' }
@@ -168,7 +169,7 @@ export function RepresentativesPage({ patient }) {
         <div className="empty">Sin representantes registrados.</div>
       )}
       {representatives.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Representantes legales">
           <table>
             <thead>
               <tr>
@@ -213,7 +214,7 @@ export function RepresentativesPage({ patient }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
 
       {ending && (

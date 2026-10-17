@@ -10,6 +10,7 @@ import { addDays, formatCivilDate, formatTime, isoWeekday, localDate } from '../
 import { useTimeZone } from '../../ui/useTimeZone'
 import { DESK_ROLES, WEEKDAYS } from './labels'
 import { StatusBadge } from './StatusBadge'
+import { TableWrap } from '../../components/TableWrap'
 
 const VIEWS = { dia: 'Día', semana: 'Semana', sala: 'Sala de espera' }
 
@@ -49,7 +50,7 @@ function AppointmentRow({ appointment, timeZone, appPath }) {
 function AppointmentsTable({ appointments, timeZone, appPath, empty }) {
   if (appointments.length === 0) return <div className="empty">{empty}</div>
   return (
-    <div className="table-wrap">
+    <TableWrap label="Citas">
       <table>
         <thead>
           <tr>
@@ -66,7 +67,7 @@ function AppointmentsTable({ appointments, timeZone, appPath, empty }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrap>
   )
 }
 
@@ -103,7 +104,7 @@ function WaitingRoom({ timeZone, appPath, dentistId }) {
   if (list.length === 0) return <div className="empty">No hay pacientes en la sala de espera.</div>
 
   return (
-    <div className="table-wrap">
+    <TableWrap label="Sala de espera">
       <table>
         <thead>
           <tr>
@@ -130,7 +131,7 @@ function WaitingRoom({ timeZone, appPath, dentistId }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </TableWrap>
   )
 }
 

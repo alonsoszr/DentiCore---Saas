@@ -14,6 +14,7 @@ import { usePatient } from '../patients/usePatient'
 import { InlineError } from './InlineError'
 import { ITEM_STATUS, SIGNERS, siteText } from './labels'
 import { useFocusOnMount, usePlan, useProcedures } from './useTreatment'
+import { TableWrap } from '../../components/TableWrap'
 
 const PENDING_ITEM = ['propuesto', 'aceptado']
 
@@ -276,7 +277,7 @@ export function PlanConsentsPage() {
         {items.length === 0 ? (
           <div className="empty">Ningún ítem pendiente del plan exige consentimiento informado.</div>
         ) : (
-          <div className="table-wrap">
+          <TableWrap label="Consentimientos informados del plan">
             <table>
               <thead>
                 <tr>
@@ -338,7 +339,7 @@ export function PlanConsentsPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
 
         {signing && (

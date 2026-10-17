@@ -7,6 +7,7 @@ import { ActiveBadge } from '../../components/ActiveBadge'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Field } from '../../components/Field'
 import { formatCurrency } from '../../ui/format'
+import { TableWrap } from '../../components/TableWrap'
 
 const EMPTY = {
   code: '',
@@ -253,7 +254,7 @@ export function CatalogPage() {
         <div className="empty">Aún no hay procedimientos en el catálogo.</div>
       )}
       {procedures.length > 0 && (
-        <div className="table-wrap">
+        <TableWrap label="Procedimientos del catálogo">
           <table>
             <thead>
               <tr>
@@ -314,7 +315,7 @@ export function CatalogPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableWrap>
       )}
 
       {toDelete && (

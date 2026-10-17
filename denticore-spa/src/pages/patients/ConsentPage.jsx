@@ -9,6 +9,7 @@ import { ConsentForm } from '../../portal/ConsentForm'
 import { PURPOSES } from '../../portal/consentPurposes'
 import { formatDateTime } from '../../ui/format'
 import { useFocusFirstError } from '../../ui/useFocusFirstError'
+import { TableWrap } from '../../components/TableWrap'
 
 const CHANNEL_LABELS = { presencial: 'Presencial', portal: 'Portal', papel: 'Papel' }
 
@@ -81,7 +82,7 @@ export function ConsentPage({ patient }) {
           <div className="empty">El paciente aún no tiene consentimientos.</div>
         )}
         {consents.length > 0 && (
-          <div className="table-wrap">
+          <TableWrap label="Consentimientos registrados">
             <table>
               <thead>
                 <tr>
@@ -120,7 +121,7 @@ export function ConsentPage({ patient }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableWrap>
         )}
       </div>
 
