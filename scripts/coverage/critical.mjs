@@ -7,6 +7,7 @@
  * Uso: node scripts/coverage/critical.mjs denticore-api/coverage.xml
  */
 import { appendFileSync, readFileSync } from 'node:fs'
+import { relative, resolve } from 'node:path'
 
 const MIN = 95
 
@@ -38,8 +39,18 @@ export function criticalCoverage(clover) {
   return totals
 }
 
+/** Informe Clover dentro del directorio de trabajo; cualquier otra ruta se rechaza. */
+function cloverPath(argument = 'coverage.xml') {
+  const path = resolve(process.cwd(), argument)
+  const inside = relative(process.cwd(), path)
+  if (!path.endsWith('.xml') || inside.startsWith('..') || resolve(inside) !== path) {
+    throw new Error(`El informe Clover debe ser un .xml dentro de ${process.cwd()}: ${argument}`)
+  }
+  return path
+}
+
 function main() {
-  const totals = criticalCoverage(readFileSync(process.argv[2] ?? 'coverage.xml', 'utf8'))
+  const totals = criticalCoverage(readFileSync(cloverPath(process.argv[2]), 'utf8'))
   const rows = Object.entries(totals).map(([name, { statements, covered, files }]) => {
     const pct = statements ? (covered / statements) * 100 : 0
     return { name, pct, statements, covered, files, ok: statements > 0 && pct >= MIN }

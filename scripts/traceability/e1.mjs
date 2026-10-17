@@ -63,8 +63,10 @@ export function e1Requirements(srs) {
     .filter((match) => cus.has(`CUS-${match[2].padStart(2, '0')}`))
     .map((match) => match[1]))]
 
-  return { rf: expandIds(rfList), rnf: expandIds(rnfList), rn: [...rn].sort(), ca, cus: [...cus] }
+  return { rf: expandIds(rfList), rnf: expandIds(rnfList), rn: [...rn].sort(byText), ca, cus: [...cus] }
 }
+
+const byText = (a, b) => a.localeCompare(b)
 
 const ID = /\b(?:RF|RNF|RN|CA)-\d+(?:\.\d+)?\b/g
 
@@ -171,7 +173,7 @@ function main() {
     const ids = [...required.rf, ...required.rn, ...required.ca, ...required.rnf]
     writeFileSync(
       process.argv[jsonAt + 1],
-      JSON.stringify({ gaps, tests: Object.fromEntries(ids.map((id) => [id, [...(cited.get(id) ?? [])].sort()])) }, null, 2),
+      JSON.stringify({ gaps, tests: Object.fromEntries(ids.map((id) => [id, [...(cited.get(id) ?? [])].sort(byText)])) }, null, 2),
     )
   }
 
