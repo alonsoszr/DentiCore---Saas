@@ -7,6 +7,7 @@
  */
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Patients\Models\Consent;
 use App\Modules\Platform\Models\ClinicSetting;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Scheduling\Models\Appointment;
@@ -31,7 +32,9 @@ function portalForeignRecords(Tenant $tenant): array
         'tenant_id' => $tenant->id, 'patient_id' => $patient->id, 'starts_at' => now()->addDays(5),
     ]));
 
-    return ['{patient}' => $patient->uuid, '{budget}' => $budget, '{appointment}' => $appointment->uuid, '{tooth}' => '16'];
+    $consent = TenantContext::run($tenant, fn () => Consent::query()->where('patient_id', $patient->id)->where('status', 'vigente')->sole());
+
+    return ['{patient}' => $patient->uuid, '{budget}' => $budget, '{appointment}' => $appointment->uuid, '{consent}' => $consent->uuid, '{tooth}' => '16'];
 }
 
 /** @return list<array{0: string, 1: string}> Rutas PORT que reciben el uuid de un registro. */

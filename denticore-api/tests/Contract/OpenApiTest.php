@@ -217,6 +217,12 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->getJson('/api/v1/consents/'.$granted->json('data.id').'/certificate'), 'GET', '/consents/{consent}/certificate');
     $check($this->actingWithToken($admin)->getJson('/api/v1/consents/'.fake()->uuid().'/certificate'), 'GET', '/consents/{consent}/certificate');
 
+    // Revocación de finalidades (CUS-18)
+    $revocations = "{$consents}/".$granted->json('data.id').'/revocations';
+    $check($this->actingWithToken($admin)->postJson($revocations, ['purposes' => ['notificaciones']]), 'POST', '/patients/{patient}/consents/{consent}/revocations');
+    $check($this->actingWithToken($admin)->postJson($revocations, ['purposes' => ['notificaciones']]), 'POST', '/patients/{patient}/consents/{consent}/revocations');
+    $check($this->actingWithToken($admin)->postJson("{$consents}/".fake()->uuid().'/revocations', ['purposes' => ['notificaciones']]), 'POST', '/patients/{patient}/consents/{consent}/revocations');
+
     // Antecedentes médicos
     $history = ['alergias' => ['Penicilina'], 'enfermedades' => [], 'medicamentos' => [], 'observaciones' => null];
     $check($this->actingWithToken($admin)->putJson("/api/v1/patients/{$adult->uuid}/medical-history", $history), 'PUT', '/patients/{patient}/medical-history');
@@ -609,6 +615,13 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->postJson("{$portalBase}/consents", ['purpose_care' => false], $idempotent()), 'POST', '/portal/patients/{patient}/consents');
     $check($this->postJson("{$portalBase}/consents", ['purpose_care' => true], $idempotent()), 'POST', '/portal/patients/{patient}/consents');
     $check($this->getJson("{$portalBase}/consents"), 'GET', '/portal/patients/{patient}/consents');
+    [$revokingUser, $revokingPatient] = PortalFixtures::holder($tenant);
+    $revokingConsent = $this->actingWithToken($revokingUser)->getJson("/api/v1/portal/patients/{$revokingPatient->uuid}/consents")->json('data.0.id');
+    $portalRevocations = "/api/v1/portal/patients/{$revokingPatient->uuid}/consents/{$revokingConsent}/revocations";
+    $check($this->postJson($portalRevocations, ['purposes' => ['encuestas']]), 'POST', '/portal/patients/{patient}/consents/{consent}/revocations');
+    $check($this->postJson($portalRevocations, ['purposes' => ['atencion']]), 'POST', '/portal/patients/{patient}/consents/{consent}/revocations');
+    $check($this->postJson($portalRevocations, ['purposes' => ['atencion']]), 'POST', '/portal/patients/{patient}/consents/{consent}/revocations');
+    $this->actingWithToken($portalUser);
     $check($this->getJson("{$portalBase}/teeth/36/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
     $check($this->getJson("{$portalBase}/teeth/19/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
 

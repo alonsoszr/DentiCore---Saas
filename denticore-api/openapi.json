@@ -3932,6 +3932,117 @@
                 }
             }
         },
+        "/patients/{patient}/consents/{consent}/revocations": {
+            "post": {
+                "operationId": "consentRevocation.store",
+                "tags": [
+                    "ConsentRevocation"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "consent",
+                        "in": "path",
+                        "required": true,
+                        "description": "The consent UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RevokeConsentPurposesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ConsentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ConsentResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "anyOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/BusinessRuleException"
+                                                },
+                                                {
+                                                    "type": "object"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "El consentimiento ya no est\u00e1 vigente (RN-14)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/files/{tenant}/{file}": {
             "get": {
                 "operationId": "files.download",
@@ -8822,6 +8933,146 @@
                     },
                     "422": {
                         "description": "Paciente menor sin representante legal vigente (RN-12)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/portal/patients/{patient}/consents/{consent}/revocations": {
+            "post": {
+                "operationId": "portalConsent.revoke",
+                "summary": "CUS-18: el titular adulto o el representante revoca finalidades con su sesi\u00f3n; canal `portal`\n(RF-068, RF-069)",
+                "tags": [
+                    "PortalConsent"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "consent",
+                        "in": "path",
+                        "required": true,
+                        "description": "The consent UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "purposes": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "enum": [
+                                                "atencion",
+                                                "notificaciones",
+                                                "ia",
+                                                "prediccion",
+                                                "encuestas"
+                                            ]
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 5,
+                                        "uniqueItems": true
+                                    },
+                                    "reason": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 500
+                                    }
+                                },
+                                "required": [
+                                    "purposes"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ConsentResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "$ref": "#/components/schemas/ConsentResource"
+                                                }
+                                            },
+                                            "required": [
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "anyOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/BusinessRuleException"
+                                                },
+                                                {
+                                                    "type": "object"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "El consentimiento ya no est\u00e1 vigente (RN-14)",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -14614,6 +14865,11 @@
                         ],
                         "format": "date-time"
                     },
+                    "revoked_purposes": {
+                        "type": "array",
+                        "description": "RN-14: finalidades revocadas del consentimiento, en orden alfab\u00e9tico (CUS-18).",
+                        "items": {}
+                    },
                     "outdated": {
                         "type": "boolean"
                     }
@@ -14634,6 +14890,7 @@
                     "status",
                     "superseded_at",
                     "revoked_at",
+                    "revoked_purposes",
                     "outdated"
                 ],
                 "title": "ConsentResource"
@@ -15884,6 +16141,39 @@
                     "is_active"
                 ],
                 "title": "ProcedureResource"
+            },
+            "RevokeConsentPurposesRequest": {
+                "type": "object",
+                "description": "Revocaci\u00f3n de finalidades (CUS-18; RF-068, RF-069): una o m\u00e1s finalidades del consentimiento\nvigente y un motivo opcional (`consent_purpose_revocations.reason`, 500).",
+                "properties": {
+                    "purposes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "atencion",
+                                "notificaciones",
+                                "ia",
+                                "prediccion",
+                                "encuestas"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 5,
+                        "uniqueItems": true
+                    },
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "purposes"
+                ],
+                "title": "RevokeConsentPurposesRequest"
             },
             "RiskAlertResource": {
                 "type": "object",

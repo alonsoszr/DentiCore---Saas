@@ -5,13 +5,16 @@ namespace App\Modules\Portal\Http\Controllers;
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Http\Resources\ConsentPreviewResource;
 use App\Modules\Patients\Http\Resources\ConsentResource;
+use App\Modules\Patients\Models\Consent;
 use App\Modules\Patients\Models\Patient;
+use App\Modules\Patients\Services\ConsentRevocationService;
 use App\Modules\Patients\Services\ConsentService;
 use App\Support\Http\Controller;
 use App\Support\Http\ProblemResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\Rule;
 
 /**
  * Consentimiento de datos desde el portal (SDD §4.3.10; CUS-17 FA-1; RF-065, RF-066). La
@@ -20,7 +23,32 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class PortalConsentController extends Controller
 {
-    public function __construct(private ConsentService $consents) {}
+    public function __construct(
+        private ConsentService $consents,
+        private ConsentRevocationService $revocations,
+    ) {}
+
+    /**
+     * CUS-18: el titular adulto o el representante revoca finalidades con su sesión; canal `portal`
+     * (RF-068, RF-069).
+     */
+    #[ProblemResponse(403, 'La decisión corresponde al representante legal (RN-12)')]
+    #[ProblemResponse(409, 'El consentimiento ya no está vigente (RN-14)')]
+    public function revoke(Request $request, Patient $patient, Consent $consent): ConsentResource
+    {
+        /** @var array{purposes: list<string>, reason?: string|null} $data */
+        $data = $request->validate([
+            'purposes' => ['required', 'array', 'min:1', 'max:5'],
+            'purposes.*' => ['required', 'string', 'distinct', Rule::in(array_keys(Consent::PURPOSES))],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ], [], ['purposes' => 'finalidades', 'purposes.*' => 'finalidad', 'reason' => 'motivo']);
+        /** @var User $user */
+        $user = $request->user();
+
+        return ConsentResource::make($this->revocations->revoke(
+            $patient, $consent, $data['purposes'], $data['reason'] ?? null, $user, 'portal',
+        ));
+    }
 
     /**
      * RF-065, RF-067: consentimientos del paciente, del más reciente al más antiguo.
