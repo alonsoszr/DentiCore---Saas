@@ -158,11 +158,13 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
 
     // Toda ruta de la clínica que recibe el uuid de un registro (RF-003), tomada de las rutas
     // registradas (TASK-093). No son registros la pieza dentaria, el código de la clínica de las
-    // rutas públicas ni los tokens de un solo uso; las rutas de plataforma ({tenant}, solo SA) y los
-    // archivos firmados ({tenant}/{file}, DI-16) tienen sus propias pruebas.
+    // rutas públicas ni los tokens de un solo uso; las rutas de plataforma (`/platform/*`, solo SA,
+    // que actúa sobre todas las clínicas: T-018 y AccessRecoveryTest) y los archivos firmados
+    // ({tenant}/{file}, DI-16) tienen sus propias pruebas.
     $notRecords = ['tooth', 'slug', 'token'];
     $records = collect(Route::getRoutes()->getRoutes())
         ->filter(fn ($route) => str_starts_with($route->uri(), 'api/v1/'))
+        ->reject(fn ($route) => str_starts_with($route->uri(), 'api/v1/platform/'))
         ->reject(fn ($route) => array_intersect($route->parameterNames(), ['tenant', 'file']) !== [])
         ->filter(fn ($route) => array_diff($route->parameterNames(), $notRecords) !== []);
 
