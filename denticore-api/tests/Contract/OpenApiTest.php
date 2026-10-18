@@ -77,6 +77,20 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($twoFactorUser->fresh(), ['2fa:pending'])->postJson('/api/v1/auth/2fa/verify', [
         'code' => (new Google2FA)->getCurrentOtp($twoFactorUser->fresh()->two_factor_secret),
     ]), 'POST', '/auth/2fa/verify');
+
+    // Perfil y segundo factor propios (CUS-78)
+    $totp = fn () => (new Google2FA)->getCurrentOtp($twoFactorUser->fresh()->two_factor_secret);
+    $check($this->actingWithToken($twoFactorUser->fresh())->postJson('/api/v1/auth/2fa/recovery-codes', ['code' => '000000']), 'POST', '/auth/2fa/recovery-codes');
+    $check($this->actingWithToken($twoFactorUser->fresh())->postJson('/api/v1/auth/2fa/recovery-codes', ['code' => $totp()]), 'POST', '/auth/2fa/recovery-codes');
+    $check($this->actingWithToken($admin)->deleteJson('/api/v1/auth/2fa', ['code' => '000000']), 'DELETE', '/auth/2fa');
+    $check($this->actingWithToken($twoFactorUser->fresh())->deleteJson('/api/v1/auth/2fa', ['code' => '000000']), 'DELETE', '/auth/2fa');
+    $check($this->actingWithToken($twoFactorUser->fresh())->deleteJson('/api/v1/auth/2fa', ['code' => $totp()]), 'DELETE', '/auth/2fa');
+    $profileUser = User::factory()->for($tenant)->create(['role' => 'dentist', 'name' => 'Diego Quispe', 'password' => 'Clave-Segura-2026']);
+    $check($this->actingWithToken($profileUser)->patchJson('/api/v1/me/profile', ['name' => 'Diego Quispe Huamán']), 'PATCH', '/me/profile');
+    $check($this->actingWithToken($profileUser)->patchJson('/api/v1/me/profile', ['name' => '']), 'PATCH', '/me/profile');
+    $check($this->actingWithToken($profileUser)->putJson('/api/v1/me/password', ['current_password' => 'otra', 'password' => 'Nueva-Clave-Larga-2026', 'password_confirmation' => 'Nueva-Clave-Larga-2026']), 'PUT', '/me/password');
+    $check($this->actingWithToken($profileUser)->putJson('/api/v1/me/password', ['current_password' => 'Clave-Segura-2026', 'password' => 'Nueva-Clave-Larga-2026', 'password_confirmation' => 'Nueva-Clave-Larga-2026']), 'PUT', '/me/password');
+
     $check($this->getJson('/api/v1/public/clinics/'.$tenant->slug), 'GET', '/public/clinics/{slug}');
     $check($this->getJson('/api/v1/public/clinics/no-existe'), 'GET', '/public/clinics/{slug}');
 

@@ -8940,6 +8940,101 @@
                 }
             }
         },
+        "/me/profile": {
+            "patch": {
+                "operationId": "profile.update",
+                "summary": "Cambia el nombre propio",
+                "tags": [
+                    "Profile"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProfileRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/me/password": {
+            "put": {
+                "operationId": "profile.changePassword",
+                "summary": "Cambia la contrase\u00f1a propia indicando la actual (RF-040, RF-049). La sesi\u00f3n actual sigue\nabierta y las dem\u00e1s se cierran",
+                "tags": [
+                    "Profile"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/public/clinics/{slug}": {
             "get": {
                 "operationId": "publicClinic.show",
@@ -11776,6 +11871,94 @@
                 }
             }
         },
+        "/auth/2fa/recovery-codes": {
+            "post": {
+                "operationId": "twoFactor.regenerateRecoveryCodes",
+                "summary": "CUS-78 (RF-051, DD-36): 10 c\u00f3digos de recuperaci\u00f3n nuevos (se muestran una sola vez); los\nanteriores dejan de servir",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "recovery_codes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "recovery_codes"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/2fa": {
+            "delete": {
+                "operationId": "twoFactor.disable",
+                "summary": "CUS-78 (RF-051): desactiva el segundo factor en los roles donde es opcional",
+                "tags": [
+                    "TwoFactor"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "El segundo factor es obligatorio para el S\u00faper Administrador y el Administrador de Cl\u00ednica (RF-051)",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/attentions/{attention}/urgent-procedures": {
             "post": {
                 "operationId": "urgentProcedure.store",
@@ -13828,6 +14011,28 @@
                     "extensions"
                 ],
                 "title": "BusinessRuleException"
+            },
+            "ChangePasswordRequest": {
+                "type": "object",
+                "description": "Cambio de la contrase\u00f1a propia (CUS-78; RF-049, RF-040): exige la contrase\u00f1a actual (422 si no\ncoincide) y la nueva cumple la pol\u00edtica de DD-15, incluidas las 5 \u00faltimas.",
+                "properties": {
+                    "current_password": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "password_confirmation": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "current_password",
+                    "password",
+                    "password_confirmation"
+                ],
+                "title": "ChangePasswordRequest"
             },
             "ClinicSettingsResource": {
                 "type": "object",
@@ -16664,6 +16869,21 @@
                     }
                 },
                 "title": "UpdatePatientRequest"
+            },
+            "UpdateProfileRequest": {
+                "type": "object",
+                "description": "Perfil propio (CUS-78; RF-049): cada usuario cambia solo su nombre. El correo, el rol y los\ndatos profesionales los administra la cl\u00ednica (CUS-11).",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 150
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "title": "UpdateProfileRequest"
             },
             "UpdateTenantRequest": {
                 "type": "object",

@@ -6,11 +6,13 @@ use App\Modules\Identity\Http\Resources\UserResource;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\TwoFactorService;
 use App\Support\Http\Controller;
+use App\Support\Http\ProblemResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 /**
- * Segundo factor (SDD §4.3.2, §3.6; CUS-07, CUS-08).
+ * Segundo factor (SDD §4.3.2, §3.6; CUS-07, CUS-08, CUS-78).
  */
 class TwoFactorController extends Controller
 {
@@ -62,6 +64,40 @@ class TwoFactorController extends Controller
         return response()->json($this->sessionPayload($this->twoFactor->verify(
             $user, $data['code'] ?? null, $data['recovery_code'] ?? null, $request->ip(), $request->userAgent(),
         )));
+    }
+
+    /**
+     * CUS-78 (RF-051, DD-36): 10 códigos de recuperación nuevos (se muestran una sola vez); los
+     * anteriores dejan de servir.
+     */
+    public function regenerateRecoveryCodes(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        return response()->json(['recovery_codes' => $this->twoFactor->regenerateRecoveryCodes($user, $this->totpCode($request))]);
+    }
+
+    /**
+     * CUS-78 (RF-051): desactiva el segundo factor en los roles donde es opcional.
+     */
+    #[ProblemResponse(403, 'El segundo factor es obligatorio para el Súper Administrador y el Administrador de Clínica (RF-051)')]
+    public function disable(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->twoFactor->disable($user, $this->totpCode($request));
+
+        return response()->noContent();
+    }
+
+    private function totpCode(Request $request): string
+    {
+        /** @var array{code: string} $data */
+        $data = $request->validate(['code' => ['required', 'string', 'size:6']], [], ['code' => 'código']);
+
+        return $data['code'];
     }
 
     /**

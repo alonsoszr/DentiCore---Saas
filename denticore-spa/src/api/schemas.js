@@ -233,6 +233,12 @@ export const businessRuleExceptionSchema = z.object({
   extensions: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.null()])),
 })
 
+export const changePasswordRequestSchema = z
+  .object({ current_password: z.string().max(128), password: z.string(), password_confirmation: z.string() })
+  .describe(
+    'Cambio de la contraseña propia (CUS-78; RF-049, RF-040): exige la contraseña actual (422 si no\ncoincide) y la nueva cumple la política de DD-15, incluidas las 5 últimas.',
+  )
+
 export const clinicSettingsResourceSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -870,6 +876,12 @@ export const updatePatientRequestSchema = z
   })
   .describe(
     'Actualización de la identificación y el contacto del paciente (CUS-15; RF-062, SRS §11.3). El\nnúmero de historia clínica no cambia (RN-79). El tipo y el número de documento van juntos.',
+  )
+
+export const updateProfileRequestSchema = z
+  .object({ name: z.string().min(3).max(150) })
+  .describe(
+    'Perfil propio (CUS-78; RF-049): cada usuario cambia solo su nombre. El correo, el rol y los\ndatos profesionales los administra la clínica (CUS-11).',
   )
 
 export const updateTenantRequestSchema = z

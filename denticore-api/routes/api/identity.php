@@ -3,6 +3,7 @@
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Identity\Http\Controllers\InvitationController;
 use App\Modules\Identity\Http\Controllers\PasswordResetController;
+use App\Modules\Identity\Http\Controllers\ProfileController;
 use App\Modules\Identity\Http\Controllers\PublicClinicController;
 use App\Modules\Identity\Http\Controllers\TwoFactorController;
 use App\Modules\Identity\Http\Controllers\UserController;
@@ -30,6 +31,14 @@ Route::middleware(['auth:sanctum', 'token.fresh', 'throttle:api'])->group(functi
     Route::post('/auth/2fa/verify', [TwoFactorController::class, 'verify'])->middleware(['ability:2fa:pending', 'throttle:codes']);
     Route::post('/auth/2fa/setup', [TwoFactorController::class, 'setup'])->middleware('ability:2fa:setup,full');
     Route::post('/auth/2fa/confirm', [TwoFactorController::class, 'confirm'])->middleware(['ability:2fa:setup,full', 'throttle:codes']);
+
+    // Perfil y segundo factor propios (CUS-78).
+    Route::middleware('2fa')->group(function () {
+        Route::post('/auth/2fa/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])->middleware('throttle:codes');
+        Route::delete('/auth/2fa', [TwoFactorController::class, 'disable'])->middleware('throttle:codes');
+        Route::patch('/me/profile', [ProfileController::class, 'update']);
+        Route::put('/me/password', [ProfileController::class, 'changePassword']);
+    });
 });
 
 // STAFF (SDD §4.2).

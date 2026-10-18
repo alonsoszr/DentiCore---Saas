@@ -5,6 +5,7 @@ namespace App\Modules\Identity\Services;
 use App\Modules\Identity\Models\User;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
+use App\Support\Http\BusinessRuleException;
 use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Support\Facades\DB;
@@ -104,6 +105,60 @@ class TwoFactorService
         }
 
         return DB::transaction(fn (): array => $this->fullSession($user, $ipAddress, $userAgent));
+    }
+
+    /**
+     * CUS-78 (RF-051, DD-36): 10 códigos nuevos con un TOTP vigente; los anteriores dejan de servir.
+     *
+     * @return list<string>
+     *
+     * @throws ValidationException
+     */
+    public function regenerateRecoveryCodes(User $user, string $code): array
+    {
+        $this->ensureValidCode($user, $code);
+
+        return DB::transaction(function () use ($user): array {
+            $codes = $this->replaceRecoveryCodes($user);
+            $this->inUserTenant($user, fn () => $this->audit->record(
+                AuditEvent::Auth2faConfigured, $user, meta: ['recovery_codes' => 'regenerados'], actor: $user,
+            ));
+
+            return $codes;
+        });
+    }
+
+    /**
+     * CUS-78 (RF-051): desactiva el segundo factor con un TOTP vigente, solo en los roles donde
+     * es opcional; el Súper Administrador y el Administrador de Clínica reciben 403 (DD-15).
+     *
+     * @throws ValidationException
+     */
+    public function disable(User $user, string $code): void
+    {
+        if (in_array($user->role, AuthService::TWO_FACTOR_ROLES, true)) {
+            throw new BusinessRuleException('RF-051', 'El segundo factor es obligatorio para tu rol.', status: 403);
+        }
+
+        $this->ensureValidCode($user, $code);
+
+        DB::transaction(function () use ($user): void {
+            $user->forceFill(['two_factor_secret' => null, 'two_factor_confirmed_at' => null])->save();
+            DB::table('two_factor_recovery_codes')->where('user_id', $user->id)->delete();
+            $this->inUserTenant($user, fn () => $this->audit->record(
+                AuditEvent::Auth2faReset, $user, meta: ['origen' => 'propio'], actor: $user,
+            ));
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function ensureValidCode(User $user, string $code): void
+    {
+        if ($user->two_factor_secret === null || ! $this->validCode($user->two_factor_secret, $code)) {
+            throw ValidationException::withMessages(['code' => ['Código incorrecto.']]);
+        }
     }
 
     private function validCode(string $secret, string $code): bool

@@ -7,14 +7,15 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Cambio de contraseña (DD-15, RF-040): guarda el hash bcrypt, registra el historial (se
- * conservan las 5 últimas, `user_password_histories`) y revoca todas las sesiones del usuario.
+ * conservan las 5 últimas, `user_password_histories`) y revoca todas las sesiones del usuario, salvo
+ * la indicada en `keepTokenId` (la del propio usuario que cambia su contraseña, CUS-78).
  * La política la valida PasswordPolicy en el Form Request.
  */
 class PasswordService
 {
-    public function set(User $user, string $password): void
+    public function set(User $user, string $password, ?int $keepTokenId = null): void
     {
-        DB::transaction(function () use ($user, $password): void {
+        DB::transaction(function () use ($user, $password, $keepTokenId): void {
             $user->forceFill(['password' => $password, 'password_changed_at' => now()])->save();
 
             DB::table('user_password_histories')->insert([
@@ -27,7 +28,7 @@ class PasswordService
                 ->orderByDesc('id')->limit(PasswordPolicy::HISTORY)->pluck('id');
             DB::table('user_password_histories')->where('user_id', $user->id)->whereNotIn('id', $keep)->delete();
 
-            $user->tokens()->delete();
+            $user->tokens()->when($keepTokenId !== null, fn ($tokens) => $tokens->whereKeyNot($keepTokenId))->delete();
         });
     }
 }

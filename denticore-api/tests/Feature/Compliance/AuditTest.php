@@ -483,6 +483,21 @@ it('writes the audit events of the MS-05 model registry without its metrics', fu
     }
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65', 'RF-175');
 
+it('writes the audit events of the MS-09 own account flows without secrets', function () {
+    // TASK-100 (CUS-78): desactivar el segundo factor propio deja auth.2fa_reset sin el secreto.
+    $secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+    $dentist = User::factory()->for(Tenant::factory()->create())->create(['role' => 'dentist']);
+    $dentist->forceFill(['two_factor_secret' => $secret, 'two_factor_confirmed_at' => now()])->save();
+
+    $this->actingWithToken($dentist)->deleteJson('/api/v1/auth/2fa', ['code' => (new Google2FA)->getCurrentOtp($secret)])
+        ->assertNoContent();
+
+    $row = TenantContext::run($dentist->tenant, fn () => AuditLog::query()->where('action', 'auth.2fa_reset')->sole());
+    expect($row->metadata)->toBe(['origen' => 'propio'])
+        ->and($row->tenant_id)->toBe($dentist->tenant_id)
+        ->and(json_encode($row->toArray()))->not->toContain($secret);
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65', 'CUS-78');
+
 it('asserts in T-149 every audit event that the application emits', function () {
     // TASK-093: cada evento del catálogo que el código de E1 emite tiene su fila verificada en este
     // archivo. Los eventos del enum que ningún flujo emite todavía (E2 a E4) no se exigen.
