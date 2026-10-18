@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Patients\Http\Controllers\ConsentController;
+use App\Modules\Patients\Http\Controllers\ConsentRevocationController;
 use App\Modules\Patients\Http\Controllers\InformedConsentController;
 use App\Modules\Patients\Http\Controllers\InformedConsentTemplateController;
 use App\Modules\Patients\Http\Controllers\LegalRepresentativeController;
@@ -36,6 +37,10 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         Route::get('/patients/{patient}/consents', [ConsentController::class, 'index']);
         Route::get('/consents/{consent}/certificate', [ConsentController::class, 'certificate']);
     });
+
+    // CUS-18: revocación de finalidades (RF-068, RF-069).
+    Route::post('/patients/{patient}/consents/{consent}/revocations', [ConsentRevocationController::class, 'store'])
+        ->middleware('role:clinic_admin,receptionist');
 
     // CUS-16: representantes legales (RF-059 a RF-061).
     Route::get('/patients/{patient}/representatives', [LegalRepresentativeController::class, 'index'])

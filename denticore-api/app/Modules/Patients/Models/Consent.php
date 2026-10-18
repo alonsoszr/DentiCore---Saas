@@ -9,8 +9,10 @@ use App\Support\Files\GeneratedDocument;
 use App\Support\Files\StoredFile;
 use App\Support\Tenancy\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -47,6 +49,7 @@ use Illuminate\Support\Carbon;
  * @property-read GeneratedDocument|null $certificate
  * @property-read StoredFile|null $scannedFile
  * @property-read User|null $assistant
+ * @property-read Collection<int, ConsentPurposeRevocation> $purposeRevocations
  */
 #[UsePolicy(ConsentPolicy::class)]
 class Consent extends Model
@@ -114,6 +117,16 @@ class Consent extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    /**
+     * Finalidades revocadas (RN-14, RF-068).
+     *
+     * @return HasMany<ConsentPurposeRevocation, $this>
+     */
+    public function purposeRevocations(): HasMany
+    {
+        return $this->hasMany(ConsentPurposeRevocation::class);
     }
 
     /**

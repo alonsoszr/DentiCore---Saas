@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 /**
  * Consentimiento de datos (CUS-17; RF-065, RF-067): finalidades, otorgante, canal, huella del
- * texto y estado. `outdated` marca una versión anterior de la plantilla (RN-15). La evidencia,
+ * texto, estado y finalidades revocadas (CUS-18). `outdated` marca una versión anterior de la plantilla (RN-15). La evidencia,
  * la IP y el texto completo quedan en la constancia.
  *
  * @mixin Consent
@@ -39,6 +39,8 @@ class ConsentResource extends ApiResource
             'status' => $this->status,
             'superseded_at' => $this->superseded_at,
             'revoked_at' => $this->revoked_at,
+            // RN-14: finalidades revocadas del consentimiento, en orden alfabético (CUS-18).
+            'revoked_purposes' => $this->purposeRevocations->pluck('purpose')->sort()->values()->all(),
             'outdated' => $this->consent_template_version < app(ConsentGate::class)->currentTemplateVersion(),
         ];
     }

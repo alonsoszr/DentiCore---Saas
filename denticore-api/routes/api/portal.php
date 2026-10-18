@@ -24,6 +24,9 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
             Route::get('/patients/{patient}/consents/preview', [PortalConsentController::class, 'preview']);
             Route::post('/patients/{patient}/consents', [PortalConsentController::class, 'store'])
                 ->middleware(['portal.adult', 'idempotent']);
+            // CUS-18: revocación de finalidades con el canal `portal`.
+            Route::post('/patients/{patient}/consents/{consent}/revocations', [PortalConsentController::class, 'revoke'])
+                ->middleware('portal.adult');
 
             // CUS-36, CUS-37: presupuestos y decisión con el canal `portal`.
             Route::get('/patients/{patient}/budgets', [PortalBudgetController::class, 'index']);

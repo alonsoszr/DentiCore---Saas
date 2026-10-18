@@ -301,6 +301,9 @@ export const consentResourceSchema = z.object({
   status: z.enum(['vigente', 'revocado', 'sustituido']),
   superseded_at: z.union([z.string().datetime({ offset: true }), z.null()]),
   revoked_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  revoked_purposes: z
+    .array(z.any())
+    .describe('RN-14: finalidades revocadas del consentimiento, en orden alfabético (CUS-18).'),
   outdated: z.boolean(),
 })
 
@@ -574,6 +577,19 @@ export const procedureResourceSchema = z.object({
   ]),
   is_active: z.boolean(),
 })
+
+export const revokeConsentPurposesRequestSchema = z
+  .object({
+    purposes: z
+      .array(z.enum(['atencion', 'notificaciones', 'ia', 'prediccion', 'encuestas']))
+      .min(1)
+      .max(5)
+      .refine((arr) => arr.every((item, i) => arr.indexOf(item) == i), 'All items must be unique!'),
+    reason: z.union([z.string().max(500), z.null()]).optional(),
+  })
+  .describe(
+    'Revocación de finalidades (CUS-18; RF-068, RF-069): una o más finalidades del consentimiento\nvigente y un motivo opcional (`consent_purpose_revocations.reason`, 500).',
+  )
 
 export const riskAlertResourceSchema = z.object({
   id: z.string(),

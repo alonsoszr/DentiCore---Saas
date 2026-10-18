@@ -232,11 +232,16 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
     $url = $clinic->getJson("/api/v1/consents/{$consentId}/certificate")->assertOk()->json('data.url');
     $this->get($url)->assertOk();
 
+    // consent.purpose_revoked (CUS-18): sin el motivo del titular.
+    $clinic->postJson("/api/v1/patients/{$patientUuid}/consents/{$consentId}/revocations", ['purposes' => ['atencion'], 'reason' => 'Se muda de ciudad'])
+        ->assertOk();
+
     $actions = AuditLog::query()->pluck('action')->all();
     foreach ([
         'tenant.suspended', 'tenant.reactivated', 'tenant.plan_changed', 'auth.locked', 'auth.2fa_configured', 'auth.logout',
         'auth.password_changed', 'user.data_officer_changed', 'patient.created', 'patient.identity_updated',
         'representative.created', 'representative.ended', 'consent.granted', 'document.downloaded',
+        'consent.purpose_revoked',
     ] as $action) {
         expect($actions)->toContain($action);
     }
@@ -245,7 +250,7 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
 
     // RN-67: sin documentos, teléfonos, nombres, correos, motivos ni contraseñas en la bitácora.
     $serialized = json_encode(DB::table('audit_logs')->get());
-    foreach (['71234567', '41234567', '987654321', '911222333', 'Lucía', 'Quispe', 'Rosa', 'hitos.test', 'Falta de pago', 'Nueva-Clave-2026', $secret] as $value) {
+    foreach (['71234567', '41234567', '987654321', '911222333', 'Lucía', 'Quispe', 'Rosa', 'hitos.test', 'Falta de pago', 'Nueva-Clave-2026', 'Se muda de ciudad', $secret] as $value) {
         expect($serialized)->not->toContain($value);
     }
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');

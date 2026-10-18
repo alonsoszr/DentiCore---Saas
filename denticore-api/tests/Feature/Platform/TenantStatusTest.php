@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Odontogram\Models\Attention;
 use App\Modules\Odontogram\Models\OdontogramEntry;
 use App\Modules\Patients\Models\Patient;
+use App\Modules\Patients\Services\ConsentService;
 use App\Modules\Patients\Services\InformedConsentService;
 use App\Modules\Patients\Services\InformedConsentTemplateService;
 use App\Modules\Platform\Models\Tenant;
@@ -104,7 +105,13 @@ it('applies the read-only rule to every registered staff route', function () {
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'receptionist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
         '{representative}' => fn () => (string) Str::uuid(),
-        '{consent}' => fn () => (string) Str::uuid(),
+        // Consentimiento real: la ruta de revocación (CUS-18) escribe y debe llegar a tenant.writable.
+        '{consent}' => fn () => TenantContext::run($tenant, function () use ($tenant) {
+            $patient = Patient::factory()->for($tenant)->create(['birth_date' => '1990-01-31']);
+
+            return app(ConsentService::class)->grant($patient, ['channel' => 'presencial', 'confirmation_document_number' => $patient->document_number],
+                User::factory()->for($tenant)->create(['role' => 'receptionist']), '127.0.0.1')->uuid;
+        }),
         '{template}' => fn () => $informedConsent['template'],
         '{item}' => fn () => $informedConsent['item'],
         '{informedConsent}' => fn () => $informedConsent['consent'],
