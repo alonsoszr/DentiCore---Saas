@@ -496,7 +496,16 @@ it('writes the audit events of the MS-09 own account flows without secrets', fun
     expect($row->metadata)->toBe(['origen' => 'propio'])
         ->and($row->tenant_id)->toBe($dentist->tenant_id)
         ->and(json_encode($row->toArray()))->not->toContain($secret);
-})->group('T-149', 'RN-67', 'RF-186', 'CUS-65', 'CUS-78');
+
+    // TASK-101 (CUS-79): el administrador desbloquea la cuenta (user.unlocked).
+    $dentist->forceFill(['status' => 'bloqueado_temporal', 'locked_until' => now()->addMinutes(15)])->save();
+    $admin = User::factory()->for($dentist->tenant)->create(['role' => 'clinic_admin']);
+    $this->actingWithToken($admin)->postJson("/api/v1/users/{$dentist->uuid}/unlock")->assertOk();
+
+    $unlocked = TenantContext::run($dentist->tenant, fn () => AuditLog::query()->where('action', 'user.unlocked')->sole());
+    expect($unlocked->resource_uuid)->toBe($dentist->uuid)
+        ->and($unlocked->user_id)->toBe($admin->id);
+})->group('T-149', 'RN-67', 'RF-186', 'CUS-65', 'CUS-78', 'CUS-79');
 
 it('asserts in T-149 every audit event that the application emits', function () {
     // TASK-093: cada evento del catálogo que el código de E1 emite tiene su fila verificada en este
