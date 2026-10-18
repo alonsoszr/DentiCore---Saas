@@ -30,8 +30,9 @@ class StoreArcoRequestRequest extends FormRequest
             'description' => ['required', 'string', 'min:10', 'max:2000'],
             'confirmation_document_number' => ['required', 'string', 'max:12'],
             'files' => ['sometimes', 'array', 'max:5'],
-            // 8 MB por adjunto: dentro del máximo de 10 MB de RNF-103.
-            'files.*' => ['file', 'max:8192', 'mimes:pdf,jpg,jpeg,png'],
+            // 5 MB por adjunto (un documento escaneado): dentro del máximo de 10 MB de RNF-103 y del
+            // límite seguro de carga de SonarCloud (S5693, 8 000 000 bytes).
+            'files.*' => ['file', 'max:5120', 'mimes:pdf,jpg,jpeg,png'],
         ];
     }
 

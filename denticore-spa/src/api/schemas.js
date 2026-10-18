@@ -730,7 +730,14 @@ export const storeArcoRequestRequestSchema = z
     description: z.string().min(10).max(2000),
     confirmation_document_number: z.string().max(12),
     files: z
-      .array(z.string().base64().describe('8 MB por adjunto: dentro del máximo de 10 MB de RNF-103.'))
+      .array(
+        z
+          .string()
+          .base64()
+          .describe(
+            '5 MB por adjunto (un documento escaneado): dentro del máximo de 10 MB de RNF-103 y del\nlímite seguro de carga de SonarCloud (S5693, 8 000 000 bytes).',
+          ),
+      )
       .max(5)
       .optional(),
   })

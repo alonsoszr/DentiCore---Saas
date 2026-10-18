@@ -17252,7 +17252,7 @@
                             "type": "string",
                             "format": "binary",
                             "contentMediaType": "application/octet-stream",
-                            "description": "8 MB por adjunto: dentro del m\u00e1ximo de 10 MB de RNF-103."
+                            "description": "5 MB por adjunto (un documento escaneado): dentro del m\u00e1ximo de 10 MB de RNF-103 y del\nl\u00edmite seguro de carga de SonarCloud (S5693, 8 000 000 bytes)."
                         },
                         "maxItems": 5
                     }
