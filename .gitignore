@@ -2,3 +2,5 @@
 docs/Articulos/
 docs/borrador/
 docs/*.docx
+# Artefactos locales del navegador automatizado (Playwright MCP) de las revisiones visuales.
+.playwright-mcp/
