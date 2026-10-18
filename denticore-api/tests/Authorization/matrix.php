@@ -52,6 +52,10 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/users/{user}/deactivate', 'cus' => 'CUS-11', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/users/{user}/reactivate', 'cus' => 'CUS-11', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/users/{user}/invitation', 'cus' => 'CUS-11', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/users/{user}/unlock', 'cus' => 'CUS-79', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/users/{user}/2fa/reset', 'cus' => 'CUS-79', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/platform/clinic-admins/{user}/unlock', 'cus' => 'CUS-79', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/platform/clinic-admins/{user}/2fa/reset', 'cus' => 'CUS-79', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
 
     ['method' => 'GET', 'uri' => 'api/v1/patients', 'cus' => 'CUS-13', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/patients/lookup', 'cus' => 'CUS-13', 'denied' => ['super_admin', 'patient']],

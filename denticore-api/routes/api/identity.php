@@ -1,8 +1,10 @@
 <?php
 
+use App\Modules\Identity\Http\Controllers\AccessRecoveryController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Identity\Http\Controllers\InvitationController;
 use App\Modules\Identity\Http\Controllers\PasswordResetController;
+use App\Modules\Identity\Http\Controllers\PlatformAccessRecoveryController;
 use App\Modules\Identity\Http\Controllers\ProfileController;
 use App\Modules\Identity\Http\Controllers\PublicClinicController;
 use App\Modules\Identity\Http\Controllers\TwoFactorController;
@@ -50,4 +52,14 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate']);
     Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate']);
     Route::post('/users/{user}/invitation', [UserController::class, 'resendInvitation']);
+
+    // Restablecer el acceso de un usuario de la clínica (CUS-79).
+    Route::post('/users/{user}/unlock', [AccessRecoveryController::class, 'unlock']);
+    Route::post('/users/{user}/2fa/reset', [AccessRecoveryController::class, 'resetTwoFactor']);
+});
+
+// PLAT: el Súper Administrador restablece el acceso de los Administradores de Clínica (CUS-79, RN-04).
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'role:super_admin'])->prefix('platform')->group(function () {
+    Route::post('/clinic-admins/{user}/unlock', [PlatformAccessRecoveryController::class, 'unlock']);
+    Route::post('/clinic-admins/{user}/2fa/reset', [PlatformAccessRecoveryController::class, 'resetTwoFactor']);
 });

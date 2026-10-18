@@ -91,6 +91,18 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($profileUser)->putJson('/api/v1/me/password', ['current_password' => 'otra', 'password' => 'Nueva-Clave-Larga-2026', 'password_confirmation' => 'Nueva-Clave-Larga-2026']), 'PUT', '/me/password');
     $check($this->actingWithToken($profileUser)->putJson('/api/v1/me/password', ['current_password' => 'Clave-Segura-2026', 'password' => 'Nueva-Clave-Larga-2026', 'password_confirmation' => 'Nueva-Clave-Larga-2026']), 'PUT', '/me/password');
 
+    // Restablecer el acceso (CUS-79)
+    $lockedUser = User::factory()->for($tenant)->create(['role' => 'receptionist', 'status' => 'bloqueado_temporal', 'locked_until' => now()->addMinutes(15)]);
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$lockedUser->uuid}/unlock"), 'POST', '/users/{user}/unlock');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$lockedUser->uuid}/unlock"), 'POST', '/users/{user}/unlock');
+    $check($this->actingWithToken($admin)->postJson("/api/v1/users/{$lockedUser->uuid}/2fa/reset"), 'POST', '/users/{user}/2fa/reset');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/users/'.fake()->uuid().'/2fa/reset'), 'POST', '/users/{user}/2fa/reset');
+    $lockedAdmin = User::factory()->for($tenant)->create(['role' => 'clinic_admin', 'status' => 'bloqueado_temporal', 'locked_until' => now()->addMinutes(15)]);
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/clinic-admins/{$lockedAdmin->uuid}/unlock"), 'POST', '/platform/clinic-admins/{user}/unlock');
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/clinic-admins/{$lockedUser->uuid}/unlock"), 'POST', '/platform/clinic-admins/{user}/unlock');
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/clinic-admins/{$lockedUser->uuid}/2fa/reset"), 'POST', '/platform/clinic-admins/{user}/2fa/reset');
+    $check($this->actingWithToken($superAdmin)->postJson("/api/v1/platform/clinic-admins/{$lockedAdmin->uuid}/2fa/reset"), 'POST', '/platform/clinic-admins/{user}/2fa/reset');
+
     $check($this->getJson('/api/v1/public/clinics/'.$tenant->slug), 'GET', '/public/clinics/{slug}');
     $check($this->getJson('/api/v1/public/clinics/no-existe'), 'GET', '/public/clinics/{slug}');
 

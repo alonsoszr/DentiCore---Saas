@@ -82,7 +82,8 @@ class AuthService
     }
 
     /**
-     * SDD §1.7: 2FA confirmado → `2fa:pending`; SA o CA sin 2FA → `2fa:setup`; resto → `full`.
+     * SDD §1.7, §3.6: 2FA confirmado → `2fa:pending`; SA o CA sin 2FA, o cualquier rol con el 2FA
+     * restablecido por un administrador (CUS-79) → `2fa:setup`; resto → `full`.
      *
      * @return list<string>
      */
@@ -90,7 +91,7 @@ class AuthService
     {
         return match (true) {
             $user->two_factor_confirmed_at !== null => ['2fa:pending'],
-            in_array($user->role, self::TWO_FACTOR_ROLES, true) => ['2fa:setup'],
+            in_array($user->role, self::TWO_FACTOR_ROLES, true), $user->two_factor_reset_required => ['2fa:setup'],
             default => ['full'],
         };
     }
