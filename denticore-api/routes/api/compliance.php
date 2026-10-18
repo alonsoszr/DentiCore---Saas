@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Compliance\Http\Controllers\ArcoRequestController;
 use App\Modules\Compliance\Http\Controllers\GeneratedDocumentController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,4 +10,10 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     // CUS-36, CUS-62: documento generado con su URL firmada (RF-121, RF-180; DI-16).
     Route::get('/documents/{document}', [GeneratedDocumentController::class, 'show'])
         ->middleware('role:clinic_admin,dentist,receptionist');
+
+    // CUS-63: registro de solicitudes ARCO en la clínica (RF-182).
+    Route::middleware('role:clinic_admin,receptionist')->group(function () {
+        Route::get('/patients/{patient}/arco-requests', [ArcoRequestController::class, 'indexForPatient']);
+        Route::post('/patients/{patient}/arco-requests', [ArcoRequestController::class, 'store'])->middleware('idempotent');
+    });
 });
