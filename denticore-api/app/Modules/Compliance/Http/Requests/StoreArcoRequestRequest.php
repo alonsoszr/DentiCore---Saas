@@ -30,7 +30,8 @@ class StoreArcoRequestRequest extends FormRequest
             'description' => ['required', 'string', 'min:10', 'max:2000'],
             'confirmation_document_number' => ['required', 'string', 'max:12'],
             'files' => ['sometimes', 'array', 'max:5'],
-            'files.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png'],
+            // 8 MB por adjunto: dentro del máximo de 10 MB de RNF-103.
+            'files.*' => ['file', 'max:8192', 'mimes:pdf,jpg,jpeg,png'],
         ];
     }
 

@@ -729,7 +729,10 @@ export const storeArcoRequestRequestSchema = z
     legal_representative_id: z.string().uuid(),
     description: z.string().min(10).max(2000),
     confirmation_document_number: z.string().max(12),
-    files: z.array(z.string().base64().describe('Maximum file size: 10240 kilobytes.')).max(5).optional(),
+    files: z
+      .array(z.string().base64().describe('8 MB por adjunto: dentro del máximo de 10 MB de RNF-103.'))
+      .max(5)
+      .optional(),
   })
   .describe(
     'Solicitud ARCO presentada en la clínica (CUS-63; RF-182): tipo, solicitante, descripción,\nadjuntos y el documento del titular o del representante, revisado por el personal (SRS §11.15).',

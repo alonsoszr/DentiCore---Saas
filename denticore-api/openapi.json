@@ -17252,7 +17252,7 @@
                             "type": "string",
                             "format": "binary",
                             "contentMediaType": "application/octet-stream",
-                            "description": "Maximum file size: 10240 kilobytes."
+                            "description": "8 MB por adjunto: dentro del m\u00e1ximo de 10 MB de RNF-103."
                         },
                         "maxItems": 5
                     }
