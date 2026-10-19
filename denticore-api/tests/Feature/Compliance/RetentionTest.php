@@ -167,11 +167,12 @@ it('limits each retention job to its clinic and rejects a job without a tenant',
 it('processes every batch and its remainder independently for each clinic', function () {
     // Con lotes de 500, 1201 y 501 fichas verifican varias páginas y su remanente.
     // La medición de la ventana con el CDR completo en ER corresponde a TASK-116.
-    $tenants = Tenant::factory()->count(2)->create();
-    foreach ($tenants as $index => $tenant) {
-        $count = $index === 0 ? 1201 : 501;
-        $author = User::factory()->for($tenant)->create(['role' => 'receptionist']);
-        TenantContext::run($tenant, fn () => DB::statement(<<<'SQL'
+    try {
+        $tenants = Tenant::factory()->count(2)->create();
+        foreach ($tenants as $index => $tenant) {
+            $count = $index === 0 ? 1201 : 501;
+            $author = User::factory()->for($tenant)->create(['role' => 'receptionist']);
+            TenantContext::run($tenant, fn () => DB::statement(<<<'SQL'
             INSERT INTO patients (uuid, tenant_id, first_name, last_name, search_name, birth_date, sex,
                                   document_type, document_number, document_hash, clinical_record_number,
                                   clinical_record_hash, archive_status, created_by, last_attention_at, created_at)
@@ -181,20 +182,25 @@ it('processes every batch and its remainder independently for each clinic', func
                    CASE WHEN g % 2 = 0 THEN 'activo' ELSE 'bloqueado' END, ?, ?::timestamptz, ?::timestamptz
               FROM generate_series(1, ?) AS g
             SQL, [$tenant->id, $author->id, now()->subYears(21), now()->subYears(21), $count]));
+        }
+
+        $this->artisan('retention:apply')->assertSuccessful();
+
+        foreach ($tenants as $index => $tenant) {
+            TenantContext::run($tenant, function () use ($index, $tenant) {
+                $count = $index === 0 ? 1201 : 501;
+
+                expect(Patient::query()->count())->toBe($count)
+                    ->and(Patient::query()->where('archive_status', 'apto_eliminacion')->count())->toBe($count)
+                    ->and(AuditLog::query()->where('tenant_id', $tenant->id)->where('action', 'patient.archived')->count())->toBe($count + intdiv($count, 2));
+            });
+        }
+        expect(ScheduledTaskRun::query()->where('task', 'retention:apply')->count())->toBe(2);
+    } finally {
+        // El rollback elimina las fichas, pero no vacía la lista pendiente de GIN. Se drena
+        // la carga de esta muestra para no alterar el EXPLAIN de otras pruebas (RNF-030).
+        DB::connection('pgsql_migrator')->select("SELECT gin_clean_pending_list('patients_search_name_trgm_idx'::regclass)");
     }
-
-    $this->artisan('retention:apply')->assertSuccessful();
-
-    foreach ($tenants as $index => $tenant) {
-        TenantContext::run($tenant, function () use ($index, $tenant) {
-            $count = $index === 0 ? 1201 : 501;
-
-            expect(Patient::query()->count())->toBe($count)
-                ->and(Patient::query()->where('archive_status', 'apto_eliminacion')->count())->toBe($count)
-                ->and(AuditLog::query()->where('tenant_id', $tenant->id)->where('action', 'patient.archived')->count())->toBe($count + intdiv($count, 2));
-        });
-    }
-    expect(ScheduledTaskRun::query()->where('task', 'retention:apply')->count())->toBe(2);
 })->group('T-151', 'RF-190', 'CUS-69', 'TASK-106');
 
 it('has no registered deletion route for retained clinical records', function () {
