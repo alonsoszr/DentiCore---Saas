@@ -146,6 +146,7 @@ it('registers retention at 02:00 with single server and overlap protection', fun
 
     expect($event)->not->toBeNull()
         ->and($event->expression)->toBe('0 2 * * *')
+        ->and($event->timezone)->toBe('America/Lima')
         ->and($event->onOneServer)->toBeTrue()
         ->and($event->withoutOverlapping)->toBeTrue();
 })->group('T-151', 'RF-190', 'CUS-69', 'TASK-106');

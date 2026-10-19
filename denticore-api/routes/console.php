@@ -54,4 +54,4 @@ Schedule::command('notifications:prune-inapp')->dailyAt('03:15')->onOneServer()-
 Schedule::command('arco:deadline-reminders')->dailyAt('08:00')->timezone('America/Lima')->onOneServer()->withoutOverlapping();
 
 // Retención de la HC, sin borrado físico (SDD §1.9, §5.12; CUS-69, RF-190).
-Schedule::command('retention:apply')->dailyAt('02:00')->onOneServer()->withoutOverlapping();
+Schedule::command('retention:apply')->dailyAt('02:00')->timezone('America/Lima')->onOneServer()->withoutOverlapping();
