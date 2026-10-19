@@ -164,12 +164,12 @@ it('limits each retention job to its clinic and rejects a job without a tenant',
     expect(TenantContext::id())->toBeNull();
 })->group('T-151', 'RN-01', 'RF-190', 'CUS-69', 'TASK-106');
 
-it('processes the reference patient volume in bounded batches within the 30 minute window', function () {
-    // SRS §13.2.2: 49 clínicas con 2000 fichas y una con 20000. Se reproduce el volumen
-    // de patients que consulta retención, no las demás tablas del CDR ni el entorno ER.
-    $tenants = Tenant::factory()->count(50)->create();
+it('processes every batch and its remainder independently for each clinic', function () {
+    // Con lotes de 500, 1201 y 501 fichas verifican varias páginas y su remanente.
+    // La medición de la ventana con el CDR completo en ER corresponde a TASK-116.
+    $tenants = Tenant::factory()->count(2)->create();
     foreach ($tenants as $index => $tenant) {
-        $count = $index === 49 ? 20000 : 2000;
+        $count = $index === 0 ? 1201 : 501;
         $author = User::factory()->for($tenant)->create(['role' => 'receptionist']);
         TenantContext::run($tenant, fn () => DB::statement(<<<'SQL'
             INSERT INTO patients (uuid, tenant_id, first_name, last_name, search_name, birth_date, sex,
@@ -183,17 +183,19 @@ it('processes the reference patient volume in bounded batches within the 30 minu
             SQL, [$tenant->id, $author->id, now()->subYears(21), now()->subYears(21), $count]));
     }
 
-    $started = hrtime(true);
     $this->artisan('retention:apply')->assertSuccessful();
-    $seconds = (hrtime(true) - $started) / 1_000_000_000;
 
-    expect($seconds)->toBeLessThan(1800);
     foreach ($tenants as $index => $tenant) {
-        TenantContext::run($tenant, fn () => expect(Patient::query()->where('archive_status', 'apto_eliminacion')->count())
-            ->toBe($index === 49 ? 20000 : 2000));
+        TenantContext::run($tenant, function () use ($index, $tenant) {
+            $count = $index === 0 ? 1201 : 501;
+
+            expect(Patient::query()->count())->toBe($count)
+                ->and(Patient::query()->where('archive_status', 'apto_eliminacion')->count())->toBe($count)
+                ->and(AuditLog::query()->where('tenant_id', $tenant->id)->where('action', 'patient.archived')->count())->toBe($count + intdiv($count, 2));
+        });
     }
-    expect(ScheduledTaskRun::query()->where('task', 'retention:apply')->count())->toBe(50);
-})->group('T-151', 'RF-190', 'CUS-69', 'performance', 'TASK-106');
+    expect(ScheduledTaskRun::query()->where('task', 'retention:apply')->count())->toBe(2);
+})->group('T-151', 'RF-190', 'CUS-69', 'TASK-106');
 
 it('has no registered deletion route for retained clinical records', function () {
     $deletions = collect(Route::getRoutes()->getRoutes())
