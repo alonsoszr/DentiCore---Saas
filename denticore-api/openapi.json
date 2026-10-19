@@ -17082,6 +17082,9 @@
                     "low_confidence": {
                         "type": "boolean"
                     },
+                    "stale": {
+                        "type": "boolean"
+                    },
                     "model_version": {
                         "type": "string"
                     },
@@ -17226,6 +17229,7 @@
                     "level",
                     "confidence",
                     "low_confidence",
+                    "stale",
                     "model_version",
                     "thresholds",
                     "predicted_at",

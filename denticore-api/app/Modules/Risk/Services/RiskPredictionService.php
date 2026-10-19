@@ -158,7 +158,7 @@ class RiskPredictionService
         }
 
         $alert = null;
-        if ($level === 'alto') {
+        if ($level === 'alto' && ! $prediction->isStale()) {
             $alert = new RiskAlert;
             $alert->forceFill([
                 'risk_prediction_id' => $prediction->id,

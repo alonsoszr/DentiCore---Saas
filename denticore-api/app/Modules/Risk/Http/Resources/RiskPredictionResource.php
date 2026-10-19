@@ -41,6 +41,7 @@ class RiskPredictionResource extends ApiResource
             'level' => $this->level,
             'confidence' => $this->confidence,
             'low_confidence' => (float) $this->confidence < self::LOW_CONFIDENCE,
+            'stale' => $this->isStale(),
             'model_version' => $this->modelVersion->version,
             'thresholds' => ['medium' => $this->threshold_medium, 'high' => $this->threshold_high],
             'predicted_at' => $this->predicted_at->toIso8601String(),

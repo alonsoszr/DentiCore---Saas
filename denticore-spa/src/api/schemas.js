@@ -638,6 +638,7 @@ export const riskPredictionResourceSchema = z.object({
   level: z.enum(['bajo', 'medio', 'alto']),
   confidence: z.string(),
   low_confidence: z.boolean(),
+  stale: z.boolean(),
   model_version: z.string(),
   thresholds: z.object({ medium: z.string(), high: z.string() }),
   predicted_at: z.string(),

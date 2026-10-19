@@ -15,6 +15,7 @@ use App\Modules\Risk\Models\RiskAlert;
 use App\Modules\Risk\Models\RiskPrediction;
 use App\Modules\Risk\Models\RiskVariableSet;
 use App\Modules\Risk\Services\CircuitBreaker;
+use App\Modules\Risk\Services\RiskVariableSetService;
 use App\Modules\Scheduling\Models\Notification;
 use App\Support\Outbox\OutboxMessage;
 use App\Support\Tenancy\TenantContext;
@@ -250,6 +251,63 @@ it('expires current predictions after 12 months', function () {
 
     inClinic($tenant, fn () => expect($old->fresh()->status)->toBe('vencida')->and($recent->fresh()->status)->toBe('vigente'));
 })->group('RN-60');
+
+it('marks predictions older than 12 months as stale without waiting for expiration', function (int $months, bool $stale) {
+    $this->travelTo(now()->setDate(2026, 10, 18)->setTime(12, 0));
+    ['tenant' => $tenant, 'patient' => $patient, 'set' => $set] = predictionScenario();
+    $prediction = RiskPrediction::factory()->high()->create([
+        'tenant_id' => $tenant->id,
+        'patient_id' => $patient->id,
+        'risk_variable_set_id' => $set->id,
+        'predicted_at' => now()->subMonthsNoOverflow($months),
+    ]);
+
+    $this->getJson("/api/v1/risk-predictions/{$prediction->uuid}")->assertOk()
+        ->assertJsonPath('data.status', 'vigente')
+        ->assertJsonPath('data.stale', $stale)
+        ->assertJsonPath('data.alert_id', null);
+
+    $this->actingAsRole('clinic_admin', $tenant);
+    $this->getJson("/api/v1/risk-predictions/{$prediction->uuid}")->assertOk()
+        ->assertJsonPath('data.stale', $stale);
+
+    expect(inClinic($tenant, fn () => RiskAlert::query()->count()))->toBe(0);
+})->with([[13, true], [12, false], [11, false]])->group('RNF-148', 'RN-60', 'CUS-56', 'TASK-108');
+
+it('marks a prediction as stale when a newer variable set is captured', function () {
+    $this->freezeTime();
+    ['tenant' => $tenant, 'patient' => $patient, 'set' => $set] = predictionScenario();
+    MlEngine::predicts(0.45);
+    $id = requestPrediction($patient, $set)->assertCreated()->assertJsonPath('data.stale', false)->json('data.id');
+
+    $this->patchJson("/api/v1/risk-variable-sets/{$set->uuid}", ['clinical' => RiskFixtures::clinical(['active_lesions' => 4])])
+        ->assertCreated();
+
+    $this->getJson("/api/v1/risk-predictions/{$id}")->assertOk()->assertJsonPath('data.stale', true);
+})->group('RNF-148', 'RN-60', 'CUS-56', 'TASK-108');
+
+it('creates no alert or notifications for high risk computed with superseded variables', function () {
+    $this->freezeTime();
+    ['tenant' => $tenant, 'dentist' => $dentist, 'patient' => $patient, 'set' => $set] = predictionScenario(['locked_at' => now()]);
+    $pendingNotifications = OutboxMessage::query()->where('type', 'notification.send')->count();
+    Http::fake([MlEngine::URL => function (Request $request) use ($tenant, $dentist, $patient, $set) {
+        inClinic($tenant, fn () => app(RiskVariableSetService::class)->upsert(
+            $patient, ['clinical' => RiskFixtures::clinical(['active_lesions' => 4])], $dentist, $set,
+        ));
+
+        return Http::response(MlEngine::response($request->data(), 0.85));
+    }]);
+
+    $response = requestPrediction($patient, $set)->assertCreated()->assertJsonPath('data.level', 'alto');
+
+    inClinic($tenant, function () use ($pendingNotifications) {
+        expect(RiskPrediction::query()->count())->toBe(1)
+            ->and(RiskAlert::query()->count())->toBe(0)
+            ->and(Notification::query()->where('event', 'alerta_riesgo_alto')->count())->toBe(0)
+            ->and(OutboxMessage::query()->where('type', 'notification.send')->count())->toBe($pendingNotifications);
+    });
+    $response->assertJsonPath('data.stale', true)->assertJsonPath('data.alert_id', null);
+})->group('RNF-148', 'RN-61', 'T-125', 'CUS-57', 'TASK-108');
 
 it('never writes clinical data on its own when it computes a prediction', function () {
     // RNF-147: el modelo solo deja su predicción, su alerta y sus avisos; el odontograma, la historia,
