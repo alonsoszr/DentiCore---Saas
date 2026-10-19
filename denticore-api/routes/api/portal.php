@@ -4,6 +4,7 @@ use App\Modules\Portal\Http\Controllers\PortalAppointmentController;
 use App\Modules\Portal\Http\Controllers\PortalArcoController;
 use App\Modules\Portal\Http\Controllers\PortalBudgetController;
 use App\Modules\Portal\Http\Controllers\PortalConsentController;
+use App\Modules\Portal\Http\Controllers\PortalDocumentController;
 use App\Modules\Portal\Http\Controllers\PortalOdontogramController;
 use App\Modules\Portal\Http\Controllers\PortalSubjectController;
 use Illuminate\Support\Facades\Route;
@@ -51,10 +52,20 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     });
 
 // MS-09 (E2), carril Compliance: derechos del titular desde el portal (SDD §4.3.10).
-Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:patient', 'portal.subject'])
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:patient'])
     ->prefix('portal')
     ->group(function () {
-        // CUS-63: solicitudes ARCO verificadas por la sesión (RF-182).
-        Route::get('/patients/{patient}/arco-requests', [PortalArcoController::class, 'index']);
-        Route::post('/patients/{patient}/arco-requests', [PortalArcoController::class, 'store'])->middleware('idempotent');
+        Route::middleware('portal.subject')->group(function () {
+            // CUS-63: solicitudes ARCO verificadas por la sesión (RF-182).
+            Route::get('/patients/{patient}/arco-requests', [PortalArcoController::class, 'index']);
+            Route::post('/patients/{patient}/arco-requests', [PortalArcoController::class, 'store'])->middleware('idempotent');
+
+            // CUS-62: copia de la historia clínica, también con la clínica suspendida (RF-180, RN-70).
+            Route::post('/patients/{patient}/clinical-record-copies', [PortalDocumentController::class, 'clinicalRecordCopy'])
+                ->middleware(['tenant.readonly_ok', 'idempotent']);
+        });
+
+        // CUS-62: el documento es polimórfico y `portal.subject` no lo resuelve; el controlador
+        // comprueba que sea una copia de un sujeto de la cuenta (404 si no, RN-03).
+        Route::get('/documents/{document}', [PortalDocumentController::class, 'show']);
     });

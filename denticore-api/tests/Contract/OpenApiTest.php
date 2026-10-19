@@ -230,6 +230,10 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson($arcoRequests, [...$arcoBody, 'confirmation_document_number' => '00000000'], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/arco-requests');
     $check($this->actingWithToken($admin)->getJson($arcoRequests), 'GET', '/patients/{patient}/arco-requests');
 
+    // Copia de la historia clínica en la clínica (CUS-62)
+    $check($this->actingWithToken($admin)->postJson("/api/v1/patients/{$adult->uuid}/clinical-record-copies", [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/clinical-record-copies');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/patients/'.fake()->uuid().'/clinical-record-copies', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/clinical-record-copies');
+
     // Antecedentes médicos
     $history = ['alergias' => ['Penicilina'], 'enfermedades' => [], 'medicamentos' => [], 'observaciones' => null];
     $check($this->actingWithToken($admin)->putJson("/api/v1/patients/{$adult->uuid}/medical-history", $history), 'PUT', '/patients/{patient}/medical-history');
@@ -633,6 +637,11 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->postJson("{$portalBase}/arco-requests", ['type' => 'oposicion', 'description' => 'No deseo recibir encuestas.'], $idempotent()), 'POST', '/portal/patients/{patient}/arco-requests');
     $check($this->postJson("{$portalBase}/arco-requests", ['type' => 'otro'], $idempotent()), 'POST', '/portal/patients/{patient}/arco-requests');
     $check($this->getJson("{$portalBase}/arco-requests"), 'GET', '/portal/patients/{patient}/arco-requests');
+    // Copia de la historia clínica desde el portal (CUS-62)
+    $portalCopy = $this->postJson("{$portalBase}/clinical-record-copies", [], $idempotent());
+    $check($portalCopy, 'POST', '/portal/patients/{patient}/clinical-record-copies');
+    $check($this->getJson('/api/v1/portal/documents/'.$portalCopy->json('data.id')), 'GET', '/portal/documents/{document}');
+    $check($this->getJson('/api/v1/portal/documents/'.fake()->uuid()), 'GET', '/portal/documents/{document}');
     $check($this->getJson("{$portalBase}/teeth/36/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
     $check($this->getJson("{$portalBase}/teeth/19/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
 

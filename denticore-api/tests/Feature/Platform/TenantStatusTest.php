@@ -40,6 +40,9 @@ function staffRoutes(): array
 {
     return collect(Route::getRoutes()->getRoutes())
         ->filter(fn ($route) => in_array('tenant.writable', $route->gatherMiddleware(), true))
+        // `tenant.readonly_ok` (RN-70): documentos de lectura permitidos con la clínica suspendida;
+        // cada uno lo prueba su tarea (p. ej. la copia de HC en ClinicalRecordCopyTest).
+        ->reject(fn ($route) => in_array('tenant.readonly_ok', $route->gatherMiddleware(), true))
         ->flatMap(fn ($route) => collect($route->methods())
             ->reject(fn ($method) => $method === 'HEAD')
             ->map(fn ($method) => [$method, $route->uri()]))
