@@ -10,14 +10,14 @@
         h3 { font-size: 11px; margin: 10px 0 4px; }
         table { width: 100%; border-collapse: collapse; }
         td, th { padding: 3px 4px; vertical-align: top; }
-        td.label { width: 28%; color: #4b5563; }
+        .label { width: 28%; color: #4b5563; text-align: left; font-weight: normal; }
         .rows th { text-align: left; border-bottom: 1px solid #9ca3af; }
         .rows td { border-bottom: 1px solid #e5e7eb; }
         .num { text-align: right; white-space: nowrap; }
         .muted { color: #6b7280; }
         .text { white-space: pre-wrap; }
-        .chart td { border: 1px solid #d1d5db; text-align: center; width: 6.25%; padding: 2px 1px; }
-        .chart .tooth { font-size: 8px; color: #4b5563; }
+        .chart td, .chart th { border: 1px solid #d1d5db; text-align: center; width: 6.25%; padding: 2px 1px; }
+        .chart .tooth { font-size: 8px; color: #4b5563; font-weight: normal; }
         .chart .gap td { border: none; height: 4px; }
         .rojo { color: #b91c1c; font-weight: bold; }
         .azul { color: #1d4ed8; font-weight: bold; }
@@ -26,7 +26,7 @@
     </style>
 </head>
 <body>
-    <table>
+    <table role="presentation">
         <tr>
             <td>
                 <div><strong>{{ $clinic->legal_name ?? $clinic->name }}</strong></div>
@@ -43,24 +43,24 @@
 
     <h2>Ficha del paciente</h2>
     <table>
-        <tr><td class="label">Nombre</td><td>{{ $patient->first_name }} {{ $patient->last_name }}</td></tr>
-        <tr><td class="label">Documento</td><td>{{ strtoupper((string) $patient->document_type) }} {{ $patient->document_number }}</td></tr>
-        <tr><td class="label">Fecha de nacimiento</td><td>{{ $patient->birth_date?->format('d/m/Y') }}</td></tr>
-        @if ($patient->sex)<tr><td class="label">Sexo</td><td>{{ $patient->sex }}</td></tr>@endif
-        @if ($patient->phone)<tr><td class="label">Teléfono</td><td>{{ $patient->phone }}</td></tr>@endif
-        @if ($patient->email)<tr><td class="label">Correo</td><td>{{ $patient->email }}</td></tr>@endif
-        @if ($patient->address)<tr><td class="label">Dirección</td><td>{{ $patient->address }}</td></tr>@endif
-        <tr><td class="label">Estado del archivo</td><td>{{ $patient->archive_status }}</td></tr>
+        <tr><th scope="row" class="label">Nombre</th><td>{{ $patient->first_name }} {{ $patient->last_name }}</td></tr>
+        <tr><th scope="row" class="label">Documento</th><td>{{ strtoupper((string) $patient->document_type) }} {{ $patient->document_number }}</td></tr>
+        <tr><th scope="row" class="label">Fecha de nacimiento</th><td>{{ $patient->birth_date?->format('d/m/Y') }}</td></tr>
+        @if ($patient->sex)<tr><th scope="row" class="label">Sexo</th><td>{{ $patient->sex }}</td></tr>@endif
+        @if ($patient->phone)<tr><th scope="row" class="label">Teléfono</th><td>{{ $patient->phone }}</td></tr>@endif
+        @if ($patient->email)<tr><th scope="row" class="label">Correo</th><td>{{ $patient->email }}</td></tr>@endif
+        @if ($patient->address)<tr><th scope="row" class="label">Dirección</th><td>{{ $patient->address }}</td></tr>@endif
+        <tr><th scope="row" class="label">Estado del archivo</th><td>{{ $patient->archive_status }}</td></tr>
     </table>
 
     <h3>Antecedentes médicos</h3>
     @php($history = $patient->medical_history)
     @if ($history)
         <table>
-            <tr><td class="label">Alergias</td><td>{{ implode(', ', $history['alergias'] ?? []) ?: 'Ninguna registrada' }}</td></tr>
-            <tr><td class="label">Enfermedades</td><td>{{ implode(', ', $history['enfermedades'] ?? []) ?: 'Ninguna registrada' }}</td></tr>
-            <tr><td class="label">Medicamentos</td><td>{{ implode(', ', $history['medicamentos'] ?? []) ?: 'Ninguno registrado' }}</td></tr>
-            @if (! empty($history['observaciones']))<tr><td class="label">Observaciones</td><td class="text">{{ $history['observaciones'] }}</td></tr>@endif
+            <tr><th scope="row" class="label">Alergias</th><td>{{ implode(', ', $history['alergias'] ?? []) ?: 'Ninguna registrada' }}</td></tr>
+            <tr><th scope="row" class="label">Enfermedades</th><td>{{ implode(', ', $history['enfermedades'] ?? []) ?: 'Ninguna registrada' }}</td></tr>
+            <tr><th scope="row" class="label">Medicamentos</th><td>{{ implode(', ', $history['medicamentos'] ?? []) ?: 'Ninguno registrado' }}</td></tr>
+            @if (! empty($history['observaciones']))<tr><th scope="row" class="label">Observaciones</th><td class="text">{{ $history['observaciones'] }}</td></tr>@endif
         </table>
     @else
         <div class="muted">Sin antecedentes registrados.</div>
@@ -117,8 +117,14 @@
                     <tr>
                         @if (count($row) < 16)<td colspan="3" style="border: none;"></td>@endif
                         @foreach ($row as $tooth)
+                            <th scope="col" class="tooth">{{ $tooth }}</th>
+                        @endforeach
+                        @if (count($row) < 16)<td colspan="3" style="border: none;"></td>@endif
+                    </tr>
+                    <tr>
+                        @if (count($row) < 16)<td colspan="3" style="border: none;"></td>@endif
+                        @foreach ($row as $tooth)
                             <td>
-                                <div class="tooth">{{ $tooth }}</div>
                                 @foreach ($chart[$tooth] ?? [] as $mark)
                                     <div class="{{ $mark['color'] }}">{{ $mark['label'] }}</div>
                                 @endforeach
@@ -178,7 +184,7 @@
                 <table>
                     @foreach (['chief_complaint' => 'Motivo de consulta', 'current_illness' => 'Enfermedad actual', 'extraoral_exam' => 'Examen extraoral', 'intraoral_exam' => 'Examen intraoral', 'indications' => 'Indicaciones'] as $field => $label)
                         @if ($attention->note->getAttribute($field))
-                            <tr><td class="label">{{ $label }}</td><td class="text">{{ $attention->note->getAttribute($field) }}</td></tr>
+                            <tr><th scope="row" class="label">{{ $label }}</th><td class="text">{{ $attention->note->getAttribute($field) }}</td></tr>
                         @endif
                     @endforeach
                 </table>
@@ -186,6 +192,7 @@
             @if ($attention->diagnoses->isNotEmpty())
                 <h3>Diagnósticos</h3>
                 <table class="rows">
+                    <tr><th>Código</th><th>Descripción</th><th>Tipo</th></tr>
                     @foreach ($attention->diagnoses as $diagnosis)
                         <tr><td>{{ $diagnosis->cie10_code }}</td><td>{{ $diagnosis->cie10?->description }}</td><td>{{ $diagnosis->type }}</td></tr>
                     @endforeach
