@@ -2411,6 +2411,409 @@
                 }
             }
         },
+        "/audit-logs": {
+            "get": {
+                "operationId": "auditLog.index",
+                "tags": [
+                    "AuditLog"
+                ],
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "auth.login_ok",
+                                "auth.login_failed",
+                                "auth.locked",
+                                "auth.logout",
+                                "auth.2fa_configured",
+                                "auth.2fa_reset",
+                                "auth.password_changed",
+                                "auth.session_revoked",
+                                "tenant.created",
+                                "tenant.suspended",
+                                "tenant.reactivated",
+                                "tenant.cancelled",
+                                "tenant.purged",
+                                "tenant.plan_changed",
+                                "tenant.key_rotated",
+                                "model.registered",
+                                "model.activated",
+                                "user.created",
+                                "user.updated",
+                                "user.role_changed",
+                                "user.deactivated",
+                                "user.reactivated",
+                                "user.unlocked",
+                                "user.data_officer_changed",
+                                "patient.created",
+                                "patient.identity_updated",
+                                "patient.deceased_marked",
+                                "patient.merged",
+                                "patient.blocked",
+                                "patient.archived",
+                                "patient.deleted",
+                                "representative.created",
+                                "representative.ended",
+                                "consent.granted",
+                                "consent.purpose_revoked",
+                                "informed_consent.signed",
+                                "informed_consent.revoked",
+                                "attachment.added",
+                                "attachment.voided",
+                                "clinical_record.viewed",
+                                "attention.opened",
+                                "attention.closed",
+                                "attention.auto_closed",
+                                "note.saved",
+                                "diagnosis.added",
+                                "addendum.added",
+                                "odontogram.entry_added",
+                                "odontogram.entry_corrected",
+                                "finding.no_treat",
+                                "ai.suggestion_requested",
+                                "ai.suggestion_decided",
+                                "risk.variables_captured",
+                                "risk.predicted",
+                                "risk.alert_acknowledged",
+                                "followup.recorded",
+                                "plan.created",
+                                "plan.status_changed",
+                                "budget.issued",
+                                "budget.decided",
+                                "budget.expired",
+                                "budget.shared",
+                                "procedure.performed",
+                                "payment.registered",
+                                "payment.voided",
+                                "appointment.created",
+                                "appointment.rescheduled",
+                                "appointment.cancelled",
+                                "appointment.confirmed",
+                                "appointment.checked_in",
+                                "appointment.no_show",
+                                "document.downloaded",
+                                "export.requested",
+                                "export.downloaded",
+                                "arco.received",
+                                "arco.resolved",
+                                "incident.registered",
+                                "incident.notified",
+                                "audit.exported",
+                                "import.confirmed",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "resource_type",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 60
+                        }
+                    },
+                    {
+                        "name": "resource_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `AuditLogResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AuditLogResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audit-logs/exports": {
+            "post": {
+                "operationId": "auditLog.export",
+                "tags": [
+                    "AuditLog"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExportAuditLogRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Transfer-Encoding": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string",
+                                    "enum": [
+                                        "chunked"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
@@ -8482,6 +8885,409 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/audit-logs": {
+            "get": {
+                "operationId": "platformAuditLog.index",
+                "tags": [
+                    "PlatformAuditLog"
+                ],
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "auth.login_ok",
+                                "auth.login_failed",
+                                "auth.locked",
+                                "auth.logout",
+                                "auth.2fa_configured",
+                                "auth.2fa_reset",
+                                "auth.password_changed",
+                                "auth.session_revoked",
+                                "tenant.created",
+                                "tenant.suspended",
+                                "tenant.reactivated",
+                                "tenant.cancelled",
+                                "tenant.purged",
+                                "tenant.plan_changed",
+                                "tenant.key_rotated",
+                                "model.registered",
+                                "model.activated",
+                                "user.created",
+                                "user.updated",
+                                "user.role_changed",
+                                "user.deactivated",
+                                "user.reactivated",
+                                "user.unlocked",
+                                "user.data_officer_changed",
+                                "patient.created",
+                                "patient.identity_updated",
+                                "patient.deceased_marked",
+                                "patient.merged",
+                                "patient.blocked",
+                                "patient.archived",
+                                "patient.deleted",
+                                "representative.created",
+                                "representative.ended",
+                                "consent.granted",
+                                "consent.purpose_revoked",
+                                "informed_consent.signed",
+                                "informed_consent.revoked",
+                                "attachment.added",
+                                "attachment.voided",
+                                "clinical_record.viewed",
+                                "attention.opened",
+                                "attention.closed",
+                                "attention.auto_closed",
+                                "note.saved",
+                                "diagnosis.added",
+                                "addendum.added",
+                                "odontogram.entry_added",
+                                "odontogram.entry_corrected",
+                                "finding.no_treat",
+                                "ai.suggestion_requested",
+                                "ai.suggestion_decided",
+                                "risk.variables_captured",
+                                "risk.predicted",
+                                "risk.alert_acknowledged",
+                                "followup.recorded",
+                                "plan.created",
+                                "plan.status_changed",
+                                "budget.issued",
+                                "budget.decided",
+                                "budget.expired",
+                                "budget.shared",
+                                "procedure.performed",
+                                "payment.registered",
+                                "payment.voided",
+                                "appointment.created",
+                                "appointment.rescheduled",
+                                "appointment.cancelled",
+                                "appointment.confirmed",
+                                "appointment.checked_in",
+                                "appointment.no_show",
+                                "document.downloaded",
+                                "export.requested",
+                                "export.downloaded",
+                                "arco.received",
+                                "arco.resolved",
+                                "incident.registered",
+                                "incident.notified",
+                                "audit.exported",
+                                "import.confirmed",
+                                null
+                            ]
+                        }
+                    },
+                    {
+                        "name": "resource_type",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 60
+                        }
+                    },
+                    {
+                        "name": "resource_id",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `PlatformAuditLogResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PlatformAuditLogResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/platform/audit-logs/exports": {
+            "post": {
+                "operationId": "platformAuditLog.export",
+                "tags": [
+                    "PlatformAuditLog"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExportAuditLogRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Transfer-Encoding": {
+                                "required": true,
+                                "schema": {
+                                    "type": "string",
+                                    "enum": [
+                                        "chunked"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "403": {
                         "description": "Acceso denegado",
@@ -15517,6 +16323,110 @@
                 ],
                 "title": "AttentionResource"
             },
+            "AuditLogResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "actor_role": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "user": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "resource_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "resource_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "patient_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "changed_fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "metadata": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": {}
+                    },
+                    "ip_address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "user_agent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "correlation_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "created_at",
+                    "action",
+                    "actor_role",
+                    "user",
+                    "resource_type",
+                    "resource_id",
+                    "patient_id",
+                    "changed_fields",
+                    "metadata",
+                    "ip_address",
+                    "user_agent",
+                    "correlation_id"
+                ],
+                "title": "AuditLogResource"
+            },
             "BudgetLineRequest": {
                 "type": "object",
                 "description": "Descuento de una l\u00ednea del borrador (CUS-35 paso 3; RN-31): 0,00 a 100,00 %. El motivo (5 a 200\ncaracteres si el descuento es mayor que 0) y el tope de la cl\u00ednica los aplica BudgetService.",
@@ -16292,6 +17202,134 @@
                     "outdated"
                 ],
                 "title": "ConsentResource"
+            },
+            "ExportAuditLogRequest": {
+                "type": "object",
+                "description": "Exportaci\u00f3n CSV de la bit\u00e1cora (CUS-66, RF-187): los mismos filtros, con el rango de fechas\nobligatorio y de 31 d\u00edas como m\u00e1ximo, porque el CSV se genera en la respuesta.",
+                "properties": {
+                    "from": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "to": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "user_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "action": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "auth.login_ok",
+                            "auth.login_failed",
+                            "auth.locked",
+                            "auth.logout",
+                            "auth.2fa_configured",
+                            "auth.2fa_reset",
+                            "auth.password_changed",
+                            "auth.session_revoked",
+                            "tenant.created",
+                            "tenant.suspended",
+                            "tenant.reactivated",
+                            "tenant.cancelled",
+                            "tenant.purged",
+                            "tenant.plan_changed",
+                            "tenant.key_rotated",
+                            "model.registered",
+                            "model.activated",
+                            "user.created",
+                            "user.updated",
+                            "user.role_changed",
+                            "user.deactivated",
+                            "user.reactivated",
+                            "user.unlocked",
+                            "user.data_officer_changed",
+                            "patient.created",
+                            "patient.identity_updated",
+                            "patient.deceased_marked",
+                            "patient.merged",
+                            "patient.blocked",
+                            "patient.archived",
+                            "patient.deleted",
+                            "representative.created",
+                            "representative.ended",
+                            "consent.granted",
+                            "consent.purpose_revoked",
+                            "informed_consent.signed",
+                            "informed_consent.revoked",
+                            "attachment.added",
+                            "attachment.voided",
+                            "clinical_record.viewed",
+                            "attention.opened",
+                            "attention.closed",
+                            "attention.auto_closed",
+                            "note.saved",
+                            "diagnosis.added",
+                            "addendum.added",
+                            "odontogram.entry_added",
+                            "odontogram.entry_corrected",
+                            "finding.no_treat",
+                            "ai.suggestion_requested",
+                            "ai.suggestion_decided",
+                            "risk.variables_captured",
+                            "risk.predicted",
+                            "risk.alert_acknowledged",
+                            "followup.recorded",
+                            "plan.created",
+                            "plan.status_changed",
+                            "budget.issued",
+                            "budget.decided",
+                            "budget.expired",
+                            "budget.shared",
+                            "procedure.performed",
+                            "payment.registered",
+                            "payment.voided",
+                            "appointment.created",
+                            "appointment.rescheduled",
+                            "appointment.cancelled",
+                            "appointment.confirmed",
+                            "appointment.checked_in",
+                            "appointment.no_show",
+                            "document.downloaded",
+                            "export.requested",
+                            "export.downloaded",
+                            "arco.received",
+                            "arco.resolved",
+                            "incident.registered",
+                            "incident.notified",
+                            "audit.exported",
+                            "import.confirmed",
+                            null
+                        ]
+                    },
+                    "resource_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 60
+                    },
+                    "resource_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "from",
+                    "to"
+                ],
+                "title": "ExportAuditLogRequest"
             },
             "FindingNoTreatDecisionResource": {
                 "type": "object",
@@ -17296,6 +18334,122 @@
                     "items"
                 ],
                 "title": "PlanItemsRequest"
+            },
+            "PlatformAuditLogResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "clinic": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "actor_role": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "user": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "resource_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "resource_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "changed_fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "metadata": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "additionalProperties": {}
+                    },
+                    "ip_address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "user_agent": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "correlation_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "created_at",
+                    "clinic",
+                    "action",
+                    "actor_role",
+                    "user",
+                    "resource_type",
+                    "resource_id",
+                    "changed_fields",
+                    "metadata",
+                    "ip_address",
+                    "user_agent",
+                    "correlation_id"
+                ],
+                "title": "PlatformAuditLogResource"
             },
             "PortalSubjectResource": {
                 "type": "object",

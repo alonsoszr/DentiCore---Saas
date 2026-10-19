@@ -2,8 +2,10 @@
 
 use App\Modules\Compliance\Http\Controllers\ArcoCancellationController;
 use App\Modules\Compliance\Http\Controllers\ArcoRequestController;
+use App\Modules\Compliance\Http\Controllers\AuditLogController;
 use App\Modules\Compliance\Http\Controllers\ClinicalRecordCopyController;
 use App\Modules\Compliance\Http\Controllers\GeneratedDocumentController;
+use App\Modules\Compliance\Http\Controllers\PlatformAuditLogController;
 use Illuminate\Support\Facades\Route;
 
 // M11 — Cumplimiento y auditoría (SDD §4.3.11). STAFF (SDD §4.2). Las demás rutas llegan con sus tareas.
@@ -32,4 +34,16 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
     // CUS-62: copia de la historia clínica, también con la clínica suspendida (RF-180, RN-70).
     Route::post('/patients/{patient}/clinical-record-copies', [ClinicalRecordCopyController::class, 'store'])
         ->middleware(['role:clinic_admin,dentist,receptionist', 'tenant.readonly_ok', 'idempotent']);
+
+    // CUS-66: bitácora de la propia clínica, consulta y exportación CSV (RF-187).
+    Route::middleware('role:clinic_admin')->group(function () {
+        Route::get('/audit-logs', [AuditLogController::class, 'index']);
+        Route::post('/audit-logs/exports', [AuditLogController::class, 'export']);
+    });
+});
+
+// PLAT (SDD §4.2): bitácora de la plataforma y de todas las clínicas, sin pacientes (CUS-66, RN-04).
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'role:super_admin'])->prefix('platform')->group(function () {
+    Route::get('/audit-logs', [PlatformAuditLogController::class, 'index']);
+    Route::post('/audit-logs/exports', [PlatformAuditLogController::class, 'export']);
 });

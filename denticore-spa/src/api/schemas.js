@@ -180,6 +180,22 @@ export const attentionResourceSchema = z.object({
     .optional(),
 })
 
+export const auditLogResourceSchema = z.object({
+  id: z.string(),
+  created_at: z.string().datetime({ offset: true }),
+  action: z.string(),
+  actor_role: z.union([z.string(), z.null()]),
+  user: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+  resource_type: z.union([z.string(), z.null()]),
+  resource_id: z.union([z.string(), z.null()]),
+  patient_id: z.union([z.string(), z.null()]),
+  changed_fields: z.array(z.string()),
+  metadata: z.union([z.record(z.string(), z.any()), z.null()]),
+  ip_address: z.union([z.string(), z.null()]),
+  user_agent: z.union([z.string(), z.null()]),
+  correlation_id: z.union([z.string(), z.null()]),
+})
+
 export const budgetLineRequestSchema = z
   .object({
     discount_pct: z.number().gte(0).lte(100),
@@ -329,6 +345,102 @@ export const consentResourceSchema = z.object({
     .describe('RN-14: finalidades revocadas del consentimiento, en orden alfabético (CUS-18).'),
   outdated: z.boolean(),
 })
+
+export const exportAuditLogRequestSchema = z
+  .object({
+    from: z.string().date(),
+    to: z.string().date(),
+    user_id: z.union([z.string().uuid(), z.null()]).optional(),
+    action: z
+      .union([
+        z.literal('auth.login_ok'),
+        z.literal('auth.login_failed'),
+        z.literal('auth.locked'),
+        z.literal('auth.logout'),
+        z.literal('auth.2fa_configured'),
+        z.literal('auth.2fa_reset'),
+        z.literal('auth.password_changed'),
+        z.literal('auth.session_revoked'),
+        z.literal('tenant.created'),
+        z.literal('tenant.suspended'),
+        z.literal('tenant.reactivated'),
+        z.literal('tenant.cancelled'),
+        z.literal('tenant.purged'),
+        z.literal('tenant.plan_changed'),
+        z.literal('tenant.key_rotated'),
+        z.literal('model.registered'),
+        z.literal('model.activated'),
+        z.literal('user.created'),
+        z.literal('user.updated'),
+        z.literal('user.role_changed'),
+        z.literal('user.deactivated'),
+        z.literal('user.reactivated'),
+        z.literal('user.unlocked'),
+        z.literal('user.data_officer_changed'),
+        z.literal('patient.created'),
+        z.literal('patient.identity_updated'),
+        z.literal('patient.deceased_marked'),
+        z.literal('patient.merged'),
+        z.literal('patient.blocked'),
+        z.literal('patient.archived'),
+        z.literal('patient.deleted'),
+        z.literal('representative.created'),
+        z.literal('representative.ended'),
+        z.literal('consent.granted'),
+        z.literal('consent.purpose_revoked'),
+        z.literal('informed_consent.signed'),
+        z.literal('informed_consent.revoked'),
+        z.literal('attachment.added'),
+        z.literal('attachment.voided'),
+        z.literal('clinical_record.viewed'),
+        z.literal('attention.opened'),
+        z.literal('attention.closed'),
+        z.literal('attention.auto_closed'),
+        z.literal('note.saved'),
+        z.literal('diagnosis.added'),
+        z.literal('addendum.added'),
+        z.literal('odontogram.entry_added'),
+        z.literal('odontogram.entry_corrected'),
+        z.literal('finding.no_treat'),
+        z.literal('ai.suggestion_requested'),
+        z.literal('ai.suggestion_decided'),
+        z.literal('risk.variables_captured'),
+        z.literal('risk.predicted'),
+        z.literal('risk.alert_acknowledged'),
+        z.literal('followup.recorded'),
+        z.literal('plan.created'),
+        z.literal('plan.status_changed'),
+        z.literal('budget.issued'),
+        z.literal('budget.decided'),
+        z.literal('budget.expired'),
+        z.literal('budget.shared'),
+        z.literal('procedure.performed'),
+        z.literal('payment.registered'),
+        z.literal('payment.voided'),
+        z.literal('appointment.created'),
+        z.literal('appointment.rescheduled'),
+        z.literal('appointment.cancelled'),
+        z.literal('appointment.confirmed'),
+        z.literal('appointment.checked_in'),
+        z.literal('appointment.no_show'),
+        z.literal('document.downloaded'),
+        z.literal('export.requested'),
+        z.literal('export.downloaded'),
+        z.literal('arco.received'),
+        z.literal('arco.resolved'),
+        z.literal('incident.registered'),
+        z.literal('incident.notified'),
+        z.literal('audit.exported'),
+        z.literal('import.confirmed'),
+        z.literal(null),
+      ])
+      .optional(),
+    resource_type: z.union([z.string().max(60), z.null()]).optional(),
+    resource_id: z.union([z.string().uuid(), z.null()]).optional(),
+  })
+  .describe(
+    'Exportación CSV de la bitácora (CUS-66, RF-187): los mismos filtros, con el rango de fechas\nobligatorio y de 31 días como máximo, porque el CSV se genera en la respuesta.',
+  )
 
 export const findingNoTreatDecisionResourceSchema = z.object({
   id: z.string(),
@@ -539,6 +651,22 @@ export const planItemsRequestSchema = z
   .describe(
     'Ítems nuevos de un plan (CUS-33; RF-110, RF-111, RN-26): procedimiento activo del catálogo,\npieza, superficies, cantidad (1–32), sesión opcional, observaciones y hallazgos que atiende.\nLa pieza y las superficies según el procedimiento las valida ClinicalValidator en el servicio.',
   )
+
+export const platformAuditLogResourceSchema = z.object({
+  id: z.string(),
+  created_at: z.string().datetime({ offset: true }),
+  clinic: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+  action: z.string(),
+  actor_role: z.union([z.string(), z.null()]),
+  user: z.union([z.object({ id: z.string(), name: z.string() }), z.null()]),
+  resource_type: z.union([z.string(), z.null()]),
+  resource_id: z.union([z.string(), z.null()]),
+  changed_fields: z.array(z.string()),
+  metadata: z.union([z.record(z.string(), z.any()), z.null()]),
+  ip_address: z.union([z.string(), z.null()]),
+  user_agent: z.union([z.string(), z.null()]),
+  correlation_id: z.union([z.string(), z.null()]),
+})
 
 export const portalSubjectResourceSchema = z.object({
   id: z.string(),
