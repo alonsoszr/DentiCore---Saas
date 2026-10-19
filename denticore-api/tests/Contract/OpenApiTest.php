@@ -223,6 +223,13 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson($revocations, ['purposes' => ['notificaciones']]), 'POST', '/patients/{patient}/consents/{consent}/revocations');
     $check($this->actingWithToken($admin)->postJson("{$consents}/".fake()->uuid().'/revocations', ['purposes' => ['notificaciones']]), 'POST', '/patients/{patient}/consents/{consent}/revocations');
 
+    // Solicitudes ARCO en la clínica (CUS-63)
+    $arcoRequests = "/api/v1/patients/{$adult->uuid}/arco-requests";
+    $arcoBody = ['type' => 'acceso', 'requested_by' => 'titular', 'description' => 'Solicito la copia de mi historia clínica.', 'confirmation_document_number' => '45678912'];
+    $check($this->actingWithToken($admin)->postJson($arcoRequests, $arcoBody, ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/arco-requests');
+    $check($this->actingWithToken($admin)->postJson($arcoRequests, [...$arcoBody, 'confirmation_document_number' => '00000000'], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/arco-requests');
+    $check($this->actingWithToken($admin)->getJson($arcoRequests), 'GET', '/patients/{patient}/arco-requests');
+
     // Antecedentes médicos
     $history = ['alergias' => ['Penicilina'], 'enfermedades' => [], 'medicamentos' => [], 'observaciones' => null];
     $check($this->actingWithToken($admin)->putJson("/api/v1/patients/{$adult->uuid}/medical-history", $history), 'PUT', '/patients/{patient}/medical-history');
@@ -622,6 +629,10 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->postJson($portalRevocations, ['purposes' => ['atencion']]), 'POST', '/portal/patients/{patient}/consents/{consent}/revocations');
     $check($this->postJson($portalRevocations, ['purposes' => ['atencion']]), 'POST', '/portal/patients/{patient}/consents/{consent}/revocations');
     $this->actingWithToken($portalUser);
+    // Solicitudes ARCO desde el portal (CUS-63)
+    $check($this->postJson("{$portalBase}/arco-requests", ['type' => 'oposicion', 'description' => 'No deseo recibir encuestas.'], $idempotent()), 'POST', '/portal/patients/{patient}/arco-requests');
+    $check($this->postJson("{$portalBase}/arco-requests", ['type' => 'otro'], $idempotent()), 'POST', '/portal/patients/{patient}/arco-requests');
+    $check($this->getJson("{$portalBase}/arco-requests"), 'GET', '/portal/patients/{patient}/arco-requests');
     $check($this->getJson("{$portalBase}/teeth/36/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
     $check($this->getJson("{$portalBase}/teeth/19/history"), 'GET', '/portal/patients/{patient}/teeth/{tooth}/history');
 

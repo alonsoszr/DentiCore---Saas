@@ -1025,6 +1025,170 @@
                 }
             }
         },
+        "/patients/{patient}/arco-requests": {
+            "get": {
+                "operationId": "arcoRequest.indexForPatient",
+                "tags": [
+                    "ArcoRequest"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ArcoRequestResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ArcoRequestResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "arcoRequest.store",
+                "tags": [
+                    "ArcoRequest"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreArcoRequestRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ArcoRequestResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ArcoRequestResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/patients/{patient}/attentions": {
             "get": {
                 "operationId": "attention.index",
@@ -8297,6 +8461,191 @@
                 }
             }
         },
+        "/portal/patients/{patient}/arco-requests": {
+            "get": {
+                "operationId": "portalArco.index",
+                "tags": [
+                    "PortalArco"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `ArcoRequestResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ArcoRequestResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "portalArco.store",
+                "tags": [
+                    "PortalArco"
+                ],
+                "parameters": [
+                    {
+                        "name": "patient",
+                        "in": "path",
+                        "required": true,
+                        "description": "The patient UUID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "acceso",
+                                            "rectificacion",
+                                            "cancelacion",
+                                            "oposicion",
+                                            "portabilidad"
+                                        ]
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "minLength": 10,
+                                        "maxLength": 2000
+                                    }
+                                },
+                                "required": [
+                                    "type",
+                                    "description"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`ArcoRequestResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ArcoRequestResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "description": "Acceso denegado",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Demasiadas solicitudes",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Falta la cabecera Idempotency-Key",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Solicitud en curso con la misma clave",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProblemDetails"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/portal/patients/{patient}/budgets": {
             "get": {
                 "operationId": "portalBudget.index",
@@ -13884,6 +14233,90 @@
                 ],
                 "title": "AppointmentTypeResource"
             },
+            "ArcoRequestResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "requested_by": {
+                        "type": "string"
+                    },
+                    "representative_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "identity_verification": {
+                        "type": "string"
+                    },
+                    "channel": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "received_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "due_date": {
+                        "type": "string"
+                    },
+                    "resolved_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "within_deadline": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "response": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "denial_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "files_count": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "requested_by",
+                    "representative_id",
+                    "identity_verification",
+                    "channel",
+                    "description",
+                    "status",
+                    "received_at",
+                    "due_date",
+                    "resolved_at",
+                    "within_deadline",
+                    "response",
+                    "denial_reason"
+                ],
+                "title": "ArcoRequestResource"
+            },
             "AttentionAddendumResource": {
                 "type": "object",
                 "properties": {
@@ -16778,6 +17211,60 @@
                     "created_by"
                 ],
                 "title": "ScheduleBlockResource"
+            },
+            "StoreArcoRequestRequest": {
+                "type": "object",
+                "description": "Solicitud ARCO presentada en la cl\u00ednica (CUS-63; RF-182): tipo, solicitante, descripci\u00f3n,\nadjuntos y el documento del titular o del representante, revisado por el personal (SRS \u00a711.15).",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "acceso",
+                            "rectificacion",
+                            "cancelacion",
+                            "oposicion",
+                            "portabilidad"
+                        ]
+                    },
+                    "requested_by": {
+                        "type": "string",
+                        "enum": [
+                            "titular",
+                            "representante"
+                        ]
+                    },
+                    "legal_representative_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "description": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 2000
+                    },
+                    "confirmation_document_number": {
+                        "type": "string",
+                        "maxLength": 12
+                    },
+                    "files": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "binary",
+                            "contentMediaType": "application/octet-stream",
+                            "description": "5 MB por adjunto (un documento escaneado): dentro del m\u00e1ximo de 10 MB de RNF-103 y del\nl\u00edmite seguro de carga de SonarCloud (S5693, 8 000 000 bytes)."
+                        },
+                        "maxItems": 5
+                    }
+                },
+                "required": [
+                    "type",
+                    "requested_by",
+                    "legal_representative_id",
+                    "description",
+                    "confirmation_document_number"
+                ],
+                "title": "StoreArcoRequestRequest"
             },
             "StorePatientRequest": {
                 "type": "object",

@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Portal\Http\Controllers\PortalAppointmentController;
+use App\Modules\Portal\Http\Controllers\PortalArcoController;
 use App\Modules\Portal\Http\Controllers\PortalBudgetController;
 use App\Modules\Portal\Http\Controllers\PortalConsentController;
 use App\Modules\Portal\Http\Controllers\PortalOdontogramController;
@@ -47,4 +48,13 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
 
         // CUS-46: disponibilidad para el autoagendamiento (RF-146, RF-148).
         Route::get('/availability', [PortalAppointmentController::class, 'availability'])->middleware('portal.self_booking');
+    });
+
+// MS-09 (E2), carril Compliance: derechos del titular desde el portal (SDD §4.3.10).
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:patient', 'portal.subject'])
+    ->prefix('portal')
+    ->group(function () {
+        // CUS-63: solicitudes ARCO verificadas por la sesión (RF-182).
+        Route::get('/patients/{patient}/arco-requests', [PortalArcoController::class, 'index']);
+        Route::post('/patients/{patient}/arco-requests', [PortalArcoController::class, 'store'])->middleware('idempotent');
     });

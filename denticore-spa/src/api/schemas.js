@@ -62,6 +62,24 @@ export const appointmentTypeResourceSchema = z.object({
   is_active: z.boolean(),
 })
 
+export const arcoRequestResourceSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  requested_by: z.string(),
+  representative_id: z.union([z.string(), z.null()]),
+  identity_verification: z.string(),
+  channel: z.string(),
+  description: z.string(),
+  status: z.string(),
+  received_at: z.string().datetime({ offset: true }),
+  due_date: z.string(),
+  resolved_at: z.union([z.string().datetime({ offset: true }), z.null()]),
+  within_deadline: z.union([z.boolean(), z.null()]),
+  response: z.union([z.string(), z.null()]),
+  denial_reason: z.union([z.string(), z.null()]),
+  files_count: z.number().int().optional(),
+})
+
 export const attentionAddendumResourceSchema = z.object({
   id: z.string(),
   text: z.string(),
@@ -703,6 +721,29 @@ export const scheduleBlockResourceSchema = z.object({
   reason: z.string(),
   created_by: z.object({ id: z.string(), name: z.string() }),
 })
+
+export const storeArcoRequestRequestSchema = z
+  .object({
+    type: z.enum(['acceso', 'rectificacion', 'cancelacion', 'oposicion', 'portabilidad']),
+    requested_by: z.enum(['titular', 'representante']),
+    legal_representative_id: z.string().uuid(),
+    description: z.string().min(10).max(2000),
+    confirmation_document_number: z.string().max(12),
+    files: z
+      .array(
+        z
+          .string()
+          .base64()
+          .describe(
+            '5 MB por adjunto (un documento escaneado): dentro del máximo de 10 MB de RNF-103 y del\nlímite seguro de carga de SonarCloud (S5693, 8 000 000 bytes).',
+          ),
+      )
+      .max(5)
+      .optional(),
+  })
+  .describe(
+    'Solicitud ARCO presentada en la clínica (CUS-63; RF-182): tipo, solicitante, descripción,\nadjuntos y el documento del titular o del representante, revisado por el personal (SRS §11.15).',
+  )
 
 export const storePatientRequestSchema = z
   .object({
