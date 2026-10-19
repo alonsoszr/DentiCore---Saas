@@ -52,3 +52,6 @@ Schedule::command('notifications:prune-inapp')->dailyAt('03:15')->onOneServer()-
 // Aviso del plazo de las solicitudes ARCO (SDD §1.9; CUS-64 FA-2, RF-185): a diario a las 08:00 de
 // Lima, zona de las clínicas del Perú; es idempotente (TASK-104, carril Compliance de MS-09).
 Schedule::command('arco:deadline-reminders')->dailyAt('08:00')->timezone('America/Lima')->onOneServer()->withoutOverlapping();
+
+// Retención de la HC, sin borrado físico (SDD §1.9, §5.12; CUS-69, RF-190).
+Schedule::command('retention:apply')->dailyAt('02:00')->onOneServer()->withoutOverlapping();
