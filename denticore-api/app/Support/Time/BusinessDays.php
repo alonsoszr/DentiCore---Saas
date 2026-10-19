@@ -26,4 +26,27 @@ final class BusinessDays
 
         return $date;
     }
+
+    /**
+     * Días hábiles que faltan desde `$today` hasta `$due` (CUS-64, paso 2): cuenta los días
+     * hábiles posteriores a hoy hasta el plazo inclusive. Vencido, el número es negativo.
+     */
+    public static function remaining(DateTimeInterface $today, DateTimeInterface $due): int
+    {
+        $from = CarbonImmutable::instance($today)->startOfDay();
+        $to = CarbonImmutable::instance($due)->startOfDay();
+
+        if ($to->lessThan($from)) {
+            return -self::remaining($to, $from);
+        }
+
+        $count = 0;
+        for ($date = $from->addDay(); $date->lessThanOrEqualTo($to); $date = $date->addDay()) {
+            if (! $date->isWeekend()) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
 }

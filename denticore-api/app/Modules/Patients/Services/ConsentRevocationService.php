@@ -27,16 +27,17 @@ class ConsentRevocationService
     /**
      * @param  list<string>  $purposes  Claves de Consent::PURPOSES.
      * @param  'presencial'|'portal'|'arco'  $channel
+     * @param  int|null  $arcoRequestId  Solicitud ARCO de oposición o cancelación que la origina (CUS-64).
      *
      * @throws BusinessRuleException|ValidationException|ModelNotFoundException<Consent>
      */
-    public function revoke(Patient $patient, Consent $consent, array $purposes, ?string $reason, User $actor, string $channel): Consent
+    public function revoke(Patient $patient, Consent $consent, array $purposes, ?string $reason, User $actor, string $channel, ?int $arcoRequestId = null): Consent
     {
         if ($consent->patient_id !== $patient->id) {
             throw (new ModelNotFoundException)->setModel(Consent::class, [$consent->uuid]);
         }
 
-        return DB::transaction(function () use ($consent, $purposes, $reason, $actor, $channel): Consent {
+        return DB::transaction(function () use ($consent, $purposes, $reason, $actor, $channel, $arcoRequestId): Consent {
             /** @var Consent $locked */
             $locked = Consent::query()->whereKey($consent->id)->lockForUpdate()->firstOrFail();
 
@@ -54,6 +55,7 @@ class ConsentRevocationService
                     'channel' => $channel,
                     'revoked_by_user_id' => $actor->id,
                     'reason' => $reason,
+                    'arco_request_id' => $arcoRequestId,
                 ])->save();
             }
 

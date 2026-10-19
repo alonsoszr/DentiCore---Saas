@@ -23,6 +23,15 @@ it('counts from the next business day and skips weekends without holidays', func
     'fin de año' => ['2026-12-28', '2027-01-11'],
 ])->group('DD-26', 'RN-69');
 
+it('counts the business days left until the deadline', function (string $today, string $due, int $left) {
+    expect(BusinessDays::remaining(CarbonImmutable::parse($today), CarbonImmutable::parse($due)))->toBe($left);
+})->with([
+    'aviso del jueves' => ['2026-11-12', '2026-11-16', 2],
+    'el mismo día' => ['2026-11-16', '2026-11-16', 0],
+    'desde el sábado' => ['2026-11-14', '2026-11-16', 1],
+    'vencida' => ['2026-11-18', '2026-11-16', -2],
+])->group('DD-26', 'CUS-64');
+
 it('keeps the time of day out of the deadline', function () {
     expect(BusinessDays::addWorkingDays(CarbonImmutable::parse('2026-11-02 23:59:59'), 1)->toDateTimeString())->toBe('2026-11-03 00:00:00');
 })->group('DD-26');

@@ -30,6 +30,7 @@ use App\Support\Tokens\OneTimeTokenService;
 use App\Support\Tokens\TokenPurpose;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Tests\Support\ArcoFixtures;
 
 /**
  * Rutas registradas del grupo STAFF (las que pasan por `tenant.writable`).
@@ -108,6 +109,8 @@ it('applies the read-only rule to every registered staff route', function () {
         '{user}' => fn () => User::factory()->for($tenant)->create(['role' => 'receptionist'])->uuid,
         '{patient}' => fn () => Patient::factory()->for($tenant)->create()->uuid,
         '{representative}' => fn () => (string) Str::uuid(),
+        // Solicitud ARCO real: las rutas de atención (CUS-64) escriben y deben llegar a tenant.writable.
+        '{arcoRequest}' => fn () => ArcoFixtures::request($tenant, Patient::factory()->for($tenant)->create())->uuid,
         // Consentimiento real: la ruta de revocación (CUS-18) escribe y debe llegar a tenant.writable.
         '{consent}' => fn () => TenantContext::run($tenant, function () use ($tenant) {
             $patient = Patient::factory()->for($tenant)->create(['birth_date' => '1990-01-31']);

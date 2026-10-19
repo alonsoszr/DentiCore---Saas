@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Compliance\Http\Middleware\EnsureDataOfficer;
 use App\Modules\Patients\Http\Middleware\EnsurePatientConsent;
 use App\Modules\Portal\Http\Middleware\EnsurePortalDecisionMaker;
 use App\Modules\Portal\Http\Middleware\EnsureSelfBookingEnabled;
@@ -46,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Modules/Treatment/Console',
         __DIR__.'/../app/Modules/Scheduling/Console',
         __DIR__.'/../app/Modules/Risk/Console',
+        __DIR__.'/../app/Modules/Compliance/Console',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Alias de SDD §4.2.
@@ -68,6 +70,8 @@ return Application::configure(basePath: dirname(__DIR__))
             '2fa' => EnsureTwoFactorPassed::class,
             'ability' => CheckForAnyAbility::class,
             'abilities' => CheckAbilities::class,
+            // MS-09 (TASK-104): Oficial de Datos Personales (CUS-64).
+            'data.officer' => EnsureDataOfficer::class,
         ]);
 
         // Globales: id de correlación primero, para que todo lo demás (incluidos los errores) lo

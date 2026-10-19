@@ -70,6 +70,13 @@ return [
     // CUS-63 (TASK-103): registro de solicitudes ARCO en la clínica.
     ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/arco-requests', 'cus' => 'CUS-63', 'denied' => ['super_admin', 'dentist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/arco-requests', 'cus' => 'CUS-63', 'denied' => ['super_admin', 'dentist', 'patient']],
+    // CUS-64 (TASK-104): atención ARCO, solo del Oficial de Datos Personales (`data.officer`).
+    ['method' => 'GET', 'uri' => 'api/v1/arco-requests', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/arco-requests/{arcoRequest}', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/arco-requests/{arcoRequest}/start', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/arco-requests/{arcoRequest}/assign-correction', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/arco-requests/{arcoRequest}/cancellation', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/arco-requests/{arcoRequest}/resolve', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     // CUS-62 (TASK-102): copia de la historia clínica en la clínica.
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/clinical-record-copies', 'cus' => 'CUS-62', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/consents/{consent}/certificate', 'cus' => 'CUS-17', 'denied' => ['super_admin', 'patient']],

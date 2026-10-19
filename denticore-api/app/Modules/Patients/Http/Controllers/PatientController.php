@@ -2,6 +2,7 @@
 
 namespace App\Modules\Patients\Http\Controllers;
 
+use App\Modules\Compliance\Models\ArcoRequest;
 use App\Modules\Identity\Models\User;
 use App\Modules\Patients\Http\Requests\StorePatientRequest;
 use App\Modules\Patients\Http\Requests\UpdatePatientRequest;
@@ -86,6 +87,9 @@ class PatientController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
-        return PatientResource::make($this->patients->updateIdentity($patient, $request->validated(), $actor));
+        $arcoRequest = $request->validated('arco_request_id');
+        $arcoRequestId = $arcoRequest === null ? null : ArcoRequest::query()->where('uuid', $arcoRequest)->value('id');
+
+        return PatientResource::make($this->patients->updateIdentity($patient, $request->validated(), $actor, $arcoRequestId));
     }
 }

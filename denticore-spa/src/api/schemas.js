@@ -67,16 +67,21 @@ export const arcoRequestResourceSchema = z.object({
   type: z.string(),
   requested_by: z.string(),
   representative_id: z.union([z.string(), z.null()]),
+  patient: z.object({ id: z.string(), name: z.string() }).optional(),
   identity_verification: z.string(),
   channel: z.string(),
   description: z.string(),
   status: z.string(),
   received_at: z.string().datetime({ offset: true }),
   due_date: z.string(),
+  remaining_business_days: z.union([z.number().int(), z.null()]),
   resolved_at: z.union([z.string().datetime({ offset: true }), z.null()]),
   within_deadline: z.union([z.boolean(), z.null()]),
   response: z.union([z.string(), z.null()]),
   denial_reason: z.union([z.string(), z.null()]),
+  assigned_dentist_id: z.union([z.string(), z.null()]).optional(),
+  correction_entry_id: z.union([z.string(), z.null()]),
+  response_document_id: z.union([z.string(), z.null()]).optional(),
   files_count: z.number().int().optional(),
 })
 
@@ -596,6 +601,21 @@ export const procedureResourceSchema = z.object({
   is_active: z.boolean(),
 })
 
+export const resolveArcoRequestRequestSchema = z
+  .object({
+    status: z.enum(['atendida', 'denegada']),
+    response: z.string().min(20).max(5000),
+    denial_reason: z.union([z.string().min(20).max(2000), z.null()]).optional(),
+    purposes: z
+      .array(z.enum(['notificaciones', 'ia', 'prediccion', 'encuestas']))
+      .refine((arr) => arr.every((item, i) => arr.indexOf(item) == i), 'All items must be unique!')
+      .optional(),
+    correction_entry_id: z.string().optional(),
+  })
+  .describe(
+    'Resolución de una solicitud ARCO (CUS-64, pasos 5 y 6; SRS §11.15 «Datos»): respuesta de 20 a\n5000 caracteres y, si se deniega, fundamento de 20 a 2000 (FE-2). La oposición atendida indica\nlas finalidades opcionales que revoca; la rectificación clínica, la corrección del odontólogo.',
+  )
+
 export const revokeConsentPurposesRequestSchema = z
   .object({
     purposes: z
@@ -931,9 +951,14 @@ export const updatePatientRequestSchema = z
     phone: z.string().regex(new RegExp('^(9\\d{8}|\\+[1-9]\\d{7,14})$')).optional(),
     email: z.union([z.string().email().max(180), z.null()]).optional(),
     address: z.union([z.string().min(5).max(200), z.null()]).optional(),
+    arco_request_id: z
+      .string()
+      .uuid()
+      .describe('CUS-64: rectificación de identidad atendida desde una solicitud ARCO en trámite (RN-69).')
+      .optional(),
   })
   .describe(
-    'Actualización de la identificación y el contacto del paciente (CUS-15; RF-062, SRS §11.3). El\nnúmero de historia clínica no cambia (RN-79). El tipo y el número de documento van juntos.',
+    'Actualización de la identificación y el contacto del paciente (CUS-15; RF-062, SRS §11.3). El\nnúmero de historia clínica no cambia (RN-79). El tipo y el número de documento van juntos. Con\n`arco_request_id`, el historial queda vinculado a la rectificación ARCO (CUS-64, RN-69).',
   )
 
 export const updateProfileRequestSchema = z

@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
+use Tests\Support\ArcoFixtures;
 use Tests\Support\ClinicalFixtures;
 use Tests\Support\MlEngine;
 use Tests\Support\OpenApiContract;
@@ -233,6 +234,33 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     // Copia de la historia clínica en la clínica (CUS-62)
     $check($this->actingWithToken($admin)->postJson("/api/v1/patients/{$adult->uuid}/clinical-record-copies", [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/clinical-record-copies');
     $check($this->actingWithToken($admin)->postJson('/api/v1/patients/'.fake()->uuid().'/clinical-record-copies', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/clinical-record-copies');
+
+    // Atención de solicitudes ARCO por el Oficial de Datos Personales (CUS-64)
+    $officer = User::factory()->for($tenant)->create(['role' => 'clinic_admin', 'is_data_officer' => true]);
+    $arcoDentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
+    $arcoAnswer = ['status' => 'atendida', 'response' => 'Atendimos su solicitud dentro del plazo de la Ley N° 29733.'];
+    $access = ArcoFixtures::request($tenant, $adult);
+    $correction = ArcoFixtures::request($tenant, $adult, 'rectificacion');
+    $cancellation = ArcoFixtures::request($tenant, $adult, 'cancelacion');
+    $this->actingWithToken($officer);
+    $check($this->getJson('/api/v1/arco-requests'), 'GET', '/arco-requests');
+    $check($this->getJson('/api/v1/arco-requests?status=otro'), 'GET', '/arco-requests');
+    $check($this->getJson("/api/v1/arco-requests/{$access->uuid}"), 'GET', '/arco-requests/{arcoRequest}');
+    $check($this->getJson('/api/v1/arco-requests/'.fake()->uuid()), 'GET', '/arco-requests/{arcoRequest}');
+    $check($this->postJson("/api/v1/arco-requests/{$access->uuid}/start"), 'POST', '/arco-requests/{arcoRequest}/start');
+    $check($this->postJson("/api/v1/arco-requests/{$access->uuid}/start"), 'POST', '/arco-requests/{arcoRequest}/start');
+    $check($this->postJson("/api/v1/arco-requests/{$access->uuid}/assign-correction", ['dentist_id' => $arcoDentist->uuid]), 'POST', '/arco-requests/{arcoRequest}/assign-correction');
+    $check($this->postJson("/api/v1/arco-requests/{$correction->uuid}/assign-correction", ['dentist_id' => $arcoDentist->uuid]), 'POST', '/arco-requests/{arcoRequest}/assign-correction');
+    $this->postJson("/api/v1/arco-requests/{$correction->uuid}/start")->assertOk();
+    $check($this->postJson("/api/v1/arco-requests/{$correction->uuid}/assign-correction", ['dentist_id' => 'x']), 'POST', '/arco-requests/{arcoRequest}/assign-correction');
+    $check($this->postJson("/api/v1/arco-requests/{$correction->uuid}/assign-correction", ['dentist_id' => $arcoDentist->uuid]), 'POST', '/arco-requests/{arcoRequest}/assign-correction');
+    $check($this->postJson("/api/v1/arco-requests/{$access->uuid}/resolve", ['status' => 'denegada', 'response' => 'Corta']), 'POST', '/arco-requests/{arcoRequest}/resolve');
+    $check($this->postJson("/api/v1/arco-requests/{$access->uuid}/resolve", $arcoAnswer), 'POST', '/arco-requests/{arcoRequest}/resolve');
+    $check($this->postJson("/api/v1/arco-requests/{$access->uuid}/resolve", $arcoAnswer), 'POST', '/arco-requests/{arcoRequest}/resolve');
+    $check($this->postJson("/api/v1/arco-requests/{$access->uuid}/cancellation", [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/arco-requests/{arcoRequest}/cancellation');
+    $check($this->postJson("/api/v1/arco-requests/{$cancellation->uuid}/cancellation", [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/arco-requests/{arcoRequest}/cancellation');
+    $this->postJson("/api/v1/arco-requests/{$cancellation->uuid}/start")->assertOk();
+    $check($this->postJson("/api/v1/arco-requests/{$cancellation->uuid}/resolve", $arcoAnswer), 'POST', '/arco-requests/{arcoRequest}/resolve');
 
     // Antecedentes médicos
     $history = ['alergias' => ['Penicilina'], 'enfermedades' => [], 'medicamentos' => [], 'observaciones' => null];

@@ -44,6 +44,7 @@ final class RouteBindings
             '{diagnosis}' => fn () => (string) Str::uuid(),
             '{line}' => fn () => (string) Str::uuid(),
             '{document}' => fn () => (string) Str::uuid(),
+            '{arcoRequest}' => fn () => (string) Str::uuid(),
             '{attention}' => fn () => Attention::factory()->create(['tenant_id' => $tenant->id])->uuid,
             '{tooth}' => fn () => '16',
             '{procedure}' => fn () => Procedure::factory()->create(['tenant_id' => $tenant->id])->uuid,

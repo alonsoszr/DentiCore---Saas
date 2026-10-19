@@ -115,15 +115,16 @@ class PatientService
 
     /**
      * CUS-15 (RF-062): guarda los campos que cambiaron, conserva sus valores anteriores cifrados
-     * en `patient_identity_history` y audita solo los nombres de los campos.
+     * en `patient_identity_history` y audita solo los nombres de los campos. Con `$arcoRequestId`, el
+     * historial queda vinculado a la rectificación ARCO que la origina (CUS-64, RN-69).
      *
      * @param  array<string, mixed>  $data
      *
      * @throws BusinessRuleException
      */
-    public function updateIdentity(Patient $patient, array $data, User $actor): Patient
+    public function updateIdentity(Patient $patient, array $data, User $actor, ?int $arcoRequestId = null): Patient
     {
-        return DB::transaction(function () use ($patient, $data, $actor): Patient {
+        return DB::transaction(function () use ($patient, $data, $actor, $arcoRequestId): Patient {
             $previous = [];
 
             foreach (Arr::only($data, self::IDENTITY_FIELDS) as $field => $value) {
@@ -153,6 +154,7 @@ class PatientService
                 'changed_fields' => json_encode(array_keys($previous)),
                 'previous_values' => $this->encryption->encrypt($patient->tenant_id, (string) json_encode($previous)),
                 'changed_by' => $actor->id,
+                'arco_request_id' => $arcoRequestId,
                 'created_at' => now(),
             ]);
 
