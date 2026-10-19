@@ -550,3 +550,25 @@ it('asserts in T-149 every audit event that the application emits', function () 
     expect($emitted)->not->toBeEmpty()
         ->and($emitted->reject(fn (string $action) => str_contains($asserted, "'{$action}'"))->values()->all())->toBe([]);
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');
+
+it('writes the retention archive event once without clinical or identifying values', function () {
+    $this->freezeTime();
+    $tenant = Tenant::factory()->create();
+    $patient = Patient::factory()->for($tenant)->create(['last_attention_at' => now()->subYears(6)]);
+
+    $this->artisan('retention:apply')->assertSuccessful();
+    $this->artisan('retention:apply')->assertSuccessful();
+
+    TenantContext::run($tenant, function () use ($tenant, $patient) {
+        $row = AuditLog::query()->where('action', 'patient.archived')->sole();
+
+        expect($row->tenant_id)->toBe($tenant->id)
+            ->and($row->resource_uuid)->toBe($patient->uuid)
+            ->and($row->patient_uuid)->toBe($patient->uuid)
+            ->and($row->actor_role)->toBe('system')
+            ->and($row->user_id)->toBeNull()
+            ->and($row->changed_fields)->toBe(['archive_status'])
+            ->and($row->metadata)->toBe(['status' => 'pasivo'])
+            ->and(json_encode($row->toArray()))->not->toContain($patient->first_name, $patient->last_name, $patient->document_number);
+    });
+})->group('T-149', 'RN-67', 'RF-186', 'RF-190', 'CUS-65', 'CUS-69', 'TASK-106');
