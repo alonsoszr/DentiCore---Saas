@@ -259,12 +259,15 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
     $clinic->postJson("/api/v1/arco-requests/{$cancellationId}/start")->assertOk();
     $clinic->postJson("/api/v1/arco-requests/{$cancellationId}/cancellation", [], ['Idempotency-Key' => (string) Str::uuid()])->assertOk();
 
+    // audit.exported (CUS-66): la exportación de la bitácora deja su propio evento.
+    $clinic->post('/api/v1/audit-logs/exports', ['from' => now()->toDateString(), 'to' => now()->toDateString()])->assertOk();
+
     $actions = AuditLog::query()->pluck('action')->all();
     foreach ([
         'tenant.suspended', 'tenant.reactivated', 'tenant.plan_changed', 'auth.locked', 'auth.2fa_configured', 'auth.logout',
         'auth.password_changed', 'user.data_officer_changed', 'patient.created', 'patient.identity_updated',
         'representative.created', 'representative.ended', 'consent.granted', 'document.downloaded',
-        'consent.purpose_revoked', 'arco.received', 'export.requested', 'arco.resolved', 'patient.blocked',
+        'consent.purpose_revoked', 'arco.received', 'export.requested', 'arco.resolved', 'patient.blocked', 'audit.exported',
     ] as $action) {
         expect($actions)->toContain($action);
     }

@@ -77,6 +77,12 @@ return [
     ['method' => 'POST', 'uri' => 'api/v1/arco-requests/{arcoRequest}/assign-correction', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/arco-requests/{arcoRequest}/cancellation', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/arco-requests/{arcoRequest}/resolve', 'cus' => 'CUS-64', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    // CUS-66 (TASK-105): bitácora de la propia clínica.
+    ['method' => 'GET', 'uri' => 'api/v1/audit-logs', 'cus' => 'CUS-66', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/audit-logs/exports', 'cus' => 'CUS-66', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    // CUS-66 (TASK-105): bitácora de la plataforma, solo del Súper Administrador.
+    ['method' => 'GET', 'uri' => 'api/v1/platform/audit-logs', 'cus' => 'CUS-66', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/platform/audit-logs/exports', 'cus' => 'CUS-66', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
     // CUS-62 (TASK-102): copia de la historia clínica en la clínica.
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/clinical-record-copies', 'cus' => 'CUS-62', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/consents/{consent}/certificate', 'cus' => 'CUS-17', 'denied' => ['super_admin', 'patient']],

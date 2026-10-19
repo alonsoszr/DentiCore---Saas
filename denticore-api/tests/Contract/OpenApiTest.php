@@ -235,6 +235,17 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->actingWithToken($admin)->postJson("/api/v1/patients/{$adult->uuid}/clinical-record-copies", [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/clinical-record-copies');
     $check($this->actingWithToken($admin)->postJson('/api/v1/patients/'.fake()->uuid().'/clinical-record-copies', [], ['Idempotency-Key' => (string) Str::uuid()]), 'POST', '/patients/{patient}/clinical-record-copies');
 
+    // Bitácora de la clínica y de la plataforma (CUS-66)
+    $auditRange = ['from' => now()->subDay()->toDateString(), 'to' => now()->toDateString()];
+    $check($this->actingWithToken($admin)->getJson('/api/v1/audit-logs?per_page=5'), 'GET', '/audit-logs');
+    $check($this->actingWithToken($admin)->getJson('/api/v1/audit-logs?action=otra'), 'GET', '/audit-logs');
+    $check($this->actingWithToken($admin)->post('/api/v1/audit-logs/exports', $auditRange), 'POST', '/audit-logs/exports');
+    $check($this->actingWithToken($admin)->postJson('/api/v1/audit-logs/exports', []), 'POST', '/audit-logs/exports');
+    $check($this->actingWithToken($superAdmin)->getJson('/api/v1/platform/audit-logs?per_page=5'), 'GET', '/platform/audit-logs');
+    $check($this->actingWithToken($superAdmin)->getJson('/api/v1/platform/audit-logs?clinic_id=x'), 'GET', '/platform/audit-logs');
+    $check($this->actingWithToken($superAdmin)->post('/api/v1/platform/audit-logs/exports', $auditRange), 'POST', '/platform/audit-logs/exports');
+    $check($this->actingWithToken($superAdmin)->postJson('/api/v1/platform/audit-logs/exports', ['from' => '2026-01-01']), 'POST', '/platform/audit-logs/exports');
+
     // Atención de solicitudes ARCO por el Oficial de Datos Personales (CUS-64)
     $officer = User::factory()->for($tenant)->create(['role' => 'clinic_admin', 'is_data_officer' => true]);
     $arcoDentist = User::factory()->for($tenant)->create(['role' => 'dentist']);
