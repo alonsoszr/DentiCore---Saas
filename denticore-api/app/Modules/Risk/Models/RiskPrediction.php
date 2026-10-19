@@ -75,6 +75,16 @@ class RiskPrediction extends Model
         return 'uuid';
     }
 
+    /** Predicción de más de 12 meses o calculada con un registro de variables reemplazado (RNF-148). */
+    public function isStale(): bool
+    {
+        return $this->expires_at->isPast()
+            || RiskVariableSet::query()
+                ->where('patient_id', $this->patient_id)
+                ->where('id', '>', $this->risk_variable_set_id)
+                ->exists();
+    }
+
     /**
      * @return BelongsTo<Patient, $this>
      */
