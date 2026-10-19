@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Compliance\Documents\ClinicalRecordCopyRenderer;
 use App\Modules\Patients\Documents\ConsentCertificateRenderer;
 use App\Modules\Treatment\Documents\BudgetPdfRenderer;
 
@@ -20,6 +21,8 @@ return [
         'constancia_consentimiento' => ConsentCertificateRenderer::class,
         // M05: presupuesto emitido (RF-118).
         'presupuesto' => BudgetPdfRenderer::class,
+        // M11: copia completa de la historia clínica (RF-180).
+        'copia_hc' => ClinicalRecordCopyRenderer::class,
     ],
 
 ];

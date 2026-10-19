@@ -70,6 +70,8 @@ return [
     // CUS-63 (TASK-103): registro de solicitudes ARCO en la clínica.
     ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/arco-requests', 'cus' => 'CUS-63', 'denied' => ['super_admin', 'dentist', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/arco-requests', 'cus' => 'CUS-63', 'denied' => ['super_admin', 'dentist', 'patient']],
+    // CUS-62 (TASK-102): copia de la historia clínica en la clínica.
+    ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/clinical-record-copies', 'cus' => 'CUS-62', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/consents/{consent}/certificate', 'cus' => 'CUS-17', 'denied' => ['super_admin', 'patient']],
     ['method' => 'GET', 'uri' => 'api/v1/patients/{patient}/representatives', 'cus' => 'CUS-16', 'denied' => ['super_admin', 'patient']],
     ['method' => 'POST', 'uri' => 'api/v1/patients/{patient}/representatives', 'cus' => 'CUS-16', 'denied' => ['super_admin', 'dentist', 'patient']],
@@ -195,6 +197,9 @@ return [
     // CUS-63 (TASK-103): solicitudes ARCO desde el portal.
     ['method' => 'GET', 'uri' => 'api/v1/portal/patients/{patient}/arco-requests', 'cus' => 'CUS-63', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
     ['method' => 'POST', 'uri' => 'api/v1/portal/patients/{patient}/arco-requests', 'cus' => 'CUS-63', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    // CUS-62 (TASK-102): copia de la historia clínica desde el portal.
+    ['method' => 'POST', 'uri' => 'api/v1/portal/patients/{patient}/clinical-record-copies', 'cus' => 'CUS-62', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
+    ['method' => 'GET', 'uri' => 'api/v1/portal/documents/{document}', 'cus' => 'CUS-62', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
     ['method' => 'GET', 'uri' => 'api/v1/portal/patients/{patient}/budgets', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
     ['method' => 'GET', 'uri' => 'api/v1/portal/budgets/{budget}', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],
     ['method' => 'GET', 'uri' => 'api/v1/portal/budgets/{budget}/pdf', 'cus' => 'CUS-36', 'denied' => ['super_admin', 'clinic_admin', 'dentist', 'receptionist']],

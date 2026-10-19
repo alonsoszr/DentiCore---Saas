@@ -239,6 +239,9 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
         'description' => 'Pide la copia por un trámite escolar', 'confirmation_document_number' => '41234567',
     ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
 
+    // export.requested (CUS-62): la copia de la historia clínica, solo con su tipo.
+    $clinic->postJson("/api/v1/patients/{$patientUuid}/clinical-record-copies", [], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
+
     // consent.purpose_revoked (CUS-18): sin el motivo del titular.
     $clinic->postJson("/api/v1/patients/{$patientUuid}/consents/{$consentId}/revocations", ['purposes' => ['atencion'], 'reason' => 'Se muda de ciudad'])
         ->assertOk();
@@ -248,7 +251,7 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
         'tenant.suspended', 'tenant.reactivated', 'tenant.plan_changed', 'auth.locked', 'auth.2fa_configured', 'auth.logout',
         'auth.password_changed', 'user.data_officer_changed', 'patient.created', 'patient.identity_updated',
         'representative.created', 'representative.ended', 'consent.granted', 'document.downloaded',
-        'consent.purpose_revoked', 'arco.received',
+        'consent.purpose_revoked', 'arco.received', 'export.requested',
     ] as $action) {
         expect($actions)->toContain($action);
     }
