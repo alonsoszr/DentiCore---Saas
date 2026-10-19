@@ -42,6 +42,7 @@ use Illuminate\Support\Carbon;
  * @property-read Patient $patient
  * @property-read LegalRepresentative|null $legalRepresentative
  * @property-read User|null $handler
+ * @property-read User|null $assignedDentist
  * @property-read GeneratedDocument|null $responseDocument
  */
 class ArcoRequest extends Model
@@ -52,6 +53,9 @@ class ArcoRequest extends Model
 
     /** RN-69: plazo interno de respuesta en días hábiles (DD-26). */
     public const DEADLINE_BUSINESS_DAYS = 10;
+
+    /** Estados abiertos: aún sin resolver (CUS-64). */
+    public const OPEN_STATUSES = ['recibida', 'en_tramite'];
 
     protected function casts(): array
     {
@@ -99,6 +103,14 @@ class ArcoRequest extends Model
     public function handler(): BelongsTo
     {
         return $this->belongsTo(User::class, 'handled_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function assignedDentist(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_dentist_id');
     }
 
     /**

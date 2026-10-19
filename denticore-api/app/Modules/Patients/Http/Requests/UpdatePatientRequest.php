@@ -11,7 +11,8 @@ use Illuminate\Validation\Rule;
 
 /**
  * Actualización de la identificación y el contacto del paciente (CUS-15; RF-062, SRS §11.3). El
- * número de historia clínica no cambia (RN-79). El tipo y el número de documento van juntos.
+ * número de historia clínica no cambia (RN-79). El tipo y el número de documento van juntos. Con
+ * `arco_request_id`, el historial queda vinculado a la rectificación ARCO (CUS-64, RN-69).
  */
 class UpdatePatientRequest extends FormRequest
 {
@@ -37,6 +38,11 @@ class UpdatePatientRequest extends FormRequest
             'phone' => ['sometimes', 'string', 'regex:'.PatientIdentity::PHONE_PATTERN],
             'email' => ['sometimes', 'nullable', 'email:rfc', 'max:180'],
             'address' => ['sometimes', 'nullable', 'string', 'min:5', 'max:200'],
+            // CUS-64: rectificación de identidad atendida desde una solicitud ARCO en trámite (RN-69).
+            'arco_request_id' => ['sometimes', 'uuid', Rule::exists('arco_requests', 'uuid')
+                ->where('patient_id', $this->route('patient')?->id)
+                ->where('type', 'rectificacion')
+                ->where('status', 'en_tramite')],
         ];
     }
 
@@ -54,6 +60,7 @@ class UpdatePatientRequest extends FormRequest
             'sex' => 'sexo',
             'phone' => 'teléfono',
             'address' => 'dirección',
+            'arco_request_id' => 'solicitud ARCO',
         ];
     }
 }

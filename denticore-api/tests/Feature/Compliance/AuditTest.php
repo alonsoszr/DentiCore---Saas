@@ -234,10 +234,12 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
 
     // arco.received (CUS-63): sin la descripción de la solicitud.
     $mother = collect($clinic->getJson("/api/v1/patients/{$patientUuid}/representatives")->json('data'))->firstWhere('relationship', 'madre')['id'];
-    $clinic->postJson("/api/v1/patients/{$patientUuid}/arco-requests", [
+    $arcoBody = [
         'type' => 'acceso', 'requested_by' => 'representante', 'legal_representative_id' => $mother,
         'description' => 'Pide la copia por un trámite escolar', 'confirmation_document_number' => '41234567',
-    ], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
+    ];
+    $arcoId = $clinic->postJson("/api/v1/patients/{$patientUuid}/arco-requests", $arcoBody, ['Idempotency-Key' => (string) Str::uuid()])
+        ->assertCreated()->json('data.id');
 
     // export.requested (CUS-62): la copia de la historia clínica, solo con su tipo.
     $clinic->postJson("/api/v1/patients/{$patientUuid}/clinical-record-copies", [], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated();
@@ -246,12 +248,23 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
     $clinic->postJson("/api/v1/patients/{$patientUuid}/consents/{$consentId}/revocations", ['purposes' => ['atencion'], 'reason' => 'Se muda de ciudad'])
         ->assertOk();
 
+    // arco.resolved y patient.blocked (CUS-64): sin la respuesta ni el fundamento; el administrador es
+    // el Oficial de Datos Personales.
+    $clinic->postJson("/api/v1/arco-requests/{$arcoId}/start")->assertOk();
+    $clinic->postJson("/api/v1/arco-requests/{$arcoId}/resolve", [
+        'status' => 'denegada', 'response' => 'Respuesta privada al representante legal.', 'denial_reason' => 'Fundamento privado de la denegación ARCO.',
+    ])->assertOk();
+    $cancellationId = $clinic->postJson("/api/v1/patients/{$patientUuid}/arco-requests", [...$arcoBody, 'type' => 'cancelacion'], ['Idempotency-Key' => (string) Str::uuid()])
+        ->assertCreated()->json('data.id');
+    $clinic->postJson("/api/v1/arco-requests/{$cancellationId}/start")->assertOk();
+    $clinic->postJson("/api/v1/arco-requests/{$cancellationId}/cancellation", [], ['Idempotency-Key' => (string) Str::uuid()])->assertOk();
+
     $actions = AuditLog::query()->pluck('action')->all();
     foreach ([
         'tenant.suspended', 'tenant.reactivated', 'tenant.plan_changed', 'auth.locked', 'auth.2fa_configured', 'auth.logout',
         'auth.password_changed', 'user.data_officer_changed', 'patient.created', 'patient.identity_updated',
         'representative.created', 'representative.ended', 'consent.granted', 'document.downloaded',
-        'consent.purpose_revoked', 'arco.received', 'export.requested',
+        'consent.purpose_revoked', 'arco.received', 'export.requested', 'arco.resolved', 'patient.blocked',
     ] as $action) {
         expect($actions)->toContain($action);
     }
@@ -260,7 +273,7 @@ it('writes the audit events of the MS-01 flows without clinical values', functio
 
     // RN-67: sin documentos, teléfonos, nombres, correos, motivos ni contraseñas en la bitácora.
     $serialized = json_encode(DB::table('audit_logs')->get());
-    foreach (['71234567', '41234567', '987654321', '911222333', 'Lucía', 'Quispe', 'Rosa', 'hitos.test', 'Falta de pago', 'Nueva-Clave-2026', 'Se muda de ciudad', 'trámite escolar', $secret] as $value) {
+    foreach (['71234567', '41234567', '987654321', '911222333', 'Lucía', 'Quispe', 'Rosa', 'hitos.test', 'Falta de pago', 'Nueva-Clave-2026', 'Se muda de ciudad', 'trámite escolar', 'Respuesta privada', 'Fundamento privado', $secret] as $value) {
         expect($serialized)->not->toContain($value);
     }
 })->group('T-149', 'RN-67', 'RF-186', 'CUS-65');

@@ -48,3 +48,7 @@ Schedule::command('risk:expire-predictions')->dailyAt('00:30')->onOneServer()->w
 
 // Conservación de 90 días de los avisos in-app (SDD §1.9; CUS-53, RF-158).
 Schedule::command('notifications:prune-inapp')->dailyAt('03:15')->onOneServer()->withoutOverlapping();
+
+// Aviso del plazo de las solicitudes ARCO (SDD §1.9; CUS-64 FA-2, RF-185): a diario a las 08:00 de
+// Lima, zona de las clínicas del Perú; es idempotente (TASK-104, carril Compliance de MS-09).
+Schedule::command('arco:deadline-reminders')->dailyAt('08:00')->timezone('America/Lima')->onOneServer()->withoutOverlapping();

@@ -49,6 +49,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Tests\Support\ArcoFixtures;
 
 /**
  * Ficha de un menor con su representante y su consentimiento en la clínica indicada.
@@ -108,7 +109,8 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
     // El recorrido hace más de 60 solicitudes por usuario (throttle:api); el límite real se prueba aparte.
     config(['auth.api_requests_per_minute' => 1000]);
     [$own, $other] = Tenant::factory()->count(2)->create();
-    $this->actingAsRole('clinic_admin', $own);
+    // Oficial de Datos Personales: alcanza también la bandeja ARCO (CUS-64, `data.officer`).
+    $this->actingAsRole('clinic_admin', $own, ['is_data_officer' => true]);
     $foreign = foreignClinicRecord($other);
     // Registros clínicos de la otra clínica: atención, hallazgo y diagnóstico (MS-02).
     [$foreignEntry, $foreignDiagnosis] = TenantContext::run($other, function () use ($other) {
@@ -136,6 +138,8 @@ it('returns 404 for every route when the uuid belongs to another clinic', functi
         '{patient}' => $foreign['patient']->uuid,
         '{representative}' => $foreign['representative']->uuid,
         '{consent}' => $foreign['consent']->uuid,
+        // Solicitud ARCO de la otra clínica (MS-09).
+        '{arcoRequest}' => ArcoFixtures::request($other, $foreign['patient'])->uuid,
         '{user}' => User::factory()->for($other)->create(['role' => 'receptionist'])->uuid,
         '{attention}' => $foreignEntry->attention->uuid,
         '{entry}' => $foreignEntry->uuid,
