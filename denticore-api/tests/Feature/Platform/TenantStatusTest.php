@@ -24,11 +24,17 @@ use App\Modules\Treatment\Models\BudgetLine;
 use App\Modules\Treatment\Models\PlanItem;
 use App\Modules\Treatment\Models\Procedure;
 use App\Modules\Treatment\Models\TreatmentPlan;
+use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLog;
+use App\Support\Audit\AuditLogger;
+use App\Support\Files\FileStorage;
+use App\Support\Files\GeneratedDocument;
+use App\Support\Outbox\OutboxMessage;
 use App\Support\Tenancy\TenantContext;
 use App\Support\Tokens\OneTimeTokenService;
 use App\Support\Tokens\TokenPurpose;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\Support\ArcoFixtures;
 
@@ -234,7 +240,7 @@ it('lets only the administrator of a cancelled clinic use the routes marked as e
         ->post('/api/v1/_test/export', fn () => response()->json(['ok' => true]));
     Route::middleware(['auth:sanctum', 'tenant', 'tenant.writable', 'tenant.readonly_ok'])
         ->post('/api/v1/_test/report', fn () => response()->json(['ok' => true]));
-    $cancelled = Tenant::factory()->create(['status' => 'cancelada']);
+    $cancelled = Tenant::factory()->create(['status' => 'cancelada', 'cancelled_at' => now()]);
 
     $this->actingAsRole('clinic_admin', $cancelled);
     $this->postJson('/api/v1/_test/export')->assertOk();
@@ -262,3 +268,171 @@ it('blocks every staff route of a deleted clinic', function () {
 it('answers 404 for the public page of a clinic that does not exist', function () {
     $this->getJson('/api/v1/public/clinics/no-existe')->assertNotFound();
 });
+
+/** Documento sintético: TASK-139 implementará la generación real del ZIP. */
+function clinicExportFixture(Tenant $tenant, User $admin, bool $ready = false): GeneratedDocument
+{
+    return TenantContext::run($tenant, function () use ($tenant, $admin, $ready) {
+        $document = GeneratedDocument::query()->create([
+            'documentable_type' => $tenant->getMorphClass(), 'documentable_id' => $tenant->id,
+            'kind' => 'exportacion_clinica', 'status' => 'pendiente', 'requested_by' => $admin->id,
+        ]);
+        if ($ready) {
+            $file = app(FileStorage::class)->storeGenerated("PK\x05\x06".str_repeat("\0", 18), 'clinica.zip', 'application/zip');
+            $document->forceFill(['status' => 'listo', 'stored_file_id' => $file->id, 'completed_at' => now()])->save();
+        }
+
+        return $document;
+    });
+}
+
+it('cancels an active or suspended clinic with a reason timestamp audit and admin emails', function (string $status) {
+    $this->freezeSecond();
+    $tenant = Tenant::factory()->create(['status' => $status]);
+    User::factory()->for($tenant)->count(2)->create(['role' => 'clinic_admin']);
+    User::factory()->for($tenant)->create(['role' => 'receptionist']);
+    $this->actingAsRole('super_admin');
+
+    $this->postJson("/api/v1/platform/tenants/{$tenant->uuid}/cancel", ['reason' => 'Cierre definitivo de la clínica'])
+        ->assertOk()->assertJsonPath('data.status', 'cancelada')
+        ->assertJsonPath('data.status_reason', 'Cierre definitivo de la clínica');
+
+    expect($tenant->fresh()->cancelled_at->equalTo(now()))->toBeTrue()
+        ->and(Notification::query()->where('event', 'clinica_cancelada')->count())->toBe(2)
+        ->and(OutboxMessage::query()->where('type', 'notification.send')->count())->toBe(2)
+        ->and(AuditLog::query()->where('action', 'tenant.cancelled')->sole()->resource_uuid)->toBe($tenant->uuid);
+})->with(['activa', 'suspendida'])->group('T-012', 'RF-020', 'RN-07', 'CUS-02', 'TASK-107');
+
+it('requires a cancellation reason and never restarts the 90 day window', function () {
+    $this->freezeTime();
+    $tenant = Tenant::factory()->create();
+    $this->actingAsRole('super_admin');
+    $uri = "/api/v1/platform/tenants/{$tenant->uuid}/cancel";
+
+    $this->postJson($uri, [])->assertUnprocessable()->assertJsonValidationErrors('reason');
+    $this->postJson($uri, ['reason' => 'Cierre definitivo'])->assertOk();
+    $cancelledAt = $tenant->fresh()->cancelled_at;
+    $this->travel(10)->days();
+    $this->postJson($uri, ['reason' => 'Intento de ampliar el plazo'])->assertConflict();
+
+    expect($tenant->fresh()->cancelled_at->equalTo($cancelledAt))->toBeTrue()
+        ->and(AuditLog::query()->where('action', 'tenant.cancelled')->count())->toBe(1);
+})->group('T-012', 'RF-020', 'RN-07', 'CUS-02', 'TASK-107');
+
+it('allows only clinic_admin exports during 90 days after cancellation', function (int $offset, bool $allowed) {
+    Storage::fake('s3');
+    $this->freezeSecond();
+    $cancelledAt = now()->copy();
+    $tenant = Tenant::factory()->create(['status' => 'cancelada', 'cancelled_at' => $cancelledAt]);
+    $admin = $this->actingAsRole('clinic_admin', $tenant);
+    $document = clinicExportFixture($tenant, $admin, ready: true);
+    $this->travelTo($cancelledAt->copy()->addSeconds($offset));
+
+    $created = $this->postJson('/api/v1/clinic/exports', [], ['Idempotency-Key' => (string) Str::uuid()]);
+    $shown = $this->getJson("/api/v1/clinic/exports/{$document->uuid}");
+    if ($allowed) {
+        $created->assertCreated()->assertJsonPath('data.kind', 'exportacion_clinica')->assertJsonPath('data.status', 'pendiente');
+        $shown->assertOk()->assertJsonPath('data.status', 'listo');
+    } else {
+        $created->assertForbidden()->assertJsonPath('rule', 'RN-07');
+        $shown->assertForbidden()->assertJsonPath('rule', 'RN-07');
+    }
+    $this->getJson('/api/v1/patients')->assertForbidden()->assertJsonPath('rule', 'RN-07');
+})->with([
+    'al cancelar' => [0, true],
+    'antes del límite' => [90 * 86400 - 1, true],
+    'exactamente 90 días' => [90 * 86400, true],
+    'después del límite' => [90 * 86400 + 1, false],
+    'día 91' => [91 * 86400, false],
+])->group('T-012', 'RF-020', 'RN-07', 'RN-72', 'CUS-05', 'TASK-107');
+
+it('denies export requests and documents to every non administrator role', function (string $role) {
+    $this->freezeTime();
+    $tenant = Tenant::factory()->create(['status' => 'cancelada', 'cancelled_at' => now()]);
+    $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin']);
+    $document = clinicExportFixture($tenant, $admin);
+    $this->actingAsRole($role, $tenant);
+
+    $this->postJson('/api/v1/clinic/exports', [], ['Idempotency-Key' => (string) Str::uuid()])->assertForbidden();
+    $this->getJson("/api/v1/clinic/exports/{$document->uuid}")->assertForbidden();
+})->with(['super_admin', 'dentist', 'receptionist', 'patient'])->group('T-012', 'RF-020', 'RN-72', 'CUS-05', 'TASK-107');
+
+it('requests exports idempotently without leaving outbox messages before TASK-139', function (string $status) {
+    $this->freezeTime();
+    $tenant = Tenant::factory()->create(['status' => $status]);
+    $this->actingAsRole('clinic_admin', $tenant);
+    $headers = ['Idempotency-Key' => (string) Str::uuid()];
+    $first = $this->postJson('/api/v1/clinic/exports', [], $headers)->assertCreated()
+        ->assertJsonPath('data.status', 'pendiente')->assertJsonPath('data.url', null);
+    $this->postJson('/api/v1/clinic/exports', [], $headers)->assertCreated()->assertJsonPath('data.id', $first->json('data.id'));
+
+    TenantContext::run($tenant, function () {
+        expect(GeneratedDocument::query()->count())->toBe(1);
+        expect(OutboxMessage::query()->count())->toBe(0)
+            ->and(AuditLog::query()->where('action', 'export.requested')->sole()->metadata)->toBe(['kind' => 'exportacion_clinica']);
+    });
+    // TASK-139 encolará estas solicitudes cuando exista el generador ZIP y su manejador.
+    $this->getJson('/api/v1/clinic/exports/'.$first->json('data.id'))->assertOk()->assertJsonPath('data.status', 'pendiente');
+})->with(['activa', 'suspendida'])->group('T-012', 'RF-020', 'RN-72', 'CUS-05', 'TASK-107');
+
+it('returns 404 for another clinic export and for documents of a different kind', function () {
+    $tenant = Tenant::factory()->create();
+    $admin = $this->actingAsRole('clinic_admin', $tenant);
+    $foreign = Tenant::factory()->create();
+    $other = clinicExportFixture($foreign, User::factory()->for($foreign)->create(['role' => 'clinic_admin']));
+    $wrongKind = clinicExportFixture($tenant, $admin);
+    TenantContext::run($tenant, fn () => $wrongKind->forceFill(['kind' => 'reporte'])->save());
+
+    $this->getJson("/api/v1/clinic/exports/{$other->uuid}")->assertNotFound();
+    $this->getJson("/api/v1/clinic/exports/{$wrongKind->uuid}")->assertNotFound();
+})->group('T-012', 'RN-01', 'RF-020', 'RN-72', 'CUS-05', 'TASK-107');
+
+it('expires signed export downloads at the cancellation boundary even if the URL is still valid', function () {
+    Storage::fake('s3');
+    $this->freezeTime();
+    $tenant = Tenant::factory()->create(['status' => 'cancelada', 'cancelled_at' => now()->subDays(90)->addMinute()]);
+    $admin = $this->actingAsRole('clinic_admin', $tenant);
+    $document = clinicExportFixture($tenant, $admin, ready: true);
+    $url = $this->getJson("/api/v1/clinic/exports/{$document->uuid}")->assertOk()->json('data.url');
+    $this->get($url)->assertOk();
+    $this->travel(61)->seconds();
+    $this->get($url)->assertForbidden();
+})->group('T-012', 'RF-020', 'RN-07', 'RN-72', 'CUS-05', 'TASK-107');
+
+it('blocks old non export signed URLs after a clinic cancellation', function () {
+    Storage::fake('s3');
+    $this->freezeTime();
+    $tenant = Tenant::factory()->create();
+    $receptionist = $this->actingAsRole('receptionist', $tenant);
+    $url = TenantContext::run($tenant, function () use ($receptionist) {
+        $file = app(FileStorage::class)->storeGenerated('Documento sintético', 'reporte.txt', 'text/plain');
+
+        return app(FileStorage::class)->temporaryUrl($file, $receptionist);
+    });
+    $tenant->forceFill(['status' => 'cancelada', 'cancelled_at' => now()])->save();
+
+    $this->get($url)->assertForbidden();
+})->group('T-012', 'RF-020', 'RN-07', 'CUS-05', 'TASK-107');
+
+it('rejects cancelled clinic logins after the 90 day window', function () {
+    $this->freezeTime();
+    $tenant = Tenant::factory()->create(['status' => 'cancelada', 'cancelled_at' => now()->subDays(91)]);
+    $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin', 'password' => 'clave-correcta-123']);
+
+    $this->postJson('/api/v1/auth/login', ['tenant_slug' => $tenant->slug, 'email' => $admin->email, 'password' => 'clave-correcta-123'])
+        ->assertUnauthorized()->assertJsonPath('detail', 'Credenciales inválidas.');
+})->group('T-012', 'RF-020', 'RN-07', 'CUS-05', 'TASK-107');
+
+it('rolls back an export request and outbox if audit fails', function () {
+    $tenant = Tenant::factory()->create();
+    $this->actingAsRole('clinic_admin', $tenant);
+    $audit = Mockery::mock(AuditLogger::class);
+    $audit->shouldReceive('record')->withArgs(fn (AuditEvent $event) => $event === AuditEvent::ExportRequested)
+        ->andThrow(new RuntimeException('Fallo sintético'));
+    $this->app->instance(AuditLogger::class, $audit);
+
+    $this->postJson('/api/v1/clinic/exports', [], ['Idempotency-Key' => (string) Str::uuid()])->assertStatus(500);
+
+    TenantContext::run($tenant, fn () => expect(GeneratedDocument::query()->count())->toBe(0));
+    expect(OutboxMessage::query()->where('queue', 'heavy')->count())->toBe(0);
+})->group('T-012', 'T-157', 'RF-020', 'CUS-05', 'TASK-107');

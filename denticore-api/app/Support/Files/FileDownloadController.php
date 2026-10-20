@@ -4,6 +4,7 @@ namespace App\Support\Files;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Platform\Models\Tenant;
+use App\Modules\Platform\Services\ClinicExportService;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
 use App\Support\Http\Controller;
@@ -20,13 +21,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class FileDownloadController extends Controller
 {
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(private AuditLogger $audit, private ClinicExportService $exports) {}
 
     public function __invoke(Request $request, string $tenant, string $file): StreamedResponse
     {
         $clinic = Tenant::query()->where('uuid', $tenant)->firstOrFail();
 
-        return TenantContext::run($clinic, function () use ($request, $file): StreamedResponse {
+        return TenantContext::run($clinic, function () use ($request, $file, $clinic): StreamedResponse {
             $stored = StoredFile::query()->where('uuid', $file)->firstOrFail();
 
             abort_unless($stored->isDeliverable(), 404);
@@ -34,6 +35,8 @@ class FileDownloadController extends Controller
             $requester = $request->query('by')
                 ? User::query()->where('uuid', $request->query('by'))->first()
                 : null;
+
+            $this->exports->authorizeFileDownload($clinic, $stored, $requester);
 
             $this->audit->record(AuditEvent::DocumentDownloaded, $stored, actor: $requester);
 

@@ -30,7 +30,8 @@ class EnsureTenantWritable
         $allowed = match ($tenant->status) {
             'activa' => true,
             'suspendida' => in_array($request->method(), self::READ_METHODS, true) || in_array('tenant.readonly_ok', $marks, true),
-            'cancelada' => in_array('tenant.exportable', $marks, true) && $request->user()?->role === 'clinic_admin',
+            'cancelada' => in_array('tenant.exportable', $marks, true)
+                && $request->user()?->role === 'clinic_admin' && $tenant->allowsClinicExport(),
             default => false,
         };
 

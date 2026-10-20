@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Platform\Http\Controllers\ClinicExportController;
 use App\Modules\Platform\Http\Controllers\ClinicSettingsController;
 use App\Modules\Platform\Http\Controllers\SubscriptionPlanController;
 use App\Modules\Platform\Http\Controllers\TenantController;
@@ -39,4 +40,16 @@ Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant
         Route::get('/settings', [ClinicSettingsController::class, 'show']);
         Route::patch('/settings', [ClinicSettingsController::class, 'update']);
         Route::post('/logo', [ClinicSettingsController::class, 'uploadLogo']);
+    });
+
+// TASK-107 (CUS-02, RF-020): cancelación con motivo, solo desde activa o suspendida.
+Route::post('/platform/tenants/{tenant}/cancel', [TenantStatusController::class, 'cancel'])
+    ->middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'role:super_admin']);
+
+// CUS-05: solo administradores; en suspendida se permite solicitar y, tras cancelar, durante 90 días.
+Route::middleware(['auth:sanctum', 'token.fresh', '2fa', 'throttle:api', 'tenant', 'tenant.writable', 'throttle:tenant', 'role:clinic_admin', 'tenant.exportable'])
+    ->prefix('clinic')->group(function () {
+        Route::post('/exports', [ClinicExportController::class, 'store'])
+            ->middleware(['tenant.readonly_ok', 'idempotent']);
+        Route::get('/exports/{document}', [ClinicExportController::class, 'show']);
     });

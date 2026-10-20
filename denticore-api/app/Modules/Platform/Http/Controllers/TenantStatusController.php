@@ -9,7 +9,7 @@ use App\Support\Http\ProblemResponse;
 use Illuminate\Http\Request;
 
 /**
- * Estado de una clínica (SDD §4.3.1; CUS-02, RF-019). La cancelación (RF-020) llega en MS-09.
+ * Estado de una clínica (SDD §4.3.1; CUS-02, RF-019, RF-020).
  */
 class TenantStatusController extends Controller
 {
@@ -25,6 +25,13 @@ class TenantStatusController extends Controller
     public function reactivate(Request $request, string $tenant): TenantResource
     {
         return TenantResource::make($this->tenants->reactivate($this->tenants->find($tenant), $this->reason($request)));
+    }
+
+    #[ProblemResponse(409, 'La clínica no está activa ni suspendida (RF-020)')]
+    #[ProblemResponse(422, 'El motivo es obligatorio y debe tener entre 3 y 500 caracteres (RF-020)')]
+    public function cancel(Request $request, string $tenant): TenantResource
+    {
+        return TenantResource::make($this->tenants->cancel($this->tenants->find($tenant), $this->reason($request)));
     }
 
     /**

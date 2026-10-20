@@ -48,7 +48,8 @@ class AuthService
             ->first();
 
         // FE-4: en una clínica cancelada solo continúa su administrador (RN-07, FA-3).
-        if ($user !== null && $tenant?->status === 'cancelada' && $user->role !== 'clinic_admin') {
+        if ($user !== null && $tenant?->status === 'cancelada'
+            && ($user->role !== 'clinic_admin' || ! $tenant->allowsClinicExport())) {
             $this->fail($tenant, $user, countAttempt: false);
         }
 
