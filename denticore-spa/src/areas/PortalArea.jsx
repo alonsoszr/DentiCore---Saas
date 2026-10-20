@@ -10,6 +10,7 @@ import { PortalHealthPage } from '../portal/PortalHealthPage'
 import { PortalHomePage } from '../portal/PortalHomePage'
 import { PortalLayout } from '../portal/PortalLayout'
 import { PortalNewAppointmentPage } from '../portal/PortalNewAppointmentPage'
+import { PortalRightsPage } from '../portal/PortalRightsPage'
 import { CalendarIcon, FileTextIcon, HeartPulseIcon, HomeIcon } from '../ui/icons'
 
 /**
@@ -36,6 +37,8 @@ export default function PortalArea() {
         <Route path="presupuestos/:uuid" element={<PortalBudgetPage />} />
         <Route path="mi-historia" element={<PortalHealthPage />} />
         <Route path="consentimiento" element={<PortalConsentPage />} />
+        <Route path="arco" element={<PortalRightsPage />} />
+        <Route path="documentos" element={<PortalRightsPage documents />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
