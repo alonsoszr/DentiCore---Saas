@@ -226,4 +226,9 @@ return [
 
     // Fontanería (DI-16): la autorización es la firma de 10 minutos emitida tras la Policy.
     ['method' => 'GET', 'uri' => 'api/v1/files/{tenant}/{file}', 'cus' => 'DI-16', 'denied' => []],
+
+    // TASK-107: cancelación y exportación durante los 90 días (RN-07, RN-72).
+    ['method' => 'POST', 'uri' => 'api/v1/platform/tenants/{tenant}/cancel', 'cus' => 'CUS-02', 'denied' => ['clinic_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'POST', 'uri' => 'api/v1/clinic/exports', 'cus' => 'CUS-05', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
+    ['method' => 'GET', 'uri' => 'api/v1/clinic/exports/{document}', 'cus' => 'CUS-05', 'denied' => ['super_admin', 'dentist', 'receptionist', 'patient']],
 ];

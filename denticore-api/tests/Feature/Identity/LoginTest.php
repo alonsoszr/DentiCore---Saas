@@ -134,7 +134,7 @@ it('stores the clinic, IP and user agent of the session and keeps at most 5 full
 it('lets only the clinic_admin of a cancelled clinic in', function () {
     $admin = userIn('cerrada', 'clinic_admin', ['email' => 'admin@cerrada.test']);
     userIn('cerrada', 'receptionist', ['email' => 'rosa@cerrada.test']);
-    $admin->tenant->forceFill(['status' => 'cancelada'])->save();
+    $admin->tenant->forceFill(['status' => 'cancelada', 'cancelled_at' => now()])->save();
 
     login('cerrada', 'admin@cerrada.test')->assertOk();
     login('cerrada', 'rosa@cerrada.test')->assertUnauthorized()->assertJsonPath('detail', 'Credenciales inválidas.');

@@ -68,6 +68,17 @@ class Tenant extends Model
         ];
     }
 
+    /** Acceso a CUS-05, incluido el límite exacto de 90 días desde la cancelación (RF-020). */
+    public function allowsClinicExport(): bool
+    {
+        return match ($this->status) {
+            'activa', 'suspendida' => true,
+            'cancelada' => $this->cancelled_at !== null
+                && now()->betweenIncluded($this->cancelled_at, $this->cancelled_at->copy()->addDays(90)),
+            default => false,
+        };
+    }
+
     /**
      * @return BelongsTo<SubscriptionPlan, $this>
      */

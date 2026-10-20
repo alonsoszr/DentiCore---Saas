@@ -17,6 +17,8 @@ use App\Modules\Treatment\Models\Procedure;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLog;
 use App\Support\Audit\AuditLogger;
+use App\Support\Files\FileStorage;
+use App\Support\Files\GeneratedDocument;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
@@ -575,3 +577,34 @@ it('writes the retention archive event once without clinical or identifying valu
             ->and(json_encode($row->toArray()))->not->toContain($patient->first_name, $patient->last_name, $patient->document_number);
     });
 })->group('T-149', 'RN-67', 'RF-186', 'RF-190', 'CUS-65', 'CUS-69', 'TASK-106');
+
+it('audits tenant cancellation and clinic export without clinical or identifying values', function () {
+    Storage::fake('s3');
+    $this->freezeSecond();
+    $tenant = Tenant::factory()->create();
+    $admin = User::factory()->for($tenant)->create(['role' => 'clinic_admin']);
+    $superAdmin = $this->actingAsRole('super_admin');
+
+    $this->postJson("/api/v1/platform/tenants/{$tenant->uuid}/cancel", ['reason' => 'Cierre definitivo de prueba'])->assertOk();
+    $cancelled = AuditLog::query()->where('action', 'tenant.cancelled')->sole();
+    expect($cancelled->tenant_id)->toBeNull()->and($cancelled->user_id)->toBe($superAdmin->id)
+        ->and($cancelled->changed_fields)->toBe(['status']);
+
+    $this->actingWithToken($admin);
+    $id = $this->postJson('/api/v1/clinic/exports', [], ['Idempotency-Key' => (string) Str::uuid()])->assertCreated()->json('data.id');
+    TenantContext::run($tenant, function () use ($id) {
+        $file = app(FileStorage::class)->storeGenerated("PK\x05\x06".str_repeat("\0", 18), 'clinica.zip', 'application/zip');
+        GeneratedDocument::query()->where('uuid', $id)
+            ->update(['status' => 'listo', 'stored_file_id' => $file->id, 'completed_at' => now()]);
+    });
+    $url = $this->getJson("/api/v1/clinic/exports/{$id}")->assertOk()->json('data.url');
+    $this->get($url)->assertOk();
+
+    foreach (['export.requested', 'export.downloaded'] as $action) {
+        $row = AuditLog::query()->where('action', $action)->sole();
+        expect($row->tenant_id)->toBe($tenant->id)->and($row->user_id)->toBe($admin->id)
+            ->and($row->resource_uuid)->toBe($tenant->uuid)
+            ->and($row->metadata)->toBe(['kind' => 'exportacion_clinica'])
+            ->and(json_encode($row->toArray()))->not->toContain($admin->email, 'Cierre definitivo de prueba');
+    }
+})->group('T-149', 'RN-67', 'RF-020', 'RN-72', 'CUS-02', 'CUS-05', 'TASK-107');

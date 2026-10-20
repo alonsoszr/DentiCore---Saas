@@ -145,6 +145,26 @@ class TenantService
         return $this->changeStatus($tenant, from: 'suspendida', to: 'activa', reason: $reason);
     }
 
+    /** CUS-02: cancela desde activa o suspendida, sin reiniciar un plazo ya iniciado (RF-020). */
+    public function cancel(Tenant $tenant, string $reason): Tenant
+    {
+        return DB::transaction(function () use ($tenant, $reason): Tenant {
+            $tenant = Tenant::query()->whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+            if (! in_array($tenant->status, ['activa', 'suspendida'], true)) {
+                throw new BusinessRuleException('RF-020', 'Solo se puede cancelar una clínica activa o suspendida.', status: 409);
+            }
+
+            $tenant->forceFill(['status' => 'cancelada', 'status_reason' => $reason, 'cancelled_at' => now()])->save();
+            $this->audit->record(AuditEvent::TenantCancelled, $tenant, ['status']);
+            TenantContext::run($tenant, function () use ($tenant, $reason): void {
+                User::query()->where('tenant_id', $tenant->id)->where('role', 'clinic_admin')->where('status', '<>', 'inactivo')->orderBy('id')
+                    ->each(fn (User $admin) => $this->notifications->sendEmail(NotificationEvent::ClinicaCancelada, $admin, ['reason' => $reason]));
+            });
+
+            return $this->find($tenant->uuid);
+        });
+    }
+
     /**
      * CUS-03: RF-022 rechaza un plan cuyo máximo de odontólogos es menor que los activos e indica
      * cuántos desactivar; RF-023 (funciones en lectura al bajar de plan) lo aplica `plan.feature`.

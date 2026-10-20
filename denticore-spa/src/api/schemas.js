@@ -278,6 +278,13 @@ export const changePasswordRequestSchema = z
     'Cambio de la contraseña propia (CUS-78; RF-049, RF-040): exige la contraseña actual (422 si no\ncoincide) y la nueva cumple la política de DD-15, incluidas las 5 últimas.',
   )
 
+export const clinicExportResourceSchema = z.object({
+  id: z.string(),
+  kind: z.literal('exportacion_clinica'),
+  status: z.enum(['pendiente', 'generando', 'listo', 'fallido']),
+  url: z.union([z.string(), z.null()]),
+})
+
 export const clinicSettingsResourceSchema = z.object({
   id: z.string(),
   name: z.string(),

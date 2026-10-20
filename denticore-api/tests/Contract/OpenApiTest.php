@@ -726,6 +726,18 @@ it('matches every API response against the OpenAPI 3.1 document', function () {
     $check($this->get($url), 'GET', '/files/{tenant}/{file}');
     $check($this->getJson($url.'x'), 'GET', '/files/{tenant}/{file}');
 
+    // TASK-107: cancelación con motivo y solicitud/consulta de exportación en su ventana.
+    $exportTenant = Tenant::factory()->create();
+    $exportAdmin = User::factory()->for($exportTenant)->create(['role' => 'clinic_admin']);
+    $this->actingWithToken($superAdmin);
+    $check($this->postJson("/api/v1/platform/tenants/{$exportTenant->uuid}/cancel", []), 'POST', '/platform/tenants/{tenant}/cancel');
+    $check($this->postJson("/api/v1/platform/tenants/{$exportTenant->uuid}/cancel", ['reason' => 'Cierre definitivo']), 'POST', '/platform/tenants/{tenant}/cancel');
+    $this->actingWithToken($exportAdmin);
+    $export = $this->postJson('/api/v1/clinic/exports', [], $idempotent());
+    $check($export, 'POST', '/clinic/exports');
+    $check($this->getJson('/api/v1/clinic/exports/'.$export->json('data.id')), 'GET', '/clinic/exports/{document}');
+    $check($this->getJson('/api/v1/clinic/exports/'.fake()->uuid()), 'GET', '/clinic/exports/{document}');
+
     // Cierre de sesión
     $token = $admin->createToken('api')->plainTextToken;
     app('auth')->forgetGuards();
