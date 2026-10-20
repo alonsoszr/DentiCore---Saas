@@ -96,6 +96,7 @@ function ToothHistoryPicker({ subject }) {
 
 /** /c/:slug/portal/mi-historia: «Mi salud» (CUS-17, CUS-24). */
 export function PortalHealthPage() {
+  const { portalPath } = useClinic()
   return (
     <>
       <PageHeader title="Mi salud" />
@@ -103,6 +104,15 @@ export function PortalHealthPage() {
         {(subject) => (
           <>
             <ConsentSummary subject={subject} />
+            <section className="card portal-item">
+              <h2>Mis datos y documentos</h2>
+              <Link className="portal-card-link" to={portalPath('/arco')}>
+                Consultar o registrar una solicitud ARCO
+              </Link>
+              <Link className="portal-card-link" to={portalPath('/documentos')}>
+                Solicitar copia de mi historia clínica
+              </Link>
+            </section>
             <ToothHistoryPicker subject={subject} />
           </>
         )}

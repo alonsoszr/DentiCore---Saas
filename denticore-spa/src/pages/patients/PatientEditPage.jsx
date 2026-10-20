@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
@@ -23,8 +24,8 @@ const FIELDS = [
  * Edición de la identificación y el contacto (CUS-15; RF-062). Solo se envían los campos que
  * cambiaron; la API guarda los valores anteriores cifrados. El número de HC no cambia (RN-79).
  */
-export function PatientEditPage({ patient }) {
-  const { slug } = useClinic()
+export function PatientEditPage({ patient, arcoRequestId = null }) {
+  const { slug, appPath } = useClinic()
   const queryClient = useQueryClient()
   const initial = Object.fromEntries(FIELDS.map((field) => [field, patient[field] ?? '']))
   const [form, setForm] = useState(initial)
@@ -53,6 +54,7 @@ export function PatientEditPage({ patient }) {
       changed.document_type = form.document_type
       changed.document_number = form.document_number
     }
+    if (arcoRequestId) changed.arco_request_id = arcoRequestId
     update.mutate(changed)
   }
 
@@ -62,6 +64,17 @@ export function PatientEditPage({ patient }) {
   return (
     <div className="card">
       <h2>Editar identificación</h2>
+      {arcoRequestId && (
+        <p>
+          Rectificación vinculada a una solicitud ARCO.{' '}
+          <Link to={appPath('/cumplimiento/arco')}>Volver a la bandeja ARCO</Link>
+        </p>
+      )}
+      {errors.arco_request_id && (
+        <p className="error" role="alert">
+          {errors.arco_request_id}
+        </p>
+      )}
       <p className="muted mb-4">El número de historia clínica no cambia: {patient.clinical_record_number}.</p>
       {saved && (
         <div className="alert alert-success" role="status">

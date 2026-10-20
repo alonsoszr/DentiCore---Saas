@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../api/client'
 import { fieldErrors, generalError } from '../../api/errors'
 import { useClinic } from '../../auth/useClinic'
+import { useAuth } from '../../auth/useAuth'
 import { Field } from '../../components/Field'
 import { ConsentStatusBadge } from './ConsentStatusBadge'
 import { ConsentForm } from '../../portal/ConsentForm'
@@ -10,6 +11,7 @@ import { PURPOSES } from '../../portal/consentPurposes'
 import { formatDateTime } from '../../ui/format'
 import { useFocusFirstError } from '../../ui/useFocusFirstError'
 import { TableWrap } from '../../components/TableWrap'
+import { ConsentRevocation } from '../compliance/ConsentRevocation'
 
 const CHANNEL_LABELS = { presencial: 'Presencial', portal: 'Portal', papel: 'Papel' }
 
@@ -20,6 +22,7 @@ const CHANNEL_LABELS = { presencial: 'Presencial', portal: 'Portal', papel: 'Pap
  */
 export function ConsentPage({ patient }) {
   const { slug } = useClinic()
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [channel, setChannel] = useState('presencial')
   const [document, setDocument] = useState('')
@@ -196,6 +199,9 @@ export function ConsentPage({ patient }) {
           </>
         )}
       </div>
+      {['clinic_admin', 'receptionist'].includes(user?.role) && user?.tenant?.status !== 'suspendida' && (
+        <ConsentRevocation key={patient.id} patientId={patient.id} />
+      )}
     </>
   )
 }
