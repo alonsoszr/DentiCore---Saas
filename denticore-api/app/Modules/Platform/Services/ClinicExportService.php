@@ -9,8 +9,6 @@ use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLogger;
 use App\Support\Files\GeneratedDocument;
 use App\Support\Files\StoredFile;
-use App\Support\Outbox\OutboxQueue;
-use App\Support\Outbox\OutboxWriter;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 
@@ -19,10 +17,7 @@ class ClinicExportService
 {
     public const KIND = 'exportacion_clinica';
 
-    /** TASK-139 registrará su generador; mientras tanto el outbox conserva el mensaje pendiente. */
-    public const GENERATE_MESSAGE = 'clinic.export';
-
-    public function __construct(private ClinicExportPolicy $policy, private OutboxWriter $outbox, private AuditLogger $audit) {}
+    public function __construct(private ClinicExportPolicy $policy, private AuditLogger $audit) {}
 
     public function request(User $requester): GeneratedDocument
     {
@@ -34,7 +29,7 @@ class ClinicExportService
                 'documentable_type' => $tenant->getMorphClass(), 'documentable_id' => $tenant->id,
                 'kind' => self::KIND, 'status' => 'pendiente', 'requested_by' => $requester->id,
             ]);
-            $this->outbox->record(self::GENERATE_MESSAGE, ['document' => $document->uuid], OutboxQueue::Heavy);
+            // TASK-139 encolará los documentos pendientes cuando registre el generador ZIP.
             $this->audit->record(AuditEvent::ExportRequested, $tenant, meta: ['kind' => self::KIND], actor: $requester);
 
             return $document;

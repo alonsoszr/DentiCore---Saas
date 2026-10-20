@@ -16,7 +16,7 @@ class ClinicExportController extends Controller
 {
     public function __construct(private ClinicExportService $exports) {}
 
-    /** Solicita la exportación en la cola heavy; TASK-139 implementará el contenido ZIP. */
+    /** Registra la solicitud pendiente; TASK-139 la encolará en heavy y generará el ZIP. */
     #[ProblemResponse(403, 'Solo el administrador puede exportar dentro del plazo de la clínica (RN-07, RN-72)')]
     public function store(Request $request): JsonResponse
     {

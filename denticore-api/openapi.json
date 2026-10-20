@@ -4246,7 +4246,7 @@
         "/clinic/exports": {
             "post": {
                 "operationId": "clinicExport.store",
-                "summary": "Solicita la exportaci\u00f3n en la cola heavy; TASK-139 implementar\u00e1 el contenido ZIP",
+                "summary": "Registra la solicitud pendiente; TASK-139 la encolar\u00e1 en heavy y generar\u00e1 el ZIP",
                 "tags": [
                     "ClinicExport"
                 ],

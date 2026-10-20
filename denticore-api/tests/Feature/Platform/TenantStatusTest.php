@@ -29,7 +29,6 @@ use App\Support\Audit\AuditLog;
 use App\Support\Audit\AuditLogger;
 use App\Support\Files\FileStorage;
 use App\Support\Files\GeneratedDocument;
-use App\Support\Outbox\OutboxDispatcher;
 use App\Support\Outbox\OutboxMessage;
 use App\Support\Tenancy\TenantContext;
 use App\Support\Tokens\OneTimeTokenService;
@@ -358,7 +357,7 @@ it('denies export requests and documents to every non administrator role', funct
     $this->getJson("/api/v1/clinic/exports/{$document->uuid}")->assertForbidden();
 })->with(['super_admin', 'dentist', 'receptionist', 'patient'])->group('T-012', 'RF-020', 'RN-72', 'CUS-05', 'TASK-107');
 
-it('requests exports idempotently on heavy without generating partial content before TASK-139', function (string $status) {
+it('requests exports idempotently without leaving outbox messages before TASK-139', function (string $status) {
     $this->freezeTime();
     $tenant = Tenant::factory()->create(['status' => $status]);
     $this->actingAsRole('clinic_admin', $tenant);
@@ -367,15 +366,12 @@ it('requests exports idempotently on heavy without generating partial content be
         ->assertJsonPath('data.status', 'pendiente')->assertJsonPath('data.url', null);
     $this->postJson('/api/v1/clinic/exports', [], $headers)->assertCreated()->assertJsonPath('data.id', $first->json('data.id'));
 
-    TenantContext::run($tenant, function () use ($first) {
+    TenantContext::run($tenant, function () {
         expect(GeneratedDocument::query()->count())->toBe(1);
-        $message = OutboxMessage::query()->where('queue', 'heavy')->sole();
-        expect($message->payload)->toBe(['document' => $first->json('data.id')])
-            ->and($message->dispatched_at)->toBeNull()
+        expect(OutboxMessage::query()->count())->toBe(0)
             ->and(AuditLog::query()->where('action', 'export.requested')->sole()->metadata)->toBe(['kind' => 'exportacion_clinica']);
     });
-    // Sin generador registrado aún, el outbox conserva la solicitud; no invoca el generador PDF.
-    app(OutboxDispatcher::class)->dispatchBatch();
+    // TASK-139 encolará estas solicitudes cuando exista el generador ZIP y su manejador.
     $this->getJson('/api/v1/clinic/exports/'.$first->json('data.id'))->assertOk()->assertJsonPath('data.status', 'pendiente');
 })->with(['activa', 'suspendida'])->group('T-012', 'RF-020', 'RN-72', 'CUS-05', 'TASK-107');
 
