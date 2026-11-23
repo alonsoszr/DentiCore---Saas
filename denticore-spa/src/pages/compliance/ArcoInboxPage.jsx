@@ -82,7 +82,7 @@ function Inbox() {
                     <td>{formatCivilDate(request.due_date)}</td>
                     <td>{request.remaining_business_days ?? 'Resuelta'}</td>
                     <td>
-                      <button className="btn-link" onClick={() => setSelected(request.id)}>
+                      <button type="button" className="btn-link" onClick={() => setSelected(request.id)}>
                         Ver solicitud
                       </button>
                     </td>

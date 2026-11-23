@@ -62,7 +62,7 @@ function CorrectionAssignment({ request, mutation }) {
           </>
         )}
         <div className="form-actions">
-          <button className="btn btn-secondary" disabled={mutation.isPending || !dentist}>
+          <button type="submit" className="btn btn-secondary" disabled={mutation.isPending || !dentist}>
             Asignar rectificación
           </button>
         </div>
@@ -144,7 +144,12 @@ export function ArcoRequestDetail({ id }) {
           {request.remaining_business_days !== null && <p>Días hábiles restantes: {request.remaining_business_days}</p>}
           {action.isError && !confirmation && <Alert tone="error">{generalError(action.error)}</Alert>}
           {request.status === 'recibida' && (
-            <button className="btn" onClick={() => action.mutate({ action: 'start' })} disabled={action.isPending}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => action.mutate({ action: 'start' })}
+              disabled={action.isPending}
+            >
               Iniciar atención
             </button>
           )}
@@ -171,6 +176,7 @@ export function ArcoRequestDetail({ id }) {
                     </Alert>
                   ) : (
                     <button
+                      type="button"
                       className="btn btn-danger"
                       disabled={action.isPending || !patient.isSuccess}
                       onClick={() => {

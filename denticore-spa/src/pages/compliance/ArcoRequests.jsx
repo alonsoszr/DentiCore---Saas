@@ -183,7 +183,7 @@ export function ArcoRequests({ patientId, portal = false }) {
             </>
           )}
           <div className="form-actions">
-            <button className="btn" disabled={register.isPending}>
+            <button type="submit" className="btn" disabled={register.isPending}>
               {register.isPending ? 'Registrando…' : 'Registrar solicitud'}
             </button>
           </div>

@@ -108,7 +108,7 @@ export function ArcoResolutionForm({ request, pending, error, onSubmit }) {
         />
       )}
       <div className="form-actions">
-        <button className="btn" disabled={pending}>
+        <button type="submit" className="btn" disabled={pending}>
           Resolver solicitud
         </button>
       </div>

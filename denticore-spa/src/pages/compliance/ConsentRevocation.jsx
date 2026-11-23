@@ -94,7 +94,7 @@ function RevocationForm({ consent, patientId, portal, onRevoked }) {
           size={portal ? 'lg' : undefined}
         />
         <div className="form-actions">
-          <button className="btn btn-danger" disabled={purposes.length === 0 || revoke.isPending}>
+          <button type="submit" className="btn btn-danger" disabled={purposes.length === 0 || revoke.isPending}>
             Revocar finalidades
           </button>
         </div>
