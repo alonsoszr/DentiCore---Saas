@@ -8,6 +8,7 @@ use App\Modules\Patients\Models\Patient;
 use App\Modules\Patients\Services\PatientSearchRepository;
 use App\Modules\Platform\Models\Tenant;
 use App\Modules\Platform\Services\RucValidator;
+use App\Support\ReferenceData\ReferenceQueryPlan;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -118,13 +119,19 @@ it('searches 20 000 synthetic patients through the trigram index filtering the c
 
         $search = new PatientSearchRepository($owner);
         $query = $search->query($tenantId, ['q' => 'Núñez']);
-        $plan = collect($owner->select('EXPLAIN '.$query->toRawSql()))->pluck('QUERY PLAN')->implode("\n");
+        $plan = ReferenceQueryPlan::inspect($query);
 
-        expect($plan)->toContain('patients_search_name_trgm_idx')
-            ->and($plan)->not->toContain('Seq Scan on patients')
+        expect($plan['indexes'])->toContain('patients_search_name_trgm_idx')
+            ->and($plan['violations'])->toBe([])
             // Sin RLS, solo el filtro explícito separa las clínicas.
             ->and($query->count())->toBe(1)
             ->and($search->query($otherTenantId, ['q' => 'nunez'])->count())->toBe(1);
+
+        $owner->statement('SET LOCAL enable_indexscan = off');
+        $owner->statement('SET LOCAL enable_indexonlyscan = off');
+        $owner->statement('SET LOCAL enable_bitmapscan = off');
+        expect(ReferenceQueryPlan::inspect($query)['violations'])
+            ->toBe(['public.patients']);
     } finally {
         $owner->rollBack();
     }
