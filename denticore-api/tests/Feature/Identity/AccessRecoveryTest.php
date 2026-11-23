@@ -84,7 +84,7 @@ it('resets the second factor of a user of the own clinic and closes the sessions
     $row = auditRows($tenant, 'auth.2fa_reset')->sole();
     expect($row->metadata)->toBe(['origen' => 'administrador'])
         ->and(json_encode($row->toArray()))->not->toContain(RECOVERY_TOTP_SECRET);
-})->group('RF-052', 'DD-36', 'CUS-79', 'RN-67');
+})->group('T-149', 'RF-052', 'DD-36', 'CUS-79', 'RN-67');
 
 it('asks to configure the second factor again on the next login after a reset', function () {
     $tenant = Tenant::factory()->create(['slug' => 'clinica-reinicio']);
@@ -107,7 +107,7 @@ it('does not let a clinic admin recover users of another clinic', function (stri
     $this->postJson("/api/v1/users/{$other->uuid}/{$action}")->assertNotFound();
 
     expect($other->refresh()->status)->toBe('bloqueado_temporal');
-})->with(['unlock', '2fa/reset'])->group('RF-052', 'RN-01', 'CUS-79');
+})->with(['unlock', '2fa/reset'])->group('T-015', 'RF-052', 'RN-01', 'CUS-79');
 
 it('lets the super admin unlock and reset the second factor of a clinic admin', function () {
     $tenant = Tenant::factory()->create();
@@ -120,7 +120,7 @@ it('lets the super admin unlock and reset the second factor of a clinic admin', 
     expect($admin->refresh()->two_factor_reset_required)->toBeTrue()
         ->and(auditRows($tenant, 'user.unlocked'))->toHaveCount(1)
         ->and(auditRows($tenant, 'auth.2fa_reset')->sole()->metadata)->toBe(['origen' => 'plataforma']);
-})->group('RF-052', 'RN-04', 'CUS-79', 'RN-67');
+})->group('T-149', 'RF-052', 'RN-04', 'CUS-79', 'RN-67');
 
 it('forbids super_admin from resetting 2FA of a dentist', function (string $role) {
     $user = withTwoFactor(User::factory()->for(Tenant::factory()->create())->create(['role' => $role]));
@@ -132,7 +132,7 @@ it('forbids super_admin from resetting 2FA of a dentist', function (string $role
     $this->postJson("/api/v1/platform/clinic-admins/{$user->uuid}/unlock")->assertForbidden();
 
     expect($user->refresh()->two_factor_confirmed_at)->not->toBeNull();
-})->with(['dentist', 'receptionist', 'patient'])->group('T-025', 'RF-052', 'RN-04', 'CUS-79');
+})->with(['dentist', 'receptionist', 'patient'])->group('T-019', 'T-025', 'RF-052', 'RN-04', 'CUS-79');
 
 it('answers 404 for an unknown user in the platform routes', function () {
     $this->actingAsRole('super_admin');

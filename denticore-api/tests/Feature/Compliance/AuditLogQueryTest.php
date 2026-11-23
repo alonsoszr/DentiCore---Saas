@@ -143,7 +143,7 @@ it('exports the clinic log to CSV and records its own audit event', function () 
     $exported = TenantContext::run($own, fn () => AuditLog::query()->where('action', 'audit.exported')->sole());
     expect($exported->user_id)->toBe($admin->id)
         ->and($exported->metadata)->toEqual(['scope' => 'clinica', 'from' => '2026-11-01', 'to' => '2026-11-03', 'rows' => 2]);
-})->group('RF-187', 'RN-67', 'CUS-66');
+})->group('T-149', 'RF-187', 'RN-67', 'CUS-66');
 
 it('exports the platform log with the clinic and without the patient', function () {
     ['own' => $own] = auditScenario();
@@ -164,7 +164,7 @@ it('exports the platform log with the clinic and without the patient', function 
     expect($exported->tenant_id)->toBeNull()
         ->and($exported->user_id)->toBe($superAdmin->id)
         ->and($exported->metadata)->toEqual(['scope' => 'plataforma', 'from' => '2026-11-03', 'to' => '2026-11-03', 'rows' => 3]);
-})->group('RF-187', 'RN-04', 'RN-67', 'CUS-66');
+})->group('T-149', 'RF-187', 'RN-04', 'RN-67', 'CUS-66');
 
 it('limits each export to a range of 31 days', function () {
     ['admin' => $admin] = auditScenario();

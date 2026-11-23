@@ -172,7 +172,7 @@ it('forbids turning off the second factor where it is mandatory', function (stri
         ->assertJsonPath('rule', 'RF-051');
 
     expect($user->refresh()->two_factor_confirmed_at)->not->toBeNull();
-})->with(['clinic_admin', 'super_admin'])->group('RF-051', 'DD-15', 'CUS-78');
+})->with(['clinic_admin', 'super_admin'])->group('T-019', 'RF-051', 'DD-15', 'CUS-78');
 
 it('requires a session that passed the second factor', function (string $method, string $uri) {
     $user = profileUser();
