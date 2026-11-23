@@ -12,6 +12,7 @@ use App\Modules\Platform\Models\Tenant;
 use App\Modules\Platform\Services\RucValidator;
 use App\Support\Audit\AuditEvent;
 use App\Support\Audit\AuditLog;
+use App\Support\ReferenceData\ReferenceQueryPlan;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -216,10 +217,10 @@ it('filters by date and user through the index of the clinic, user and date', fu
         $query = app(AuditLogSearch::class)->query($tenantId, [
             'from' => '2026-01-05', 'to' => '2026-01-06', 'user_id' => $user->uuid,
         ]);
-        $plan = collect($owner->select('EXPLAIN '.$query->toRawSql()))->pluck('QUERY PLAN')->implode("\n");
+        $plan = ReferenceQueryPlan::inspect($query->toBase(), $owner);
 
-        expect($plan)->toContain('tenant_id_user_id_created_at')
-            ->and($plan)->not->toContain('Seq Scan');
+        expect(implode(' ', $plan['indexes']))->toContain('tenant_id_user_id_created_at')
+            ->and($plan['violations'])->toBe([]);
     } finally {
         $owner->rollBack();
     }

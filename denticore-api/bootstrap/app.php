@@ -13,6 +13,7 @@ use App\Support\Http\EnsureTwoFactorPassed;
 use App\Support\Http\HandleIdempotencyKey;
 use App\Support\Http\ProblemDetails;
 use App\Support\Http\SecurityHeaders;
+use App\Support\ReferenceData\GenerateReferenceDatasetCommand;
 use App\Support\Tenancy\AllowCancelledExport;
 use App\Support\Tenancy\AllowInReadOnlyTenant;
 use App\Support\Tenancy\EnsurePlanFeature;
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Modules/Scheduling/Console',
         __DIR__.'/../app/Modules/Risk/Console',
         __DIR__.'/../app/Modules/Compliance/Console',
+        GenerateReferenceDatasetCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Alias de SDD §4.2.
