@@ -38,6 +38,19 @@ function api(overrides = {}) {
 afterEach(() => vi.restoreAllMocks())
 
 describe('TenantDetailPage', () => {
+  it('unlocks the clinic administrator through the platform API', async () => {
+    const calls = api({
+      'get /platform/tenants/t-1': () => ({
+        data: { data: { ...TENANT, admin: { ...TENANT.admin, status: 'bloqueado_temporal' } } },
+      }),
+    })
+    renderPage(<TenantDetailPage />, ROUTE)
+    await userEvent.click(await screen.findByRole('button', { name: 'Desbloquear acceso' }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar' }))
+    expect(await screen.findByText('Acceso desbloqueado.')).toBeInTheDocument()
+    expect(calls).toContainEqual(expect.objectContaining({ method: 'post', url: '/platform/clinic-admins/u-1/unlock' }))
+  })
+
   it('shows the clinic, its plan and its first administrator', async () => {
     api()
     renderPage(<TenantDetailPage />, ROUTE)

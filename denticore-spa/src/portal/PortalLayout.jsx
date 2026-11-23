@@ -8,7 +8,7 @@ import { SessionTimeout } from '../ui/SessionTimeout'
  * pestañas inferiores en el móvil (arriba desde 1024 px), texto de 16 px y controles de 48 px.
  * `tabs` es la lista de pestañas ({ to, label, Icon, end }).
  */
-export function PortalLayout({ tabs }) {
+export function PortalLayout({ tabs, profilePath }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -28,9 +28,16 @@ export function PortalLayout({ tabs }) {
           DentiCore
           <small>{user.tenant?.name}</small>
         </div>
-        <button type="button" className="btn btn-secondary" onClick={handleLogout}>
-          Cerrar sesión
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          {profilePath && (
+            <NavLink to={profilePath} className="btn btn-secondary">
+              Mi perfil
+            </NavLink>
+          )}
+          <button type="button" className="btn btn-secondary" onClick={handleLogout}>
+            Cerrar sesión
+          </button>
+        </div>
       </header>
 
       <nav className="portal-tabs" aria-label="Secciones del portal" style={{ '--portal-tabs': tabs.length }}>
