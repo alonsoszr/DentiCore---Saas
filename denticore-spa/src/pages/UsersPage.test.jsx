@@ -10,6 +10,18 @@ const ROUTE = { user: admin, route: '/c/clinica-demo/app/usuarios', path: '/c/:s
 describe('UsersPage', () => {
   afterEach(() => vi.restoreAllMocks())
 
+  it('unlocks a staff account with a temporary block', async () => {
+    const locked = { ...makeUser('dentist'), status: 'bloqueado_temporal' }
+    const calls = mockApi(({ method }) => ({
+      data: { data: method === 'post' ? { ...locked, status: 'activo' } : [admin, locked] },
+    }))
+    renderPage(<UsersPage />, ROUTE)
+    await userEvent.click(await screen.findByRole('button', { name: 'Desbloquear acceso' }))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar' }))
+    expect(await screen.findByText('Acceso desbloqueado.')).toBeInTheDocument()
+    expect(calls).toContainEqual(expect.objectContaining({ method: 'post', url: '/users/u-dentist/unlock' }))
+  })
+
   it('lists users and invites a new one without password', async () => {
     const calls = mockApi((config) => {
       if (config.method === 'post') {

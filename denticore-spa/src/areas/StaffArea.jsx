@@ -24,6 +24,8 @@ import { BudgetNewPage } from '../pages/treatment/BudgetNewPage'
 import { CatalogPage } from '../pages/treatment/CatalogPage'
 import { ConsentTemplatesPage } from '../pages/treatment/ConsentTemplatesPage'
 import { ArcoInboxPage } from '../pages/compliance/ArcoInboxPage'
+import { AuditLogPage } from '../pages/compliance/AuditLogPage'
+import { ProfilePage } from '../pages/compliance/ProfilePage'
 import { isDataOfficer } from '../pages/compliance/rights'
 import { PlanConsentsPage } from '../pages/treatment/PlanConsentsPage'
 import { PlanDetailPage } from '../pages/treatment/PlanDetailPage'
@@ -45,6 +47,8 @@ export default function StaffArea() {
     { to: appPath('/usuarios'), label: 'Usuarios', roles: ['clinic_admin'] },
     { to: appPath('/configuracion'), label: 'Configuración', roles: ['clinic_admin'], end: true },
     { to: appPath('/configuracion/consentimientos'), label: 'Consentimientos', roles: ['clinic_admin'] },
+    { to: appPath('/cumplimiento/auditoria'), label: 'Bitácora', roles: ['clinic_admin'] },
+    { to: appPath('/perfil'), label: 'Mi perfil' },
     ...(isDataOfficer(user)
       ? [{ to: appPath('/cumplimiento/arco'), label: 'Solicitudes ARCO', roles: ['clinic_admin'] }]
       : []),
@@ -55,7 +59,16 @@ export default function StaffArea() {
       <Route element={<Layout items={navItems} />}>
         <Route index element={<Navigate to="pacientes" replace />} />
         <Route path="sin-acceso" element={<ForbiddenPage />} />
+        <Route path="perfil" element={<ProfilePage />} />
         <Route path="cumplimiento/arco" element={<ArcoInboxPage />} />
+        <Route
+          path="cumplimiento/auditoria"
+          element={
+            <RequireRole allow={['clinic_admin']} forbiddenPath={forbiddenPath}>
+              <AuditLogPage />
+            </RequireRole>
+          }
+        />
         <Route path="agenda" element={<AgendaPage />} />
         <Route
           path="agenda/nueva"

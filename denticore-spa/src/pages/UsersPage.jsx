@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AccessRecoveryActions } from './compliance/AdminActions'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import { fieldErrors, generalError } from '../api/errors'
@@ -270,34 +271,39 @@ export function UsersPage() {
                     <td>
                       <UserStatusBadge status={user.status} />
                     </td>
-                    <td style={{ textAlign: 'right', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                      <button type="button" className="btn-link" onClick={() => openEdit(user)}>
-                        Editar
-                      </button>
-                      {user.status === 'pendiente_activacion' && (
-                        <button
-                          type="button"
-                          className="btn-link"
-                          onClick={() => userAction.mutate({ user, action: 'invitation' })}
-                        >
-                          Reenviar invitación
+                    <td className="text-right">
+                      <div className="flex flex-wrap justify-end gap-3">
+                        <button type="button" className="btn-link" onClick={() => openEdit(user)}>
+                          Editar
                         </button>
-                      )}
-                      {user.status === 'inactivo' ? (
-                        <button
-                          type="button"
-                          className="btn-link"
-                          onClick={() => userAction.mutate({ user, action: 'reactivate' })}
-                        >
-                          Reactivar
-                        </button>
-                      ) : (
-                        user.id !== currentUser.id && (
-                          <button type="button" className="btn-link" onClick={() => deactivate(user)}>
-                            Desactivar
+                        {user.status === 'pendiente_activacion' && (
+                          <button
+                            type="button"
+                            className="btn-link"
+                            onClick={() => userAction.mutate({ user, action: 'invitation' })}
+                          >
+                            Reenviar invitación
                           </button>
-                        )
-                      )}
+                        )}
+                        {user.status === 'inactivo' ? (
+                          <button
+                            type="button"
+                            className="btn-link"
+                            onClick={() => userAction.mutate({ user, action: 'reactivate' })}
+                          >
+                            Reactivar
+                          </button>
+                        ) : (
+                          user.id !== currentUser.id && (
+                            <button type="button" className="btn-link" onClick={() => deactivate(user)}>
+                              Desactivar
+                            </button>
+                          )
+                        )}
+                        {['activo', 'bloqueado_temporal'].includes(user.status) && user.id !== currentUser.id && (
+                          <AccessRecoveryActions user={user} />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { useClinic } from '../auth/useClinic'
 import { NotFoundPage } from '../pages/SimplePages'
+import { ProfilePage } from '../pages/compliance/ProfilePage'
 import { PortalAppointmentPage } from '../portal/PortalAppointmentPage'
 import { PortalAppointmentsPage } from '../portal/PortalAppointmentsPage'
 import { PortalBudgetPage } from '../portal/PortalBudgetPage'
@@ -28,7 +29,7 @@ export default function PortalArea() {
 
   return (
     <Routes>
-      <Route element={<PortalLayout tabs={tabs} />}>
+      <Route element={<PortalLayout tabs={tabs} profilePath={portalPath('/perfil')} />}>
         <Route index element={<PortalHomePage />} />
         <Route path="citas" element={<PortalAppointmentsPage />} />
         <Route path="citas/nueva" element={<PortalNewAppointmentPage />} />
@@ -39,6 +40,7 @@ export default function PortalArea() {
         <Route path="consentimiento" element={<PortalConsentPage />} />
         <Route path="arco" element={<PortalRightsPage />} />
         <Route path="documentos" element={<PortalRightsPage documents />} />
+        <Route path="perfil" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

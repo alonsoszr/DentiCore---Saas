@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { apiClient } from '../api/client'
 import { fieldErrors, generalError } from '../api/errors'
 import { adminPath } from '../auth/paths'
+import { AccessRecoveryActions, ClinicCancellation } from './compliance/AdminActions'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
@@ -169,6 +170,11 @@ export function TenantDetailPage() {
               <dd>{ADMIN_STATUS_LABELS[tenant.admin.status] ?? tenant.admin.status}</dd>
             </div>
           </dl>
+          {['activo', 'bloqueado_temporal'].includes(tenant.admin.status) && tenant.status !== 'cancelada' && (
+            <div className="form-actions">
+              <AccessRecoveryActions user={tenant.admin} platform />
+            </div>
+          )}
           {tenant.admin.status === 'pendiente_activacion' && (
             <div className="form-actions">
               {generalError(resendInvitation.error) && (
@@ -192,7 +198,7 @@ export function TenantDetailPage() {
         </div>
       )}
 
-      <div className="card">
+      <div className="card" hidden={tenant.status === 'cancelada'}>
         <h2>Cambiar plan</h2>
         {generalError(changePlan.error) && (
           <div className="alert alert-error" role="alert">
@@ -219,7 +225,7 @@ export function TenantDetailPage() {
         </form>
       </div>
 
-      <div className="card">
+      <div className="card" hidden={tenant.status === 'cancelada'}>
         <h2>{suspended ? 'Reactivar clínica' : 'Suspender clínica'}</h2>
         {!confirming && generalError(changeStatus.error) && (
           <div className="alert alert-error" role="alert">
@@ -242,6 +248,8 @@ export function TenantDetailPage() {
           </div>
         </form>
       </div>
+
+      <ClinicCancellation tenant={tenant} onUpdated={onUpdated('Clínica cancelada.')} />
 
       {confirming && (
         <ConfirmDialog
