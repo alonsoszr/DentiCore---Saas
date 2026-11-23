@@ -27,11 +27,13 @@ it('forbids the ARCO inbox to an admin who is not data officer', function () {
     // CA-64.4 (FE-1): sin la designación, ni la bandeja ni las acciones.
     $this->getJson('/api/v1/arco-requests')->assertForbidden();
     $this->getJson("/api/v1/arco-requests/{$request->uuid}")->assertForbidden();
-    $this->postJson("/api/v1/arco-requests/{$request->uuid}/start")->assertForbidden();
+    foreach (['start', 'assign-correction', 'cancellation', 'resolve'] as $action) {
+        $this->postJson("/api/v1/arco-requests/{$request->uuid}/{$action}")->assertForbidden();
+    }
 
     ArcoFixtures::officer($tenant);
     $this->getJson('/api/v1/arco-requests')->assertOk()->assertJsonCount(1, 'data');
-})->group('T-145', 'CA-64.4', 'CUS-64');
+})->group('T-019', 'T-145', 'CA-64.4', 'CUS-64');
 
 it('lists the inbox by deadline with the business days left', function () {
     $tenant = Tenant::factory()->create(['timezone' => 'America/Lima']);

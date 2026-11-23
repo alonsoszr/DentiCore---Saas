@@ -1680,7 +1680,7 @@ Implementación: cada Resource recibe el rol del usuario (`$request->user()->rol
 
 ### 3.8 Pruebas de autorización
 
-El SRS exige una prueba por celda ❌ de los CUS *Must* (RF-004): 133 celdas en los 60 CUS *Must*. Se generan con un *dataset* de Pest a partir de un arreglo `AUTH_MATRIX` en `tests/Authorization/matrix.php`, que es la transcripción de §3.4; cada caso invoca el endpoint representativo del CUS (§4.3) con un token del rol denegado y espera 403 (o 404 cuando el rol no puede ver el registro). Una prueba adicional falla si una ruta de `routes/api.php` no figura en la matriz.
+El SRS exige una prueba por celda ❌ de sus 60 CUS *Must* (RF-004). Las 133 celdas se cuentan sobre los cinco roles de SRS §9.3 y se verifican en T-019. El *dataset* de Pest usa `AUTH_MATRIX` en `tests/Authorization/matrix.php` para probar cada restricción por ruta de §3.4, incluidos los casos adicionales de representantes. Cada caso invoca la ruta con un token del rol denegado y espera 403 (o 404 cuando el rol no puede ver el registro). Una prueba adicional falla si una ruta de `routes/api.php` no figura en la matriz.
 
 ## 4. Rutas y Controladores
 

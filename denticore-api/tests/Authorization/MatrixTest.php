@@ -41,7 +41,46 @@ it('denies every forbidden cell of the Must use cases', function (string $method
     $status = $this->json($method, $path)->status();
 
     expect($status)->toBeIn([403, 404], "{$method} {$path} como {$role} respondió {$status}");
-})->with('forbidden cells')->group('RN-06', 'RF-004');
+})->with('forbidden cells')->group('T-019', 'RN-06', 'RF-004');
+
+it('covers all 133 forbidden cells required by the 60 Must use cases', function () {
+    // SRS §9.2 y §9.3. REP y las restricciones específicas de rutas se prueban
+    // en el dataset de AUTH_MATRIX, fuera del recuento normativo de cinco roles.
+    $rules = [
+        [[1, 2, 3], ['clinic_admin', 'dentist', 'receptionist', 'patient']],
+        [[4, 11, 32, 45, 64, 82], ['super_admin', 'dentist', 'receptionist', 'patient']],
+        [[6, 7, 8, 9, 10, 27, 38, 51, 52, 53, 57, 65, 69, 78], []],
+        [[13, 14, 35, 83], ['super_admin', 'patient']],
+        [[15, 16, 50], ['super_admin', 'dentist', 'patient']],
+        [[17, 21, 24, 36, 46, 62, 77], ['super_admin']],
+        [[18, 37, 47, 48, 49, 63], ['super_admin', 'dentist']],
+        [[22, 23, 26, 33, 34, 39, 55, 58, 80, 81], ['super_admin', 'clinic_admin', 'receptionist', 'patient']],
+        [[25, 54], ['super_admin', 'clinic_admin', 'patient']],
+        [[40, 44, 56], ['super_admin', 'receptionist', 'patient']],
+        [[66, 79], ['dentist', 'receptionist', 'patient']],
+    ];
+
+    $must = [];
+    $expected = [];
+    foreach ($rules as [$numbers, $denied]) {
+        foreach ($numbers as $number) {
+            $cus = sprintf('CUS-%02d', $number);
+            $must[] = $cus;
+            foreach ($denied as $role) {
+                $expected[] = "{$cus} {$role}";
+            }
+        }
+    }
+
+    $covered = collect(authMatrix())->flatMap(fn ($route) => array_map(
+        fn ($role) => "{$route['cus']} {$role}",
+        $route['denied'],
+    ))->all();
+
+    expect(array_unique($must))->toHaveCount(60)
+        ->and($expected)->toHaveCount(133)
+        ->and(array_values(array_diff($expected, $covered)))->toBe([]);
+})->group('T-019', 'RN-06', 'RF-004', 'TASK-110');
 
 it('lists every API route in AUTH_MATRIX', function () {
     $inMatrix = collect(authMatrix())->map(fn ($route) => "{$route['method']} {$route['uri']}");
