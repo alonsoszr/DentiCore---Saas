@@ -35,6 +35,7 @@ Fichas de implementación de las pantallas diseñadas en Google Stitch. Cada pan
 | [auth-password-forgot.md](auth-password-forgot.md) | ¿Olvidaste tu contraseña? (A5) | `/c/:slug/restablecer` | E1 | TASK-040 |
 | [auth-password-reset.md](auth-password-reset.md) | Restablecer contraseña (A5) | `/c/:slug/restablecer/:token` | E1 | TASK-040 |
 | [auth-activate.md](auth-activate.md) | Activar cuenta por invitación (A6) | `/c/:slug/activar/:token` | E1 | TASK-040 |
+| [e2-derechos-titular.md](e2-derechos-titular.md) | Derechos del titular: versión mínima de revocación, ARCO y copia de HC | Ficha del paciente, `/app/cumplimiento/arco`, `/portal/arco` y `/portal/documentos` | E2 | TASK-109-a |
 
 ## Componentes compartidos del bloque de acceso
 

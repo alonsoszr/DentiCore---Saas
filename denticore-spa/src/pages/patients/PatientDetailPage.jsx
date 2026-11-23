@@ -4,6 +4,9 @@ import { hasFeature } from '../../auth/features'
 import { RequireFeature } from '../../auth/guards'
 import { useAuth } from '../../auth/useAuth'
 import { useClinic } from '../../auth/useClinic'
+import { RequireRole } from '../../auth/RequireRole'
+import { ArcoRequests } from '../compliance/ArcoRequests'
+import { ClinicalRecordCopy } from '../compliance/ClinicalRecordCopy'
 import { RiskPage } from '../risk/RiskPage'
 import { RiskVariablesPage } from '../risk/RiskVariablesPage'
 import { NotFoundPage } from '../SimplePages'
@@ -52,6 +55,8 @@ export function PatientDetailPage() {
     ...(user?.role === 'dentist' ? [{ to: `${base}/pendientes`, label: 'Pendientes' }] : []),
     { to: `${base}/antecedentes`, label: 'Antecedentes' },
     { to: `${base}/consentimiento`, label: 'Consentimiento' },
+    { to: `${base}/copia-hc`, label: 'Copia de HC' },
+    ...(IDENTITY_ROLES.includes(user?.role) ? [{ to: `${base}/arco`, label: 'Solicitudes ARCO' }] : []),
     { to: `${base}/representantes`, label: 'Representantes' },
     ...(IDENTITY_ROLES.includes(user?.role) ? [{ to: `${base}/editar`, label: 'Editar identificación' }] : []),
   ]
@@ -102,8 +107,20 @@ export function PatientDetailPage() {
         <Route path="pendientes" element={<PendingFindingsPage patient={patient} />} />
         <Route path="antecedentes" element={<MedicalHistoryPage patient={patient} />} />
         <Route path="consentimiento" element={<ConsentPage patient={patient} />} />
+        <Route path="copia-hc" element={<ClinicalRecordCopy key={patient.id} patientId={patient.id} />} />
+        <Route
+          path="arco"
+          element={
+            <RequireRole allow={IDENTITY_ROLES} forbiddenPath={appPath('/sin-acceso')}>
+              <ArcoRequests key={patient.id} patientId={patient.id} />
+            </RequireRole>
+          }
+        />
         <Route path="representantes" element={<RepresentativesPage patient={patient} />} />
-        <Route path="editar" element={<PatientEditPage patient={patient} />} />
+        <Route
+          path="editar"
+          element={<PatientEditPage patient={patient} arcoRequestId={location.state?.arcoRequestId ?? null} />}
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

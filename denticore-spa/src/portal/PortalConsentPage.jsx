@@ -9,11 +9,12 @@ import { AlertCircleIcon } from '../ui/icons'
 import { ConsentForm } from './ConsentForm'
 import { subjectName } from './portalQueries'
 import { WithPortalSubject } from './WithPortalSubject'
+import { ConsentRevocation } from '../pages/compliance/ConsentRevocation'
 
 /**
  * CUS-17 FA-1: la confirmación es la propia sesión más la casilla «He leído y acepto»; el canal
- * es `portal`. Las finalidades opcionales salen sin marcar (CA-17.1). La revocación (CUS-18) es
- * de E2.
+ * es `portal`. Las finalidades opcionales salen sin marcar (CA-17.1); la revocación (CUS-18)
+ * se presenta en una sección independiente.
  */
 function ConsentGrant({ subject }) {
   const { slug } = useClinic()
@@ -128,7 +129,16 @@ export function PortalConsentPage() {
         Volver a Mi salud
       </Link>
       <h1>Consentimiento de datos</h1>
-      <WithPortalSubject>{(subject) => <ConsentGrant subject={subject} />}</WithPortalSubject>
+      <WithPortalSubject>
+        {(subject) => (
+          <>
+            <ConsentGrant key={`grant-${subject.id}`} subject={subject} />
+            {!(subject.relationship === 'titular' && subject.is_minor) && (
+              <ConsentRevocation key={subject.id} patientId={subject.id} portal />
+            )}
+          </>
+        )}
+      </WithPortalSubject>
     </>
   )
 }
